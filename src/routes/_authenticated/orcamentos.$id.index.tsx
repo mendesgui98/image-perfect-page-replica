@@ -259,7 +259,7 @@ function SectionCard({
   const total = items.reduce((s, i) => s + (result.items.find((r) => r.id === i.id)?.total ?? 0), 0);
   function autoMaterials() {
     const names = Array.from(new Set(items.flatMap((i) => i.materials.filter((m) => m.supplied_by === "jmg").map((m) => m.name)).filter(Boolean)));
-    if (!names.length) return toast.info("Nenhum material da JMG nesta etapa.");
+    if (!names.length) { toast.info("Nenhum material da JMG nesta etapa."); return; }
     run(supabase.from("budget_sections").update({ materials_text: names.join(", ") + "." }).eq("id", section.id));
   }
   return (
@@ -476,7 +476,7 @@ function DadosEditor({
         </div>
         <Button
           onClick={() => {
-            if (Math.abs(pctSum - 100) > 1e-9) return toast.error("As parcelas precisam somar 100%.");
+            if (Math.abs(pctSum - 100) > 1e-9) { toast.error("As parcelas precisam somar 100%."); return; }
             const { client_display, endereco, bairro, cidade, uf, cep, validity_date, estimated_term, notes, exclusions, closing_text } = f;
             onSave(locked ? { client_display } : { client_display, endereco, bairro, cidade, uf, cep, validity_date: validity_date || null, estimated_term, notes, exclusions, closing_text, payment_terms: t });
           }}
@@ -556,7 +556,7 @@ function PricingPanel({
 
   async function apply() {
     const { error } = await supabase.from("budgets").update({ params: draft as never, general_discount: disc }).eq("id", budgetId);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await supabase.from("budget_history").insert({
       budget_id: budgetId, action: "precificacao",
       summary: { antes: { params, desconto: discount, total: result.saleNet, margem: result.margin }, depois: { params: draft, desconto: disc, total: sim.saleNet, margem: sim.margin } } as never,

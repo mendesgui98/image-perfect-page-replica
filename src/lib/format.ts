@@ -27,12 +27,12 @@ function ate999(n: number): string {
   if (n === 100) return "cem";
   const c = Math.floor(n / 100), r = n % 100;
   const parts: string[] = [];
-  if (c) parts.push(CEN[c]);
+  if (c) parts.push(CEN[c]!);
   if (r) {
-    if (r < 20) parts.push(UN[r]);
+    if (r < 20) parts.push(UN[r]!);
     else {
       const d = Math.floor(r / 10), u = r % 10;
-      parts.push(u ? `${DEZ[d]} e ${UN[u]}` : DEZ[d]);
+      parts.push(u ? `${DEZ[d]} e ${UN[u]}` : DEZ[d]!);
     }
   }
   return parts.join(" e ");
