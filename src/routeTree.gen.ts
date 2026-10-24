@@ -14,8 +14,14 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedCadastrosRouteImport } from './routes/_authenticated/cadastros'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedEtapasRouteImport } from './routes/_authenticated/etapas'
+import { Route as AuthenticatedMateriaisRouteImport } from './routes/_authenticated/materiais'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
+import { Route as AuthenticatedServicosRouteImport } from './routes/_authenticated/servicos'
+import { Route as AuthenticatedOrcamentosIndexRouteImport } from './routes/_authenticated/orcamentos.index'
+import { Route as AuthenticatedOrcamentosIdIndexRouteImport } from './routes/_authenticated/orcamentos.$id.index'
+import { Route as AuthenticatedOrcamentosIdPdfRouteImport } from './routes/_authenticated/orcamentos.$id.pdf'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,9 +47,20 @@ const AuthenticatedCadastrosRoute = AuthenticatedCadastrosRouteImport.update({
   path: '/cadastros',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEtapasRoute = AuthenticatedEtapasRouteImport.update({
   id: '/etapas',
   path: '/etapas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMateriaisRoute = AuthenticatedMateriaisRouteImport.update({
+  id: '/materiais',
+  path: '/materiais',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
@@ -51,22 +68,57 @@ const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
   path: '/painel',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedServicosRoute = AuthenticatedServicosRouteImport.update({
+  id: '/servicos',
+  path: '/servicos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOrcamentosIndexRoute =
+  AuthenticatedOrcamentosIndexRouteImport.update({
+    id: '/orcamentos/',
+    path: '/orcamentos/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOrcamentosIdIndexRoute =
+  AuthenticatedOrcamentosIdIndexRouteImport.update({
+    id: '/orcamentos/$id/',
+    path: '/orcamentos/$id/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOrcamentosIdPdfRoute =
+  AuthenticatedOrcamentosIdPdfRouteImport.update({
+    id: '/orcamentos/$id/pdf',
+    path: '/orcamentos/$id/pdf',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/cadastros': typeof AuthenticatedCadastrosRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/etapas': typeof AuthenticatedEtapasRoute
+  '/materiais': typeof AuthenticatedMateriaisRoute
   '/painel': typeof AuthenticatedPainelRoute
+  '/servicos': typeof AuthenticatedServicosRoute
+  '/orcamentos/': typeof AuthenticatedOrcamentosIndexRoute
+  '/orcamentos/$id/pdf': typeof AuthenticatedOrcamentosIdPdfRoute
+  '/orcamentos/$id/': typeof AuthenticatedOrcamentosIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/cadastros': typeof AuthenticatedCadastrosRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/etapas': typeof AuthenticatedEtapasRoute
+  '/materiais': typeof AuthenticatedMateriaisRoute
   '/painel': typeof AuthenticatedPainelRoute
+  '/servicos': typeof AuthenticatedServicosRoute
+  '/orcamentos': typeof AuthenticatedOrcamentosIndexRoute
+  '/orcamentos/$id/pdf': typeof AuthenticatedOrcamentosIdPdfRoute
+  '/orcamentos/$id': typeof AuthenticatedOrcamentosIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -75,15 +127,44 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/cadastros': typeof AuthenticatedCadastrosRoute
+  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/etapas': typeof AuthenticatedEtapasRoute
+  '/_authenticated/materiais': typeof AuthenticatedMateriaisRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
+  '/_authenticated/servicos': typeof AuthenticatedServicosRoute
+  '/_authenticated/orcamentos/': typeof AuthenticatedOrcamentosIndexRoute
+  '/_authenticated/orcamentos/$id/pdf': typeof AuthenticatedOrcamentosIdPdfRoute
+  '/_authenticated/orcamentos/$id/': typeof AuthenticatedOrcamentosIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/auth' | '/reset-password' | '/cadastros' | '/etapas' | '/painel'
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/cadastros'
+    | '/configuracoes'
+    | '/etapas'
+    | '/materiais'
+    | '/painel'
+    | '/servicos'
+    | '/orcamentos/'
+    | '/orcamentos/$id/pdf'
+    | '/orcamentos/$id/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/reset-password' | '/cadastros' | '/etapas' | '/painel'
+  to:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/cadastros'
+    | '/configuracoes'
+    | '/etapas'
+    | '/materiais'
+    | '/painel'
+    | '/servicos'
+    | '/orcamentos'
+    | '/orcamentos/$id/pdf'
+    | '/orcamentos/$id'
   id:
     | '__root__'
     | '/'
@@ -91,8 +172,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/_authenticated/cadastros'
+    | '/_authenticated/configuracoes'
     | '/_authenticated/etapas'
+    | '/_authenticated/materiais'
     | '/_authenticated/painel'
+    | '/_authenticated/servicos'
+    | '/_authenticated/orcamentos/'
+    | '/_authenticated/orcamentos/$id/pdf'
+    | '/_authenticated/orcamentos/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -139,11 +226,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCadastrosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/etapas': {
       id: '/_authenticated/etapas'
       path: '/etapas'
       fullPath: '/etapas'
       preLoaderRoute: typeof AuthenticatedEtapasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/materiais': {
+      id: '/_authenticated/materiais'
+      path: '/materiais'
+      fullPath: '/materiais'
+      preLoaderRoute: typeof AuthenticatedMateriaisRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/painel': {
@@ -153,19 +254,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPainelRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/servicos': {
+      id: '/_authenticated/servicos'
+      path: '/servicos'
+      fullPath: '/servicos'
+      preLoaderRoute: typeof AuthenticatedServicosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/orcamentos/': {
+      id: '/_authenticated/orcamentos/'
+      path: '/orcamentos'
+      fullPath: '/orcamentos/'
+      preLoaderRoute: typeof AuthenticatedOrcamentosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/orcamentos/$id/': {
+      id: '/_authenticated/orcamentos/$id/'
+      path: '/orcamentos/$id'
+      fullPath: '/orcamentos/$id/'
+      preLoaderRoute: typeof AuthenticatedOrcamentosIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/orcamentos/$id/pdf': {
+      id: '/_authenticated/orcamentos/$id/pdf'
+      path: '/orcamentos/$id/pdf'
+      fullPath: '/orcamentos/$id/pdf'
+      preLoaderRoute: typeof AuthenticatedOrcamentosIdPdfRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCadastrosRoute: typeof AuthenticatedCadastrosRoute
+  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedEtapasRoute: typeof AuthenticatedEtapasRoute
+  AuthenticatedMateriaisRoute: typeof AuthenticatedMateriaisRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
+  AuthenticatedServicosRoute: typeof AuthenticatedServicosRoute
+  AuthenticatedOrcamentosIndexRoute: typeof AuthenticatedOrcamentosIndexRoute
+  AuthenticatedOrcamentosIdPdfRoute: typeof AuthenticatedOrcamentosIdPdfRoute
+  AuthenticatedOrcamentosIdIndexRoute: typeof AuthenticatedOrcamentosIdIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCadastrosRoute: AuthenticatedCadastrosRoute,
+  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedEtapasRoute: AuthenticatedEtapasRoute,
+  AuthenticatedMateriaisRoute: AuthenticatedMateriaisRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
+  AuthenticatedServicosRoute: AuthenticatedServicosRoute,
+  AuthenticatedOrcamentosIndexRoute: AuthenticatedOrcamentosIndexRoute,
+  AuthenticatedOrcamentosIdPdfRoute: AuthenticatedOrcamentosIdPdfRoute,
+  AuthenticatedOrcamentosIdIndexRoute: AuthenticatedOrcamentosIdIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
