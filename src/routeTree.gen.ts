@@ -20,6 +20,8 @@ import { Route as AuthenticatedMateriaisRouteImport } from './routes/_authentica
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedServicosRouteImport } from './routes/_authenticated/servicos'
 import { Route as AuthenticatedOrcamentosIndexRouteImport } from './routes/_authenticated/orcamentos.index'
+import { Route as AuthenticatedOrcamentosIdIndexRouteImport } from './routes/_authenticated/orcamentos.$id.index'
+import { Route as AuthenticatedOrcamentosIdPdfRouteImport } from './routes/_authenticated/orcamentos.$id.pdf'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -77,6 +79,18 @@ const AuthenticatedOrcamentosIndexRoute =
     path: '/orcamentos/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOrcamentosIdIndexRoute =
+  AuthenticatedOrcamentosIdIndexRouteImport.update({
+    id: '/orcamentos/$id/',
+    path: '/orcamentos/$id/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOrcamentosIdPdfRoute =
+  AuthenticatedOrcamentosIdPdfRouteImport.update({
+    id: '/orcamentos/$id/pdf',
+    path: '/orcamentos/$id/pdf',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +103,8 @@ export interface FileRoutesByFullPath {
   '/painel': typeof AuthenticatedPainelRoute
   '/servicos': typeof AuthenticatedServicosRoute
   '/orcamentos/': typeof AuthenticatedOrcamentosIndexRoute
+  '/orcamentos/$id/pdf': typeof AuthenticatedOrcamentosIdPdfRoute
+  '/orcamentos/$id/': typeof AuthenticatedOrcamentosIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -101,6 +117,8 @@ export interface FileRoutesByTo {
   '/painel': typeof AuthenticatedPainelRoute
   '/servicos': typeof AuthenticatedServicosRoute
   '/orcamentos': typeof AuthenticatedOrcamentosIndexRoute
+  '/orcamentos/$id/pdf': typeof AuthenticatedOrcamentosIdPdfRoute
+  '/orcamentos/$id': typeof AuthenticatedOrcamentosIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -115,6 +133,8 @@ export interface FileRoutesById {
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/servicos': typeof AuthenticatedServicosRoute
   '/_authenticated/orcamentos/': typeof AuthenticatedOrcamentosIndexRoute
+  '/_authenticated/orcamentos/$id/pdf': typeof AuthenticatedOrcamentosIdPdfRoute
+  '/_authenticated/orcamentos/$id/': typeof AuthenticatedOrcamentosIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -129,6 +149,8 @@ export interface FileRouteTypes {
     | '/painel'
     | '/servicos'
     | '/orcamentos/'
+    | '/orcamentos/$id/pdf'
+    | '/orcamentos/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -141,6 +163,8 @@ export interface FileRouteTypes {
     | '/painel'
     | '/servicos'
     | '/orcamentos'
+    | '/orcamentos/$id/pdf'
+    | '/orcamentos/$id'
   id:
     | '__root__'
     | '/'
@@ -154,6 +178,8 @@ export interface FileRouteTypes {
     | '/_authenticated/painel'
     | '/_authenticated/servicos'
     | '/_authenticated/orcamentos/'
+    | '/_authenticated/orcamentos/$id/pdf'
+    | '/_authenticated/orcamentos/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -242,6 +268,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrcamentosIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/orcamentos/$id/': {
+      id: '/_authenticated/orcamentos/$id/'
+      path: '/orcamentos/$id'
+      fullPath: '/orcamentos/$id/'
+      preLoaderRoute: typeof AuthenticatedOrcamentosIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/orcamentos/$id/pdf': {
+      id: '/_authenticated/orcamentos/$id/pdf'
+      path: '/orcamentos/$id/pdf'
+      fullPath: '/orcamentos/$id/pdf'
+      preLoaderRoute: typeof AuthenticatedOrcamentosIdPdfRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -253,6 +293,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
   AuthenticatedServicosRoute: typeof AuthenticatedServicosRoute
   AuthenticatedOrcamentosIndexRoute: typeof AuthenticatedOrcamentosIndexRoute
+  AuthenticatedOrcamentosIdPdfRoute: typeof AuthenticatedOrcamentosIdPdfRoute
+  AuthenticatedOrcamentosIdIndexRoute: typeof AuthenticatedOrcamentosIdIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -263,6 +305,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
   AuthenticatedServicosRoute: AuthenticatedServicosRoute,
   AuthenticatedOrcamentosIndexRoute: AuthenticatedOrcamentosIndexRoute,
+  AuthenticatedOrcamentosIdPdfRoute: AuthenticatedOrcamentosIdPdfRoute,
+  AuthenticatedOrcamentosIdIndexRoute: AuthenticatedOrcamentosIdIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
