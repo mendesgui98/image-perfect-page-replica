@@ -231,7 +231,7 @@ export function computeBudget(
     reinvestment: r2(Math.max(result, 0) * pct(params.reinvestment_share)),
     belowMin: saleNet > 0 && margin < pct(params.min_margin),
     belowDesired: saleNet > 0 && margin < pct(params.desired_margin),
-    maxExtraDiscount: r2(maxExtraDiscount),
+    maxExtraDiscount: Math.floor(maxExtraDiscount * 100) / 100,
   };
 }
 
