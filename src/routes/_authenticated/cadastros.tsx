@@ -1,0 +1,175 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { Plus, Search } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+
+type Person = Database["public"]["Tables"]["people"]["Row"];
+type Kind = Database["public"]["Enums"]["person_kind"];
+
+export const Route = createFileRoute("/_authenticated/cadastros")({
+  head: () => ({ meta: [{ title: "Cadastros — JMG Reformas" }] }),
+  component: Cadastros,
+});
+
+const KINDS: { k: Kind; label: string }[] = [
+  { k: "cliente", label: "Clientes" },
+  { k: "contato", label: "Contatos" },
+  { k: "arquiteto", label: "Arquitetos" },
+  { k: "fornecedor", label: "Fornecedores" },
+  { k: "prestador", label: "Prestadores" },
+];
+
+const FIELDS: [keyof Person, string, string?][] = [
+  ["name", "Nome / Razão social"],
+  ["document", "CPF / CNPJ"],
+  ["rg", "RG"],
+  ["phone", "Telefone"],
+  ["email", "E-mail"],
+  ["endereco", "Endereço"],
+  ["bairro", "Bairro"],
+  ["cidade", "Cidade"],
+  ["uf", "UF"],
+  ["cep", "CEP"],
+  ["specialty", "Especialidade / ramo"],
+];
+
+function Cadastros() {
+  const [kind, setKind] = useState<Kind>("cliente");
+  const [q, setQ] = useState("");
+  const [showInactive, setShowInactive] = useState(false);
+  const [edit, setEdit] = useState<Partial<Person> | null>(null);
+  const qc = useQueryClient();
+
+  const { data = [] } = useQuery({
+    queryKey: ["people", kind],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("people").select("*").eq("kind", kind).order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const save = useMutation({
+    mutationFn: async (p: Partial<Person>) => {
+      if (!p.name?.trim()) throw new Error("Informe o nome.");
+      const payload = { ...p, kind: p.kind ?? kind, name: p.name.trim() } as Person;
+      const { error } = p.id
+        ? await supabase.from("people").update(payload).eq("id", p.id)
+        : await supabase.from("people").insert(payload);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Salvo.");
+      setEdit(null);
+      qc.invalidateQueries({ queryKey: ["people"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const list = data.filter(
+    (p) => (showInactive || p.active) && (p.name + (p.document ?? "") + (p.phone ?? "")).toLowerCase().includes(q.toLowerCase()),
+  );
+
+  return (
+    <div>
+      <PageHeader
+        title="Cadastros"
+        subtitle="Clientes, contatos, arquitetos, fornecedores e prestadores."
+        actions={
+          <Button onClick={() => setEdit({ kind, active: true })}>
+            <Plus className="h-4 w-4" /> Novo
+          </Button>
+        }
+      />
+      <Tabs value={kind} onValueChange={(v) => setKind(v as Kind)}>
+        <TabsList className="h-auto flex-wrap">
+          {KINDS.map((k) => (
+            <TabsTrigger key={k.k} value={k.k}>
+              {k.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+      <div className="my-4 flex flex-wrap items-center gap-4">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-9" placeholder="Buscar" value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <Switch checked={showInactive} onCheckedChange={setShowInactive} /> Mostrar arquivados
+        </label>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {list.map((p) => (
+          <button key={p.id} onClick={() => setEdit(p)} className="rounded-lg border bg-card p-4 text-left shadow-card hover:border-primary">
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-semibold">{p.name}</div>
+              {!p.active && <span className="text-xs text-muted-foreground">arquivado</span>}
+            </div>
+            <div className="mt-1 text-sm text-muted-foreground">{[p.phone, p.email].filter(Boolean).join(" · ") || "—"}</div>
+            {p.cidade && <div className="text-xs text-muted-foreground">{[p.cidade, p.uf].filter(Boolean).join(" - ")}</div>}
+          </button>
+        ))}
+        {list.length === 0 && <p className="text-sm text-muted-foreground">Nenhum registro.</p>}
+      </div>
+
+      <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{edit?.id ? "Editar cadastro" : "Novo cadastro"}</DialogTitle>
+          </DialogHeader>
+          {edit && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1 sm:col-span-2">
+                <Label>Tipo</Label>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={edit.kind ?? kind}
+                  onChange={(e) => setEdit({ ...edit, kind: e.target.value as Kind })}
+                >
+                  {KINDS.map((k) => (
+                    <option key={k.k} value={k.k}>
+                      {k.label.slice(0, -1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {FIELDS.map(([f, l]) => (
+                <div key={f} className={f === "name" || f === "endereco" ? "space-y-1 sm:col-span-2" : "space-y-1"}>
+                  <Label>{l}</Label>
+                  <Input value={(edit[f] as string) ?? ""} onChange={(e) => setEdit({ ...edit, [f]: e.target.value })} />
+                </div>
+              ))}
+              <div className="space-y-1 sm:col-span-2">
+                <Label>Observações</Label>
+                <Textarea value={edit.notes ?? ""} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} />
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <Switch checked={edit.active ?? true} onCheckedChange={(v) => setEdit({ ...edit, active: v })} /> Ativo
+              </label>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEdit(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => edit && save.mutate(edit)} disabled={save.isPending}>
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
