@@ -18,9 +18,9 @@ export const UNIT_LABEL: Record<string, string> = {
   vb: "serviço fechado",
 };
 
-const UN = ["", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove", "dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove"];
-const DEZ = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
-const CEN = ["", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos", "seiscentos", "setecentos", "oitocentos", "novecentos"];
+const UN: string[] = ["", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove", "dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove"];
+const DEZ: string[] = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
+const CEN: string[] = ["", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos", "seiscentos", "setecentos", "oitocentos", "novecentos"];
 
 function ate999(n: number): string {
   if (n === 0) return "";
@@ -47,7 +47,7 @@ function inteiroPorExtenso(n: number): string {
   if (milhoes) parts.push(milhoes === 1 ? "um milhão" : `${ate999(milhoes)} milhões`);
   if (milhares) parts.push(milhares === 1 ? "mil" : `${ate999(milhares)} mil`);
   if (resto) parts.push(ate999(resto));
-  if (parts.length === 1) return parts[0];
+  if (parts.length === 1) return parts[0]!;
   const last = parts[parts.length - 1];
   const joinE = resto > 0 && (resto < 100 || resto % 100 === 0);
   return parts.slice(0, -1).join(" ") + (joinE ? " e " : " ") + last;

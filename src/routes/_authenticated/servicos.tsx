@@ -45,7 +45,6 @@ function Servicos() {
       if (!s.description?.trim()) throw new Error("Informe a descrição.");
       const { comp, ...rest } = s;
       const payload = {
-        id: rest.id,
         description: rest.description!.trim(),
         stage_id: rest.stage_id || null,
         unit: rest.unit ?? "un",

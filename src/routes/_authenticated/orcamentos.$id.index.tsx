@@ -37,7 +37,7 @@ function Editor() {
 
   const updBudget = useMutation({
     mutationFn: async (p: Record<string, unknown>) => {
-      const { error } = await supabase.from("budgets").update(p).eq("id", id);
+      const { error } = await supabase.from("budgets").update(p as never).eq("id", id);
       if (error) throw error;
     },
     onSuccess: refresh,
@@ -312,9 +312,9 @@ function SectionCard({
 
 function ItemRow({
   item, r, params, locked, run,
-}: { item: Item; r?: BudgetResult["items"][number]; params: PricingParams; locked: boolean; run: (p: PromiseLike<{ error: unknown }>) => Promise<void> }) {
+}: { item: Item; r?: BudgetResult["items"][number] | undefined; params: PricingParams; locked: boolean; run: (p: PromiseLike<{ error: unknown }>) => Promise<void> }) {
   const [open, setOpen] = useState(false);
-  const upd = (p: Record<string, unknown>) => run(supabase.from("budget_items").update(p).eq("id", item.id));
+  const upd = (p: Record<string, unknown>) => run(supabase.from("budget_items").update(p as never).eq("id", item.id));
   const num = (v: string) => (v === "" ? null : Number(v));
   const setMat = (i: number, p: Partial<ItemMaterial>) => upd({ materials: item.materials.map((m, j) => (j === i ? { ...m, ...p } : m)) });
 

@@ -60,17 +60,17 @@ export interface ItemMaterial {
 }
 
 export interface PricingItem {
-  id?: string;
+  id?: string | undefined;
   quantity: number;
   labor_cost_unit: number;
   materials: ItemMaterial[];
-  labor_markup_override?: number | null;
-  materials_markup_override?: number | null;
-  item_discount?: number;
+  labor_markup_override?: number | null | undefined;
+  materials_markup_override?: number | null | undefined;
+  item_discount?: number | undefined;
 }
 
 export interface ItemResult {
-  id?: string;
+  id?: string | undefined;
   laborCost: number;
   materialsCost: number;
   laborList: number;
@@ -241,7 +241,8 @@ export function splitPayments(total: number, terms: { label: string; pct: number
   const pctSum = terms.reduce((s, t) => s + (Number(t.pct) || 0), 0);
   if (out.length && Math.abs(pctSum - 100) < 1e-9) {
     const diff = r2(total - out.reduce((s, t) => s + t.value, 0));
-    out[out.length - 1].value = r2(out[out.length - 1].value + diff);
+    const last = out[out.length - 1]!;
+    last.value = r2(last.value + diff);
   }
   return { rows: out, pctSum };
 }

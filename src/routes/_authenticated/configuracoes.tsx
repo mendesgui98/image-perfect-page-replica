@@ -117,9 +117,9 @@ function Precos({ ro }: { ro: boolean }) {
   const setTaxes = (t: Tax[]) => setF({ ...f, taxes: t as unknown as Pricing["taxes"] });
   const save = useMutation({
     mutationFn: async () => {
-      const payload: Partial<Pricing> = { configured: true, taxes: f.taxes };
-      for (const [k] of PCT_FIELDS) (payload as Record<string, unknown>)[k] = Number(f[k]) || 0;
-      const { error } = await supabase.from("pricing_settings").update(payload).eq("id", 1);
+      const payload: Record<string, unknown> = { configured: true, taxes: f.taxes ?? [] };
+      for (const [k] of PCT_FIELDS) payload[k] = Number(f[k]) || 0;
+      const { error } = await supabase.from("pricing_settings").update(payload as never).eq("id", 1);
       if (error) throw error;
     },
     onSuccess: () => {

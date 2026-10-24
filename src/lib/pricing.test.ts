@@ -33,7 +33,7 @@ describe("precificação JMG", () => {
   });
 
   it("material fornecido pelo cliente não gera custo nem preço", () => {
-    const r = computeBudget([{ ...items[0], materials: [mat({ supplied_by: "cliente" })] }], params);
+    const r = computeBudget([{ ...items[0]!, materials: [mat({ supplied_by: "cliente" })] }], params);
     expect(r.materialsCost).toBe(0);
     expect(r.materialsNet).toBe(0);
   });
@@ -66,8 +66,8 @@ describe("precificação JMG", () => {
       { label: "a", pct: 30 }, { label: "b", pct: 12.5 }, { label: "c", pct: 12.5 },
       { label: "d", pct: 12.5 }, { label: "e", pct: 12.5 }, { label: "f", pct: 20 },
     ]);
-    expect(rows[0].value).toBe(81240);
-    expect(rows[5].value).toBe(54160);
+    expect(rows[0]!.value).toBe(81240);
+    expect(rows[5]!.value).toBe(54160);
   });
 
   it("valor por extenso", () => {
