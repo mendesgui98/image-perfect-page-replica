@@ -33,3 +33,9 @@ dist-ssr
 
 # Local scratch files and dependency caches
 work/
+
+# Ambiente local
+.env
+.env.*
+!.env.example
+package-lock.json
