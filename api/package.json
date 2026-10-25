@@ -1,0 +1,19 @@
+{
+  "name": "jmg-api",
+  "private": true,
+  "type": "module",
+  "description": "API própria da JMG Obras (Node 22 + TypeScript sem etapa de build).",
+  "engines": {
+    "node": ">=22.6"
+  },
+  "scripts": {
+    "dev": "node --experimental-strip-types --env-file-if-exists=.env --watch src/server.ts",
+    "start": "node --experimental-strip-types src/server.ts",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "postgres": "^3.4.9",
+    "zod": "^3.25.76"
+  }
+}

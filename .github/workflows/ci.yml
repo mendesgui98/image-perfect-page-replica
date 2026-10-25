@@ -27,6 +27,8 @@ jobs:
       - run: bun run lint
       - run: bun run test
       - run: bun run test:db
+      - run: bun run api:typecheck
+      - run: bun run api:test
       - run: bun run build
         env:
           VITE_SUPABASE_URL: http://localhost:8000
@@ -49,6 +51,12 @@ jobs:
           build-args: |
             VITE_SUPABASE_URL=http://localhost:8000
             VITE_SUPABASE_PUBLISHABLE_KEY=ci-placeholder
+      - name: Build api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: api
+          push: false
       - name: Build migrator
         uses: docker/build-push-action@v6
         with:

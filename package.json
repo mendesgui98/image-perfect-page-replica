@@ -16,7 +16,10 @@
     "start": "node .output/server/index.mjs",
     "typecheck": "tsc --noEmit",
     "db:migrate": "node scripts/migrate.mjs",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "api:dev": "cd api && node --experimental-strip-types --env-file-if-exists=.env --watch src/server.ts",
+    "api:test": "cd api && node --experimental-strip-types --test test/*.test.ts",
+    "api:typecheck": "cd api && tsc --noEmit -p ."
   },
   "overrides": {
     "rolldown": "1.2.1"

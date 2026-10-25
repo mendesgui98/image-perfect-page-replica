@@ -17,6 +17,7 @@ services:
       args:
         VITE_SUPABASE_URL: ${API_EXTERNAL_URL}
         VITE_SUPABASE_PUBLISHABLE_KEY: ${ANON_KEY}
+        VITE_API_URL: ${APP_API_URL}
     restart: unless-stopped
     environment:
       # O SSR fala com o gateway pela rede interna; o navegador usa API_EXTERNAL_URL.
@@ -25,6 +26,25 @@ services:
     ports:
       # Exposto só localmente; na VPS o acesso público passa pelo Caddy (HTTPS).
       - "127.0.0.1:${WEB_PORT:-3000}:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  api:
+    build:
+      context: ..
+      target: api
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
+      JWT_SECRET: ${JWT_SECRET}
+      AUTH_URL: http://auth:9999
+      SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      SITE_URL: ${SITE_URL}
+      CORS_ORIGINS: ${SITE_URL}
+    ports:
+      - "127.0.0.1:${API_PORT:-4000}:4000"
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -215,6 +235,7 @@ services:
     depends_on:
       - web
       - kong
+      - api
     environment:
       APP_DOMAIN: ${APP_DOMAIN}
       API_DOMAIN: ${API_DOMAIN}

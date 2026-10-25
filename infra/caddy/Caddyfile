@@ -14,8 +14,13 @@
 	reverse_proxy web:3000
 }
 
-# API (gateway do Supabase: auth, rest, storage)
+# API: /jmg/* vai para a API própria; o resto para o gateway do Supabase (auth, rest, storage)
 {$API_DOMAIN} {
 	encode zstd gzip
-	reverse_proxy kong:8000
+	handle_path /jmg/* {
+		reverse_proxy api:4000
+	}
+	handle {
+		reverse_proxy kong:8000
+	}
 }

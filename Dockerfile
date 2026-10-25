@@ -11,8 +11,10 @@ FROM deps AS build
 # Variáveis VITE_* entram no bundle do navegador no momento do build.
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_PUBLISHABLE_KEY
+ARG VITE_API_URL
 ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
     VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY \
+    VITE_API_URL=$VITE_API_URL \
     NITRO_PRESET=node-server
 COPY . .
 RUN bun run build
@@ -24,6 +26,21 @@ COPY --from=deps /app/node_modules/postgres ./node_modules/postgres
 COPY scripts/migrate.mjs ./scripts/migrate.mjs
 COPY supabase/migrations ./supabase/migrations
 CMD ["node", "scripts/migrate.mjs"]
+
+# ---------- API própria ----------
+# Node 22 executa TypeScript direto (--experimental-strip-types); sem etapa de build.
+FROM node:22-alpine AS api
+WORKDIR /app
+ENV NODE_ENV=production PORT=4000
+COPY --from=deps /app/node_modules/postgres ./node_modules/postgres
+COPY --from=deps /app/node_modules/zod ./node_modules/zod
+COPY api/package.json ./package.json
+COPY api/src ./src
+USER node
+EXPOSE 4000
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:4000/health >/dev/null || exit 1
+CMD ["node", "--experimental-strip-types", "--no-warnings", "src/server.ts"]
 
 # ---------- runtime do front ----------
 FROM node:22-alpine AS web
