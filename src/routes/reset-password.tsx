@@ -43,7 +43,7 @@ function Reset() {
           <Label>Nova senha</Label>
           <Input
             type="password"
-            minLength={6}
+            minLength={8}
             value={pw}
             onChange={(e) => setPw(e.target.value)}
             required

@@ -12,7 +12,11 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:db": "node tests/audit-integrity.mjs"
+    "test:db": "node tests/audit-integrity.mjs",
+    "start": "node .output/server/index.mjs",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "node scripts/migrate.mjs",
+    "format:check": "prettier --check ."
   },
   "overrides": {
     "rolldown": "1.2.1"

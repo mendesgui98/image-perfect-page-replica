@@ -1,28 +1,52 @@
 # JMG Reformas — Gestão de obras
 
-Aplicação de orçamentos, contratos, obras, cronogramas, compras e financeiro da JMG Reformas. Desenvolvida com React, TypeScript, TanStack Start/Query e Supabase; interface com Tailwind e Radix.
+Sistema web (e PWA) de orçamentos, contratos, obras, cronogramas, compras e financeiro da JMG Reformas.
 
-## Desenvolvimento
+**Stack:** TypeScript, React 19, TanStack Start (SSR) + Router + Query, Tailwind 4, shadcn/Radix.
+Backend: PostgreSQL com Supabase self-hosted (Auth, PostgREST, Storage), regras de negócio em funções
+SQL e RLS. Tudo roda em Docker e é publicado em VPS.
 
-Use Node.js 24 ou uma versão compatível com as dependências do projeto. Configure as variáveis de ambiente do Supabase para o ambiente de desenvolvimento e instale as dependências usando o arquivo `bun.lock`.
+## Começando
+
+Pré-requisitos: Node 22, [Bun](https://bun.sh) 1.x e Docker.
 
 ```sh
-bun install --frozen-lockfile
+bun install
+# Banco e serviços locais
+cd infra && cp .env.example .env && node ../scripts/generate-keys.mjs  # cole as chaves no .env
+docker compose up -d db auth rest storage kong migrate
+cd ..
+# Front com hot reload
+cp .env.example .env   # VITE_SUPABASE_URL=http://localhost:8000 e a ANON_KEY
 bun run dev
 ```
 
-## Verificações
+Para subir tudo em containers (inclusive o front) ou publicar na VPS, veja [infra/README.md](infra/README.md).
 
-```sh
-bun run test
-bun run test:db
-bunx tsc --noEmit
-bun run build
-bun run lint
-```
+## Scripts
 
-As regras de contribuição ficam em `AGENTS.md`. As tabelas e regras persistidas são definidas pelas migrações SQL; o arquivo `drizzle/schema.ts` vazio não representa o banco completo.
+| Comando              | O que faz                                              |
+| -------------------- | ------------------------------------------------------ |
+| `bun run dev`        | Front em modo desenvolvimento (porta 3000)             |
+| `bun run build`      | Build de produção (servidor Node em `.output/`)        |
+| `bun run start`      | Executa o build de produção                            |
+| `bun run test`       | Testes unitários (Vitest)                              |
+| `bun run test:db`    | Regras do banco com PGlite (aplica todas as migrações) |
+| `bun run typecheck`  | Checagem de tipos                                      |
+| `bun run lint`       | ESLint + Prettier                                      |
+| `bun run db:migrate` | Aplica migrações pendentes em `DATABASE_URL`           |
 
-Consulte [correções de integridade e aplicação da migração](docs/audit-corrections.md) antes de disponibilizar a versão corrigida.
+## Banco de dados
 
-Consulte também [exclusão e lixeira](docs/record-trash.md) para aplicar a migração 0016 e entender os vínculos preservados.
+- Migrações em `supabase/migrations/AAAAMMDDHHMMSS_nome.sql`; nunca edite uma migração já aplicada.
+- O serviço `migrate` (ou `bun run db:migrate`) aplica as pendentes e registra em
+  `supabase_migrations.schema_migrations`, compatível com a Supabase CLI.
+- Tipos do banco: `src/integrations/supabase/types.ts`.
+
+## Fluxo de trabalho
+
+1. Crie uma branch a partir da `main` (`feat/...`, `fix/...`).
+2. Abra um Pull Request; o CI roda tipos, lint, testes e build.
+3. Faça merge só com o CI verde.
+
+Regras de arquitetura e de negócio: [AGENTS.md](AGENTS.md). Documentos técnicos em `docs/`.
