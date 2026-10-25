@@ -1,24 +1,30 @@
-# Image Perfect Page Replica
+# JMG Reformas — Gestão de obras
 
-Implement exactly the screenshot and nothing else
+Aplicação de orçamentos, contratos, obras, cronogramas, compras e financeiro da JMG Reformas. Desenvolvida com React, TypeScript, TanStack Start/Query e Supabase; interface com Tailwind e Radix.
 
-This project was built with [Lovable](https://lovable.dev).
+## Desenvolvimento
 
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/b15d814b-dd91-4a53-9dbd-84f193080e19).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Use Node.js 24 ou uma versão compatível com as dependências do projeto. Configure as variáveis de ambiente do Supabase para o ambiente de desenvolvimento e instale as dependências usando o arquivo `bun.lock`.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+bun install --frozen-lockfile
+bun run dev
 ```
+
+## Verificações
+
+```sh
+bun run test
+bun run test:db
+bunx tsc --noEmit
+bun run build
+bun run lint
+```
+
+As regras de contribuição ficam em `AGENTS.md`. As tabelas e regras persistidas são definidas pelas migrações SQL; o arquivo `drizzle/schema.ts` vazio não representa o banco completo.
+
+Consulte [correções de integridade e aplicação da migração](docs/audit-corrections.md) antes de disponibilizar a versão corrigida.
+
+## Lovable
+
+Este projeto mantém integração com o [editor Lovable](https://lovable.dev/projects/b15d814b-dd91-4a53-9dbd-84f193080e19). Preserve o histórico publicado e mantenha a branch conectada funcional.

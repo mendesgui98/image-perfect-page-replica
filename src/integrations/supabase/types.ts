@@ -2009,6 +2009,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      save_service_composition: {
+        Args: { _id: string | null; _data: Json; _composition: Json }
+        Returns: string
+      }
+
       approve_work_schedule: { Args: { _work_id: string }; Returns: number }
       can_see_costs: { Args: { _user_id: string }; Returns: boolean }
       capture_schedule_version: {
@@ -2281,3 +2286,4 @@ export const Constants = {
     },
   },
 } as const
+

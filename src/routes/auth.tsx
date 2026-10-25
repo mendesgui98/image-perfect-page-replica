@@ -40,10 +40,13 @@ function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin + "/painel", data: { full_name: name } },
+          options: {
+            emailRedirectTo: window.location.origin + "/painel",
+            data: { full_name: name },
+          },
         });
         if (error) throw error;
-        toast.success("Conta criada. Confirme pelo link enviado ao seu e-mail.");
+        toast.success("Conta criada. Confirme seu e-mail e aguarde a liberação do administrador.");
         setMode("in");
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -64,7 +67,11 @@ function AuthPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden lg:block">
-        <img src="/proposta-capa.jpg" alt="Ambiente reformado pela JMG" className="absolute inset-0 h-full w-full object-cover" />
+        <img
+          src="/proposta-capa.jpg"
+          alt="Ambiente reformado pela JMG"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
         <div className="absolute inset-y-0 left-0 w-10 bg-primary" />
       </div>
       <div className="flex items-center justify-center p-6">
@@ -89,27 +96,48 @@ function AuthPage() {
           )}
           <div className="space-y-2">
             <Label htmlFor="email">E-mail</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
           {mode !== "reset" && (
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input id="password" type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <Input
+                id="password"
+                type="password"
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
             </div>
           )}
           <Button type="submit" className="w-full" size="lg" disabled={busy}>
             {mode === "in" ? "Entrar" : mode === "up" ? "Criar conta" : "Enviar link"}
           </Button>
           <div className="flex justify-between text-sm">
-            <button type="button" className="text-primary hover:underline" onClick={() => setMode(mode === "up" ? "in" : "up")}>
+            <button
+              type="button"
+              className="text-primary hover:underline"
+              onClick={() => setMode(mode === "up" ? "in" : "up")}
+            >
               {mode === "up" ? "Já tenho conta" : "Criar conta"}
             </button>
-            <button type="button" className="text-muted-foreground hover:underline" onClick={() => setMode("reset")}>
+            <button
+              type="button"
+              className="text-muted-foreground hover:underline"
+              onClick={() => setMode("reset")}
+            >
               Esqueci a senha
             </button>
           </div>
           <p className="text-xs text-muted-foreground">
-            A primeira conta criada vira administrador. As demais entram como equipe de obra até o administrador alterar o perfil.
+            Novas contas precisam de liberação do administrador para acessar os dados da empresa.
           </p>
         </form>
       </div>

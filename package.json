@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:db": "node tests/audit-integrity.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"
@@ -95,6 +96,7 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "8.1.5",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "@electric-sql/pglite": "0.3.14"
   }
 }

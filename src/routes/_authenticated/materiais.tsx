@@ -1,3 +1,4 @@
+import { businessDate } from "@/lib/dashboard-math";
 import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { fmtBRL, fmtDate, fmtNum } from "@/lib/format";
 
 type Mat = Database["public"]["Tables"]["materials"]["Row"];
@@ -34,19 +41,24 @@ function Materiais() {
   });
   const { data: suppliers = [] } = useQuery({
     queryKey: ["people", "fornecedor"],
-    queryFn: async () => (await supabase.from("people").select("*").eq("kind", "fornecedor").order("name")).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("people").select("*").eq("kind", "fornecedor").order("name")).data ?? [],
   });
   const save = useMutation({
     mutationFn: async (m: Partial<Mat>) => {
-      if (!m.name || !m.purchase_unit || !m.consumption_unit) throw new Error("Preencha nome e unidades.");
+      if (!m.name || !m.purchase_unit || !m.consumption_unit)
+        throw new Error("Preencha nome e unidades.");
       const prev = data.find((x) => x.id === m.id);
       const payload = {
         ...m,
         conversion: Number(m.conversion) || 1,
         price: Number(m.price) || 0,
-        price_updated_at: !prev || prev.price !== Number(m.price) ? new Date().toISOString().slice(0, 10) : m.price_updated_at,
+        price_updated_at:
+          !prev || prev.price !== Number(m.price) ? businessDate() : m.price_updated_at,
       } as Mat;
-      const { error } = m.id ? await supabase.from("materials").update(payload).eq("id", m.id) : await supabase.from("materials").insert(payload);
+      const { error } = m.id
+        ? await supabase.from("materials").update(payload).eq("id", m.id)
+        : await supabase.from("materials").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -71,7 +83,12 @@ function Materiais() {
           </Button>
         }
       />
-      <Input className="mb-4 max-w-sm" placeholder="Buscar" value={q} onChange={(e) => setQ(e.target.value)} />
+      <Input
+        className="mb-4 max-w-sm"
+        placeholder="Buscar"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+      />
       <div className="overflow-x-auto rounded-lg border bg-card shadow-card">
         <table className="w-full text-sm">
           <thead className="bg-muted text-left text-muted-foreground">
@@ -86,11 +103,16 @@ function Materiais() {
           </thead>
           <tbody>
             {list.map((m) => (
-              <tr key={m.id} onClick={() => setEdit(m)} className={`cursor-pointer border-t hover:bg-muted/50 ${m.active ? "" : "opacity-50"}`}>
+              <tr
+                key={m.id}
+                onClick={() => setEdit(m)}
+                className={`cursor-pointer border-t hover:bg-muted/50 ${m.active ? "" : "opacity-50"}`}
+              >
                 <td className="p-3 font-medium">{m.name}</td>
                 <td className="p-3">{m.purchase_unit}</td>
                 <td className="p-3">
-                  {m.consumption_unit} <span className="text-muted-foreground">(×{fmtNum(m.conversion, 4)})</span>
+                  {m.consumption_unit}{" "}
+                  <span className="text-muted-foreground">(×{fmtNum(m.conversion, 4)})</span>
                 </td>
                 <td className="p-3 text-right num">{fmtBRL(m.price)}</td>
                 <td className="p-3 text-right num">{fmtBRL(m.price / (m.conversion || 1))}</td>
@@ -117,23 +139,46 @@ function Materiais() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1 sm:col-span-2">
                 <Label>Nome</Label>
-                <Input value={edit.name ?? ""} onChange={(e) => setEdit({ ...edit, name: e.target.value })} />
+                <Input
+                  value={edit.name ?? ""}
+                  onChange={(e) => setEdit({ ...edit, name: e.target.value })}
+                />
               </div>
               <div className="space-y-1">
                 <Label>Unidade de compra</Label>
-                <Input placeholder="saco 20kg" value={edit.purchase_unit ?? ""} onChange={(e) => setEdit({ ...edit, purchase_unit: e.target.value })} />
+                <Input
+                  placeholder="saco 20kg"
+                  value={edit.purchase_unit ?? ""}
+                  onChange={(e) => setEdit({ ...edit, purchase_unit: e.target.value })}
+                />
               </div>
               <div className="space-y-1">
                 <Label>Unidade de consumo</Label>
-                <Input placeholder="kg" value={edit.consumption_unit ?? ""} onChange={(e) => setEdit({ ...edit, consumption_unit: e.target.value })} />
+                <Input
+                  placeholder="kg"
+                  value={edit.consumption_unit ?? ""}
+                  onChange={(e) => setEdit({ ...edit, consumption_unit: e.target.value })}
+                />
               </div>
               <div className="space-y-1">
                 <Label>Conversão (consumo por 1 compra)</Label>
-                <Input type="number" step="any" value={edit.conversion ?? ""} onChange={(e) => setEdit({ ...edit, conversion: e.target.value as unknown as number })} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={edit.conversion ?? ""}
+                  onChange={(e) =>
+                    setEdit({ ...edit, conversion: e.target.value as unknown as number })
+                  }
+                />
               </div>
               <div className="space-y-1">
                 <Label>Preço por unidade de compra (R$)</Label>
-                <Input type="number" step="0.01" value={edit.price ?? ""} onChange={(e) => setEdit({ ...edit, price: e.target.value as unknown as number })} />
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={edit.price ?? ""}
+                  onChange={(e) => setEdit({ ...edit, price: e.target.value as unknown as number })}
+                />
               </div>
               <div className="space-y-1 sm:col-span-2">
                 <Label>Fornecedor</Label>
@@ -151,7 +196,11 @@ function Materiais() {
                 </select>
               </div>
               <label className="flex items-center gap-2 text-sm">
-                <Switch checked={edit.active ?? true} onCheckedChange={(v) => setEdit({ ...edit, active: v })} /> Ativo
+                <Switch
+                  checked={edit.active ?? true}
+                  onCheckedChange={(v) => setEdit({ ...edit, active: v })}
+                />{" "}
+                Ativo
               </label>
             </div>
           )}
