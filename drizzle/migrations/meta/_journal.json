@@ -36,6 +36,13 @@
       "when": 1792890544073,
       "tag": "0004_financial_installments_dashboard",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792890715929,
+      "tag": "0005_nullable_finance_parties_and_group_checks",
+      "breakpoints": true
     }
   ]
 }
