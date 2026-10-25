@@ -1,8 +1,9 @@
 # Roadmap JMG
-- [ ] Pedido atual: duas entradas em Nova obra, cadastro direto sem orçamento, posição inicial, anexos e integração à mesma gestão/consolidado; preparar plano de alteração financeira e estrutural
+- [x] Duas entradas em Nova obra, cadastro direto sem orçamento, posição inicial, anexos e mesma gestão/consolidado; validação autenticada com exemplo piloto
 - [x] Complemento solicitado: preparar plano modular para dashboards por obra e consolidado, parcelas e validação de obra piloto
 - [x] Complemento: parcelas, visão por obra e consolidado com gráficos/filtros; caixa separado de resultado e pilotos excluídos por padrão
-- [x] Piloto: orçamento/desconto/conversão única, contrato/PDF, compra 12 mil em quatro parcelas, recebimento parcial, caixa 150 mil − 100 mil = 50 mil, cronograma, foto/relatório, filtros e rascunho após queda de conexão; celular 390px sem extrapolar largura
+- [x] Piloto: conversão única, compras/recebimento parcial e caixa; celular 390px sem extrapolar largura
+- [ ] Conferência final do piloto anterior: contrato/PDF e recuperação de rascunhos ainda sem comprovação completa
 - [ ] Piloto: testar acesso autenticado como financeiro e equipe; bloqueado pela ausência de contas desses perfis (somente admin cadastrado); políticas revisadas, grupos financeiros conferidos sem divergências
 - [x] Etapa 1: cadastros, catálogo, precificação, orçamento em PDF
 - [x] Etapa 2: aprovação comprovada, contrato revisável/assinado e conversão única em obra; fluxo verificado

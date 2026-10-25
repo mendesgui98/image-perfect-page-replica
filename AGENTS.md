@@ -15,12 +15,13 @@
 - Cost data access is enforced by RLS via `public.can_see_costs()` (admin/financeiro); roles live in `user_roles`, never on profiles.
 - Approved/refused budgets are locked by DB trigger; changes go through `copy_budget(id, true)` revisions.
 - Client PDF is an HTML print view (`/orcamentos/$id/pdf`) styled after the client's model; it must never render internal costs/margins.
-- Works reference the immutable approved budget; conversion runs atomically through `convert_budget` with a unique budget key to prevent duplicate works.
-- Operational quantities and cash/allocations use pure tested helpers in `operations.ts`; economic price/result calculations stay in `pricing.ts`.
+- work_registry is canonical for both origins; linked_budget_id alone references an immutable approved budget. Legacy works mirrors conversion atomically to preserve identifiers; direct works never insert budgets.
+- Operational quantities and cash/allocations use pure tested helpers in operations.ts and work-opening.ts; economic price/result calculations stay in pricing.ts.
 - Uploaded evidence and work documents use the private `jmg-documents` bucket and temporary signed URLs; team access is limited to operational records.
 - Purchases create commitments atomically; partial receipts determine incurred purchase cost, while settlements affect only cash, never a second expense.
 - Contract wording comes from the supplied model; saved bodies are snapshots and signed contracts/approved extras are immutable.
 - Unconfirmed completion estimates retain the unregistered original budget cost; never interpret absent estimates as zero remaining cost.
 - Work, contract, schedule, diary and extra changes append database audit snapshots in work_history so revisions retain authorship and prior values.
+- Opening snapshots are immutable and separate from transactions and account balances; direct-work forecasts stay unconfirmed until a completion estimate is entered.
 - Financial dashboard aggregation is shared by company and work views; economic results use pricing helpers, and installment payables never add a second purchase expense.
 - Form drafts are scoped to the signed-in user and form on the current device; restore installment values but require users to reselect attachments.
