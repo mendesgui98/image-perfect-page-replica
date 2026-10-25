@@ -71,6 +71,13 @@
       "when": 1792892911230,
       "tag": "0009_stage_progress_details",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792934729661,
+      "tag": "0010_integrated_schedule_versions",
+      "breakpoints": true
     }
   ]
 }

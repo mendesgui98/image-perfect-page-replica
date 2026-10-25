@@ -1575,6 +1575,8 @@ export type Database = {
           planned_end: string | null
           planned_start: string | null
           responsible: string | null
+          schedule_change_reason: string | null
+          schedule_notes: string | null
           status: string
           updated_at: string
           updated_by: string | null
@@ -1600,6 +1602,8 @@ export type Database = {
           planned_end?: string | null
           planned_start?: string | null
           responsible?: string | null
+          schedule_change_reason?: string | null
+          schedule_notes?: string | null
           status?: string
           updated_at?: string
           updated_by?: string | null
@@ -1625,6 +1629,8 @@ export type Database = {
           planned_end?: string | null
           planned_start?: string | null
           responsible?: string | null
+          schedule_change_reason?: string | null
+          schedule_notes?: string | null
           status?: string
           updated_at?: string
           updated_by?: string | null
@@ -1636,6 +1642,47 @@ export type Database = {
             columns: ["linked_budget_id"]
             isOneToOne: false
             referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_schedule_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          reason: string
+          stages: Json
+          version: number
+          work_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          reason: string
+          stages: Json
+          version: number
+          work_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string
+          stages?: Json
+          version?: number
+          work_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_schedule_versions_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "work_registry"
             referencedColumns: ["id"]
           },
         ]
@@ -1658,6 +1705,8 @@ export type Database = {
           planned_start: string | null
           progress: number
           responsible: string | null
+          schedule_change_reason: string | null
+          scope_services: string | null
           sort: number
           status: string | null
           updated_at: string
@@ -1682,6 +1731,8 @@ export type Database = {
           planned_start?: string | null
           progress?: number
           responsible?: string | null
+          schedule_change_reason?: string | null
+          scope_services?: string | null
           sort?: number
           status?: string | null
           updated_at?: string
@@ -1706,6 +1757,8 @@ export type Database = {
           planned_start?: string | null
           progress?: number
           responsible?: string | null
+          schedule_change_reason?: string | null
+          scope_services?: string | null
           sort?: number
           status?: string | null
           updated_at?: string
@@ -1827,7 +1880,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_work_schedule: { Args: { _work_id: string }; Returns: number }
       can_see_costs: { Args: { _user_id: string }; Returns: boolean }
+      capture_schedule_version: {
+        Args: { _reason: string; _work_id: string }
+        Returns: number
+      }
       convert_budget: { Args: { _budget_id: string }; Returns: string }
       copy_budget: {
         Args: { _as_revision: boolean; _budget_id: string }
@@ -1890,8 +1948,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      import_work_schedule: { Args: { _work_id: string }; Returns: number }
       receive_purchase: {
         Args: { _line_id: string; _quantity: number }
+        Returns: undefined
+      }
+      reorder_work_schedule: {
+        Args: { _ids: string[]; _reason: string; _work_id: string }
         Returns: undefined
       }
     }
