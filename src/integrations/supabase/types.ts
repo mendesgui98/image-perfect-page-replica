@@ -1830,6 +1830,7 @@ export type Database = {
           planned_end: string | null
           planned_start: string | null
           progress: number
+          removed: boolean
           responsible: string | null
           schedule_change_reason: string | null
           scope_services: string | null
@@ -1856,6 +1857,7 @@ export type Database = {
           planned_end?: string | null
           planned_start?: string | null
           progress?: number
+          removed?: boolean
           responsible?: string | null
           schedule_change_reason?: string | null
           scope_services?: string | null
@@ -1882,6 +1884,7 @@ export type Database = {
           planned_end?: string | null
           planned_start?: string | null
           progress?: number
+          removed?: boolean
           responsible?: string | null
           schedule_change_reason?: string | null
           scope_services?: string | null
@@ -2090,6 +2093,10 @@ export type Database = {
       }
       receive_purchase: {
         Args: { _line_id: string; _quantity: number }
+        Returns: undefined
+      }
+      remove_schedule_stage: {
+        Args: { _id: string; _reason: string }
         Returns: undefined
       }
       reorder_work_schedule: {
