@@ -18,29 +18,17 @@ nem do Supabase Cloud.
 
 ## Rodar localmente
 
-Pré-requisitos: Docker Desktop (ou Docker Engine + Compose v2) e Node 22.
+Pré-requisitos: Docker Desktop (ou OrbStack) aberto e Node 22+. Na raiz do projeto:
 
 ```sh
-cd infra
-cp .env.example .env
-node ../scripts/generate-keys.mjs   # copie as 4 linhas para o .env
-docker compose up -d --build
-docker compose logs -f migrate      # deve terminar com "migração(ões) aplicada(s)"
+bun run stack:up                 # tudo em containers
+bun run stack:admin seu@email.com   # depois de criar a conta em /auth
 ```
 
-- App: http://localhost:3000
-- API: http://localhost:8000
-- Studio: http://localhost:3001
+O comando cria o `infra/.env` com segredos novos na primeira vez e completa chaves que faltarem.
+E-mails de convite e recuperação de senha chegam na caixa de teste (Mailpit) em http://localhost:8025.
 
-### Primeiro administrador
-
-Não existe promoção automática. Cadastre-se pelo app e depois:
-
-```sh
-docker compose exec db psql -U postgres -c \
-  "insert into public.user_roles(user_id, role)
-   select id, 'admin' from auth.users where email = 'seu@email.com';"
-```
+Para desenvolver com recarga automática use `bun run dev:all` (banco em Docker, front e API locais).
 
 ## Subir na VPS
 
@@ -48,7 +36,7 @@ docker compose exec db psql -U postgres -c \
 2. DNS: registros A de `app.seudominio` e `api.seudominio` apontando para o IP da VPS.
 3. Firewall: liberar só 22, 80 e 443 (`ufw allow OpenSSH && ufw allow 80,443/tcp && ufw enable`).
 4. Clonar o repositório, criar `infra/.env` com `SITE_URL`/`API_EXTERNAL_URL` em https e os domínios.
-5. `docker compose --profile prod up -d --build`
+5. `docker compose --profile prod up -d --build` (o perfil `dev`, com a caixa de e-mails de teste, não é usado na VPS)
 6. Studio e banco: acessar por túnel, nunca pela internet:
    `ssh -L 3001:127.0.0.1:3001 -L 54322:127.0.0.1:54322 usuario@vps`
 

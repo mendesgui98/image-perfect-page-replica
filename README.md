@@ -8,20 +8,35 @@ SQL e RLS. Tudo roda em Docker e é publicado em VPS.
 
 ## Começando
 
-Pré-requisitos: Node 22, [Bun](https://bun.sh) 1.x e Docker.
+Pré-requisitos: Node 22+, [Bun](https://bun.sh) 1.x e Docker (Docker Desktop ou OrbStack, aberto).
 
 ```sh
 bun install
-# Banco e serviços locais
-cd infra && cp .env.example .env && node ../scripts/generate-keys.mjs  # cole as chaves no .env
-docker compose up -d db auth rest storage kong migrate
-cd ..
-# Front com hot reload
-cp .env.example .env   # VITE_SUPABASE_URL=http://localhost:8000 e a ANON_KEY
-bun run dev
+bun run dev:all      # banco + Auth em Docker; front e API locais com recarga automática
 ```
 
-Para subir tudo em containers (inclusive o front) ou publicar na VPS, veja [infra/README.md](infra/README.md).
+Ou tudo em containers, igual à VPS:
+
+```sh
+bun run stack:up     # front, API, banco, Auth, Storage — tudo num comando
+```
+
+Na primeira vez o `infra/.env` é criado com segredos gerados automaticamente. Depois de criar
+sua conta em http://localhost:3000/auth, torne-a administradora:
+
+```sh
+bun run stack:admin seu@email.com
+```
+
+| Endereço                     | O que é                                     |
+| ---------------------------- | ------------------------------------------- |
+| http://localhost:3000        | App                                         |
+| http://localhost:4000/health | API própria                                 |
+| http://localhost:8000        | Gateway (Auth, REST, Storage)               |
+| http://localhost:3001        | Studio (banco)                              |
+| http://localhost:8025        | Caixa de e-mails de teste (convites, senha) |
+
+Para publicar na VPS, veja [infra/README.md](infra/README.md).
 
 ## Scripts
 

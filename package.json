@@ -19,7 +19,13 @@
     "format:check": "prettier --check .",
     "api:dev": "cd api && node --experimental-strip-types --env-file-if-exists=.env --watch src/server.ts",
     "api:test": "cd api && node --experimental-strip-types --test test/*.test.ts",
-    "api:typecheck": "cd api && tsc --noEmit -p ."
+    "api:typecheck": "cd api && tsc --noEmit -p .",
+    "dev:all": "node scripts/stack.mjs dev",
+    "stack:up": "node scripts/stack.mjs up",
+    "stack:down": "node scripts/stack.mjs down",
+    "stack:logs": "node scripts/stack.mjs logs",
+    "stack:admin": "node scripts/stack.mjs admin",
+    "stack:reset": "node scripts/stack.mjs reset"
   },
   "overrides": {
     "rolldown": "1.2.1"
