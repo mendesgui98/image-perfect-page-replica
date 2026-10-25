@@ -83,3 +83,4 @@ describe("precificação JMG", () => {
 
 it("não presume que custos ainda não registrados desapareceram",()=>{const base=computeBudget([{quantity:1,labor_cost_unit:1000,materials:[]}],{...emptyParams,labor_markup:50});const r=computeWorkResult(base,[],80,120,null);expect(r.remainingEstimate).toBe(800);expect(r.cost).toBe(1000);expect(r.result).toBe(500);expect(r.estimateConfirmed).toBe(false);});
 it("resultado acumulado considera custo incorrido e não pagamentos de caixa",()=>{const base=computeBudget([{quantity:1,labor_cost_unit:200000,materials:[]}],{...emptyParams,labor_markup:50});const r=computeWorkResult(base,[],100000,20000,null);expect(r.accumulatedResult).toBe(200000);expect(r.result).toBe(100000);});
+

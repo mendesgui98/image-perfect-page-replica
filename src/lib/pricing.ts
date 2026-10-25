@@ -259,3 +259,8 @@ export function computeWorkResult(base: BudgetResult, approvedExtras: {price:num
   const accumulatedResult=sale-incurred-commission-taxes;
   return {sale,extraValue,commission,taxes,cost,result,accumulatedResult,remainingEstimate,estimateConfirmed:additional!==null,margin:sale>0?result/sale:0};
 }
+
+/** Contract value supplied directly, without inferred catalog pricing or rates. */
+export function directContractBase(value:number):BudgetResult {
+ const r=computeBudget([],emptyParams,0);return {...r,saleNet:value,listTotal:value,result:value};
+}

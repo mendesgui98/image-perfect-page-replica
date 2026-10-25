@@ -507,7 +507,7 @@ export type Database = {
             foreignKeyName: "contracts_work_id_fkey"
             columns: ["work_id"]
             isOneToOne: true
-            referencedRelation: "works"
+            referencedRelation: "work_registry"
             referencedColumns: ["id"]
           },
         ]
@@ -579,7 +579,7 @@ export type Database = {
             foreignKeyName: "expense_allocations_work_id_fkey"
             columns: ["work_id"]
             isOneToOne: false
-            referencedRelation: "works"
+            referencedRelation: "work_registry"
             referencedColumns: ["id"]
           },
         ]
@@ -727,7 +727,7 @@ export type Database = {
             foreignKeyName: "financial_entries_work_id_fkey"
             columns: ["work_id"]
             isOneToOne: false
-            referencedRelation: "works"
+            referencedRelation: "work_registry"
             referencedColumns: ["id"]
           },
         ]
@@ -762,7 +762,7 @@ export type Database = {
             foreignKeyName: "financial_groups_work_id_fkey"
             columns: ["work_id"]
             isOneToOne: false
-            referencedRelation: "works"
+            referencedRelation: "work_registry"
             referencedColumns: ["id"]
           },
         ]
@@ -857,7 +857,7 @@ export type Database = {
             foreignKeyName: "material_movements_work_id_fkey"
             columns: ["work_id"]
             isOneToOne: false
-            referencedRelation: "works"
+            referencedRelation: "work_registry"
             referencedColumns: ["id"]
           },
         ]
@@ -1149,7 +1149,7 @@ export type Database = {
             foreignKeyName: "purchase_orders_work_id_fkey"
             columns: ["work_id"]
             isOneToOne: false
-            referencedRelation: "works"
+            referencedRelation: "work_registry"
             referencedColumns: ["id"]
           },
         ]
@@ -1324,7 +1324,7 @@ export type Database = {
             foreignKeyName: "work_estimates_work_id_fkey"
             columns: ["work_id"]
             isOneToOne: true
-            referencedRelation: "works"
+            referencedRelation: "work_registry"
             referencedColumns: ["id"]
           },
         ]
@@ -1380,7 +1380,7 @@ export type Database = {
             foreignKeyName: "work_extras_work_id_fkey"
             columns: ["work_id"]
             isOneToOne: false
-            referencedRelation: "works"
+            referencedRelation: "work_registry"
             referencedColumns: ["id"]
           },
         ]
@@ -1421,7 +1421,57 @@ export type Database = {
             foreignKeyName: "work_history_work_id_fkey"
             columns: ["work_id"]
             isOneToOne: false
-            referencedRelation: "works"
+            referencedRelation: "work_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_openings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          existing_extras: number
+          incurred: number
+          original_value: number
+          paid: number
+          pending_payable: number
+          progress: number
+          received: number
+          reference_date: string
+          work_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          existing_extras?: number
+          incurred?: number
+          original_value?: number
+          paid?: number
+          pending_payable?: number
+          progress?: number
+          received?: number
+          reference_date: string
+          work_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          existing_extras?: number
+          incurred?: number
+          original_value?: number
+          paid?: number
+          pending_payable?: number
+          progress?: number
+          received?: number
+          reference_date?: string
+          work_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_openings_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: true
+            referencedRelation: "work_registry"
             referencedColumns: ["id"]
           },
         ]
@@ -1499,7 +1549,93 @@ export type Database = {
             foreignKeyName: "work_records_work_id_fkey"
             columns: ["work_id"]
             isOneToOne: false
-            referencedRelation: "works"
+            referencedRelation: "work_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_registry: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          address: string | null
+          architect_id: string | null
+          archived: boolean
+          budget_id: string
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_pilot: boolean
+          linked_budget_id: string | null
+          name: string
+          notes: string | null
+          origin: string
+          payment_conditions: string | null
+          planned_end: string | null
+          planned_start: string | null
+          responsible: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+          work_type: string | null
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          address?: string | null
+          architect_id?: string | null
+          archived?: boolean
+          budget_id: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_pilot?: boolean
+          linked_budget_id?: string | null
+          name: string
+          notes?: string | null
+          origin?: string
+          payment_conditions?: string | null
+          planned_end?: string | null
+          planned_start?: string | null
+          responsible?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          work_type?: string | null
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          address?: string | null
+          architect_id?: string | null
+          archived?: boolean
+          budget_id?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_pilot?: boolean
+          linked_budget_id?: string | null
+          name?: string
+          notes?: string | null
+          origin?: string
+          payment_conditions?: string | null
+          planned_end?: string | null
+          planned_start?: string | null
+          responsible?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          work_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_registry_linked_budget_id_fkey"
+            columns: ["linked_budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
             referencedColumns: ["id"]
           },
         ]
@@ -1581,7 +1717,7 @@ export type Database = {
             foreignKeyName: "work_stages_work_id_fkey"
             columns: ["work_id"]
             isOneToOne: false
-            referencedRelation: "works"
+            referencedRelation: "work_registry"
             referencedColumns: ["id"]
           },
         ]
@@ -1680,6 +1816,10 @@ export type Database = {
       convert_budget: { Args: { _budget_id: string }; Returns: string }
       copy_budget: {
         Args: { _as_revision: boolean; _budget_id: string }
+        Returns: string
+      }
+      create_direct_work: {
+        Args: { _data: Json; _request_id: string }
         Returns: string
       }
       create_financial_installments: {
