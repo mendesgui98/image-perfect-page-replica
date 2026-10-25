@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -18,7 +19,7 @@ type Person = Database["public"]["Tables"]["people"]["Row"];
 type Kind = Database["public"]["Enums"]["person_kind"];
 
 export const Route = createFileRoute("/_authenticated/cadastros")({
-  head: () => ({ meta: [{ title: "Cadastros — JMG Reformas" }] }),
+  head: () => pageMeta("Cadastros", "Clientes, arquitetos, fornecedores e prestadores da JMG."),
   component: Cadastros,
 });
 

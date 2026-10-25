@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -19,7 +20,7 @@ type Company = Database["public"]["Tables"]["company_settings"]["Row"];
 type Pricing = Database["public"]["Tables"]["pricing_settings"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
-  head: () => ({ meta: [{ title: "Configurações — JMG Reformas" }] }),
+  head: () => pageMeta("Configurações", "Dados da empresa, precificação e acessos da JMG."),
   component: Config,
 });
 

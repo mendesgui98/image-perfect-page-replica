@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -10,7 +11,7 @@ import { computeBudget, splitPayments } from "@/lib/pricing";
 import { fmtBRL, fmtDate, fmtNum, reaisPorExtenso, UNIT_LABEL } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/orcamentos/$id/pdf")({
-  head: () => ({ meta: [{ title: "Proposta Comercial — JMG Reformas" }] }),
+  head: () => pageMeta("Proposta Comercial", "Documento comercial revisável da JMG."),
   component: Pdf,
 });
 

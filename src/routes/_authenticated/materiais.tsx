@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -17,7 +18,7 @@ import { fmtBRL, fmtDate, fmtNum } from "@/lib/format";
 type Mat = Database["public"]["Tables"]["materials"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/materiais")({
-  head: () => ({ meta: [{ title: "Materiais — JMG Reformas" }] }),
+  head: () => pageMeta("Materiais", "Catálogo de materiais e composições da JMG."),
   component: Materiais,
 });
 

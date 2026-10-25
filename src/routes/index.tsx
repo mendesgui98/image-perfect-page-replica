@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "JMG Reformas — Plataforma de gestão" },
       { name: "description", content: "Do orçamento à entrega: a gestão das obras da JMG Reformas em um só lugar." },
       { property: "og:title", content: "JMG Reformas — Plataforma de gestão" },

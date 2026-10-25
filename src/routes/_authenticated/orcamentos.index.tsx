@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -14,7 +15,7 @@ import { fmtDate } from "@/lib/format";
 import { STATUS_LABEL } from "@/lib/budget-status";
 
 export const Route = createFileRoute("/_authenticated/orcamentos/")({
-  head: () => ({ meta: [{ title: "Orçamentos — JMG Reformas" }] }),
+  head: () => pageMeta("Orçamentos", "Propostas e revisões comerciais da JMG."),
   component: Lista,
 });
 

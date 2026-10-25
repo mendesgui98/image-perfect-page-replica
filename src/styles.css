@@ -126,7 +126,7 @@
 
 @layer base {
   body { font-family: var(--font-body); }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: 0; }
 }
 
 @utility num { font-variant-numeric: tabular-nums; }
@@ -142,4 +142,6 @@
   body { background: white; }
   .doc-page { margin: 0; box-shadow: none; }
   .no-print { display: none !important; }
+  .contract-print { max-width: none; box-shadow: none; padding: 18mm; }
+  .contract-print section, .contract-print figure { break-inside: avoid; }
 }
