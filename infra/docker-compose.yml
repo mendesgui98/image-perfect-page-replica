@@ -18,6 +18,7 @@ services:
         VITE_SUPABASE_URL: ${API_EXTERNAL_URL}
         VITE_SUPABASE_PUBLISHABLE_KEY: ${ANON_KEY}
         VITE_API_URL: ${APP_API_URL}
+        VITE_SIGNUP_ENABLED: ${SIGNUP_ENABLED:-true}
     restart: unless-stopped
     environment:
       # O SSR fala com o gateway pela rede interna; o navegador usa API_EXTERNAL_URL.

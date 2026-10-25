@@ -20,6 +20,9 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+// Em produção o cadastro é só por convite (VITE_SIGNUP_ENABLED=false).
+const signupEnabled = import.meta.env["VITE_SIGNUP_ENABLED"] !== "false";
+
 function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"in" | "up" | "reset">("in");
@@ -121,13 +124,25 @@ function AuthPage() {
             {mode === "in" ? "Entrar" : mode === "up" ? "Criar conta" : "Enviar link"}
           </Button>
           <div className="flex justify-between text-sm">
-            <button
-              type="button"
-              className="text-primary hover:underline"
-              onClick={() => setMode(mode === "up" ? "in" : "up")}
-            >
-              {mode === "up" ? "Já tenho conta" : "Criar conta"}
-            </button>
+            {signupEnabled ? (
+              <button
+                type="button"
+                className="text-primary hover:underline"
+                onClick={() => setMode(mode === "up" ? "in" : "up")}
+              >
+                {mode === "up" ? "Já tenho conta" : "Criar conta"}
+              </button>
+            ) : (
+              mode === "reset" && (
+                <button
+                  type="button"
+                  className="text-primary hover:underline"
+                  onClick={() => setMode("in")}
+                >
+                  Voltar ao login
+                </button>
+              )
+            )}
             <button
               type="button"
               className="text-muted-foreground hover:underline"
@@ -137,7 +152,9 @@ function AuthPage() {
             </button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Novas contas precisam de liberação do administrador para acessar os dados da empresa.
+            {signupEnabled
+              ? "Novas contas precisam de liberação do administrador para acessar os dados da empresa."
+              : "O acesso é feito por convite do administrador da JMG."}
           </p>
         </form>
       </div>

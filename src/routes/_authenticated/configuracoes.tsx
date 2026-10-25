@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Tax } from "@/lib/pricing";
+import { apiConfigured } from "@/lib/api-client";
+import { UsersAdmin } from "@/components/admin/users-admin";
 
 type Company = Database["public"]["Tables"]["company_settings"]["Row"];
 type Pricing = Database["public"]["Tables"]["pricing_settings"]["Row"];
@@ -48,9 +50,7 @@ function Config() {
         <TabsContent value="precos">
           <Precos ro={!me?.isAdmin} />
         </TabsContent>
-        <TabsContent value="usuarios">
-          <Usuarios />
-        </TabsContent>
+        <TabsContent value="usuarios">{apiConfigured ? <UsersAdmin /> : <Usuarios />}</TabsContent>
       </Tabs>
     </div>
   );
@@ -311,6 +311,7 @@ function Precos({ ro }: { ro: boolean }) {
   );
 }
 
+/** Fluxo antigo (sem API própria configurada): papéis gravados direto pelo Supabase. */
 function Usuarios() {
   const qc = useQueryClient();
   const { data: me } = useMe();
