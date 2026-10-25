@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { loadBudget } from '@/lib/budget-data';
+import { loadWorkBudget,workBase } from '@/lib/work-budget';
 import { computeBudget,computeWorkResult } from '@/lib/pricing';
 import { fmtBRL,fmtPct,fmtDate } from '@/lib/format';
 import { Button } from '@/components/ui/button';
@@ -10,14 +10,14 @@ import { Dialog,DialogContent,DialogTitle,DialogHeader } from '@/components/ui/d
 import { Field,Memo,text,number,Attachment } from './fields';
 import { uploadDocument } from '@/lib/work-data';
 import { financeOptions } from './finance';
-export function WorkResult({workId,budgetId}:{workId:string;budgetId:string}){
+export function WorkResult({workId,budgetId}:{workId:string;budgetId:string|null}){
  const qc=useQueryClient();const [open,setOpen]=useState(false);const [busy,setBusy]=useState(false);const {data:f}=useQuery(financeOptions);
- const {data,error}=useQuery({queryKey:['work-result',workId],queryFn:async()=>{const [b,x,o,e]=await Promise.all([loadBudget(budgetId),supabase.from('work_extras').select('*').eq('work_id',workId),supabase.from('purchase_orders').select('*,purchase_lines(*)').eq('work_id',workId),supabase.from('work_estimates').select('*').eq('work_id',workId).maybeSingle()]);if(x.error)throw x.error;if(o.error)throw o.error;if(e.error)throw e.error;return {budget:b,extras:x.data,orders:o.data,estimate:e.data};}});
+ const {data,error}=useQuery({queryKey:['work-result',workId],queryFn:async()=>{const [b,x,o,e]=await Promise.all([loadWorkBudget(workId),supabase.from('work_extras').select('*').eq('work_id',workId),supabase.from('purchase_orders').select('*,purchase_lines(*)').eq('work_id',workId),supabase.from('work_estimates').select('*').eq('work_id',workId).maybeSingle()]);if(x.error)throw x.error;if(o.error)throw o.error;if(e.error)throw e.error;return {budget:b,extras:x.data,orders:o.data,estimate:e.data};}});
  const refresh=()=>{qc.invalidateQueries({queryKey:['work-result',workId]});qc.invalidateQueries({queryKey:['financial-dashboard']});};
  async function extra(d:FormData){setBusy(true);try{const file=d.get('proof');const path=file instanceof File&&file.size?await uploadDocument(file,'extras'):null;const r=await supabase.from('work_extras').insert({work_id:workId,description:text(d,'description'),cost:number(d,'cost'),price:number(d,'price'),extra_days:number(d,'days'),approved:d.get('approved')==='on',approval_date:text(d,'date')||null,file_path:path});if(r.error)throw r.error;setOpen(false);refresh();toast.success('Extra registrado.');}catch(e){toast.error((e as Error).message);}finally{setBusy(false);}}
  async function estimate(d:FormData){const r=await supabase.from('work_estimates').upsert({work_id:workId,additional_cost:number(d,'amount'),notes:text(d,'notes')});if(r.error)toast.error(r.error.message);else{refresh();toast.success('Estimativa salva.');}}
  if(error)return <p className="text-destructive">{error.message}</p>;if(!data||!f)return <p className="text-muted-foreground">Carregando resultado…</p>;
- const b=computeBudget(data.budget.items,data.budget.params,data.budget.budget.general_discount);
+ const b=workBase(data.budget);
  const entries=f.entries.filter(e=>!e.canceled&&e.direction==='saida'&&!e.purchase_order_id&&!e.payable_order_id&&(e.work_id===workId||f.allocations.some(a=>a.entry_id===e.id&&a.work_id===workId)));
  const amount=(e:typeof entries[number])=>e.work_id===workId?e.amount:f.allocations.filter(a=>a.entry_id===e.id&&a.work_id===workId).reduce((s,a)=>s+a.amount,0);
  const normal=entries.filter(e=>!['Comissão da arquiteta','Tributos'].includes(e.category));

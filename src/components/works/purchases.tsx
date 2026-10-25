@@ -3,7 +3,7 @@ import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { PackageCheck,Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { loadBudget } from '@/lib/budget-data';
+import { loadWorkBudget,workBase } from '@/lib/work-budget';
 import { consolidateMaterials,materialBalance } from '@/lib/operations';
 import { fmtBRL,fmtDate,fmtNum } from '@/lib/format';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Dialog,DialogContent,DialogTitle,DialogHeader } from '@/components/ui/dialog';
 import { Installments } from './installments';
 import { Field,text,number,selectClass,Attachment } from './fields';
-export function Purchases({workId,budgetId}:{workId:string;budgetId:string}){
+export function Purchases({workId,budgetId}:{workId:string;budgetId:string|null}){
  const qc=useQueryClient();const [requestId,setRequestId]=useState(()=>crypto.randomUUID());const [open,setOpen]=useState(false);const [busy,setBusy]=useState(false);const [selected,setSelected]=useState<Record<string,{quantity:number;price:number}>>({});
- const {data,error}=useQuery({queryKey:['purchases',workId],queryFn:async()=>{const [b,o,m,p]=await Promise.all([loadBudget(budgetId),supabase.from('purchase_orders').select('*,purchase_lines(*)').eq('work_id',workId).order('created_at',{ascending:false}),supabase.from('material_movements').select('*').eq('work_id',workId),supabase.from('people').select('id,name').eq('kind','fornecedor').eq('active',true)]);if(o.error)throw o.error;if(m.error)throw m.error;return {materials:consolidateMaterials(b.items),orders:o.data,movements:m.data,suppliers:p.data??[]};}});
+ const {data,error}=useQuery({queryKey:['purchases',workId],queryFn:async()=>{const [b,o,m,p]=await Promise.all([loadWorkBudget(workId),supabase.from('purchase_orders').select('*,purchase_lines(*)').eq('work_id',workId).order('created_at',{ascending:false}),supabase.from('material_movements').select('*').eq('work_id',workId),supabase.from('people').select('id,name').eq('kind','fornecedor').eq('active',true)]);if(o.error)throw o.error;if(m.error)throw m.error;return {materials:consolidateMaterials(b.items),orders:o.data,movements:m.data,suppliers:p.data??[]};}});
  const refresh=()=>{qc.invalidateQueries({queryKey:['purchases',workId]});qc.invalidateQueries({queryKey:['finance']});qc.invalidateQueries({queryKey:['work-result',workId]});qc.invalidateQueries({queryKey:['financial-dashboard']});};
  async function create(d:FormData){setBusy(true);try{const lines=data?.materials.filter(m=>(selected[m.key]?.quantity??0)>0).map(m=>({...m,...selected[m.key]}))??[];const r=await supabase.rpc('create_installment_purchase',{_request_id:requestId,_work_id:workId,_supplier_id:text(d,'supplier'),_description:text(d,'description'),_expected_date:text(d,'expected'),_rows:JSON.parse(text(d,'installments')||'[]'),_lines:lines});if(r.error)throw r.error;setRequestId(crypto.randomUUID());setOpen(false);setSelected({});refresh();toast.success('Pedido e conta a pagar registrados.');}catch(e){toast.error((e as Error).message);}finally{setBusy(false);}}
  async function receive(id:string){const v=prompt('Quantidade recebida nesta entrega:');if(!v)return;const r=await supabase.rpc('receive_purchase',{_line_id:id,_quantity:Number(v.replace(',','.'))});if(r.error)toast.error(r.error.message);else {refresh();toast.success('Recebimento registrado.');}}
