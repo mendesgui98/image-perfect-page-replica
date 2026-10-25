@@ -29,3 +29,7 @@
 - Executive indicators and financial drilldowns use executive.ts compositions from dashboard-data; totals and source rows share one selector to prevent divergence.
 - Relationship screens reuse relationship-data queries and navigate to existing work editors; the person profile route is unnested from the directory list to render independently.
 - Record deep links use entry/record search parameters and use-record-focus to reveal the source without mutating transactions.
+
+- Work progress/status comparisons live in pure tested work-progress.ts; shared dashboard progress preserves the immutable opening reference until weighted stages exist.
+- Stage photos are existing work_records linked by stage_id, protected by same-work validation and private records paths; gallery and reports reuse these rows, so uploads are never duplicated.
+- Individual work metrics use work-composition.ts to extend executiveComposition; signed economic breakdowns use the pricing result fields without recomputing economic formulas.

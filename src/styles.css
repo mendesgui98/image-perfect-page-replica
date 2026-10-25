@@ -145,3 +145,13 @@
   .contract-print { max-width: none; box-shadow: none; padding: 18mm; }
   .contract-print section, .contract-print figure { break-inside: avoid; }
 }
+
+/* Native progress bars keep their semantic color across browsers. */
+progress { appearance: none; border: none; background: var(--muted); border-radius: var(--radius-sm); overflow: hidden; }
+progress::-webkit-progress-bar { background: var(--muted); }
+progress::-webkit-progress-value { background: var(--primary); }
+progress.accent-success::-webkit-progress-value { background: var(--success); }
+progress.accent-warning::-webkit-progress-value { background: var(--warning); }
+progress::-moz-progress-bar { background: var(--primary); }
+progress.accent-success::-moz-progress-bar { background: var(--success); }
+progress.accent-warning::-moz-progress-bar { background: var(--warning); }

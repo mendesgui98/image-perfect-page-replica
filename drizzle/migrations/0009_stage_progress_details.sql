@@ -1,0 +1,4 @@
+ALTER TABLE public.work_stages ADD COLUMN status text, ADD COLUMN observations text, ADD COLUMN pending_services text, ADD COLUMN executed_services text, ADD COLUMN next_services text;
+ALTER TABLE public.work_stages ADD CONSTRAINT stage_status_allowed CHECK (status IS NULL OR status IN ('nao_iniciado','andamento','pausado','concluido','atrasado'));
+CREATE OR REPLACE FUNCTION public.guard_record_stage_work() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN IF NEW.stage_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.work_stages WHERE id=NEW.stage_id AND work_id=NEW.work_id) THEN RAISE EXCEPTION 'Etapa não pertence a esta obra.'; END IF; RETURN NEW; END $$;
+CREATE TRIGGER record_stage_work_guard BEFORE INSERT OR UPDATE ON public.work_records FOR EACH ROW EXECUTE FUNCTION public.guard_record_stage_work();

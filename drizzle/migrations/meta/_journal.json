@@ -64,6 +64,13 @@
       "when": 1792891609727,
       "tag": "0008_independent_work_registry",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792892911230,
+      "tag": "0009_stage_progress_details",
+      "breakpoints": true
     }
   ]
 }

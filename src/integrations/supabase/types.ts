@@ -1648,13 +1648,18 @@ export type Database = {
           created_at: string
           created_by: string | null
           dependency_id: string | null
+          executed_services: string | null
           id: string
           name: string
+          next_services: string | null
+          observations: string | null
+          pending_services: string | null
           planned_end: string | null
           planned_start: string | null
           progress: number
           responsible: string | null
           sort: number
+          status: string | null
           updated_at: string
           updated_by: string | null
           weight: number
@@ -1667,13 +1672,18 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           dependency_id?: string | null
+          executed_services?: string | null
           id?: string
           name: string
+          next_services?: string | null
+          observations?: string | null
+          pending_services?: string | null
           planned_end?: string | null
           planned_start?: string | null
           progress?: number
           responsible?: string | null
           sort?: number
+          status?: string | null
           updated_at?: string
           updated_by?: string | null
           weight?: number
@@ -1686,13 +1696,18 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           dependency_id?: string | null
+          executed_services?: string | null
           id?: string
           name?: string
+          next_services?: string | null
+          observations?: string | null
+          pending_services?: string | null
           planned_end?: string | null
           planned_start?: string | null
           progress?: number
           responsible?: string | null
           sort?: number
+          status?: string | null
           updated_at?: string
           updated_by?: string | null
           weight?: number
