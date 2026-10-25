@@ -1306,6 +1306,47 @@ export type Database = {
           },
         ]
       }
+      work_history: {
+        Row: {
+          after: Json | null
+          before: Json | null
+          changed_at: string
+          changed_by: string | null
+          entity: string
+          entity_id: string
+          id: string
+          work_id: string
+        }
+        Insert: {
+          after?: Json | null
+          before?: Json | null
+          changed_at?: string
+          changed_by?: string | null
+          entity: string
+          entity_id: string
+          id?: string
+          work_id: string
+        }
+        Update: {
+          after?: Json | null
+          before?: Json | null
+          changed_at?: string
+          changed_by?: string | null
+          entity?: string
+          entity_id?: string
+          id?: string
+          work_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_history_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_records: {
         Row: {
           body: string | null

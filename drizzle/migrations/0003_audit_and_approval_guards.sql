@@ -1,0 +1,13 @@
+CREATE OR REPLACE FUNCTION public.evidence_exists(_path text,_prefix text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT coalesce(_path LIKE _prefix||'/%',false) AND EXISTS(SELECT 1 FROM storage.objects WHERE bucket_id='jmg-documents' AND name=_path) $$;
+CREATE OR REPLACE FUNCTION public.guard_work() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN IF TG_OP='INSERT' AND NOT EXISTS(SELECT 1 FROM public.budgets WHERE id=new.budget_id AND status='aprovado') THEN RAISE EXCEPTION 'A obra exige orçamento aprovado.'; END IF; IF TG_OP='UPDATE' AND new.budget_id<>old.budget_id THEN RAISE EXCEPTION 'Orçamento de origem preservado.'; END IF; IF new.planned_end<new.planned_start OR new.actual_end<new.actual_start THEN RAISE EXCEPTION 'Término anterior ao início.'; END IF; RETURN new; END $$;
+CREATE TRIGGER work_guard BEFORE INSERT OR UPDATE ON public.works FOR EACH ROW EXECUTE FUNCTION public.guard_work();
+CREATE TABLE public.work_history (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),work_id uuid NOT NULL REFERENCES public.works(id),entity text NOT NULL,entity_id uuid NOT NULL,before jsonb,after jsonb,changed_by uuid DEFAULT auth.uid(),changed_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT ON public.work_history TO authenticated; GRANT ALL ON public.work_history TO service_role;
+ALTER TABLE public.work_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY work_history_read ON public.work_history FOR SELECT TO authenticated USING(public.can_see_costs(auth.uid()));
+CREATE OR REPLACE FUNCTION public.log_work_change() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN INSERT INTO public.work_history(work_id,entity,entity_id,before,after) VALUES(CASE WHEN tg_table_name='works' THEN new.id ELSE new.work_id END,tg_table_name,new.id,CASE WHEN TG_OP='INSERT' THEN NULL ELSE to_jsonb(old) END,to_jsonb(new)); RETURN new; END $$;
+CREATE TRIGGER work_hist AFTER INSERT OR UPDATE ON public.works FOR EACH ROW EXECUTE FUNCTION public.log_work_change();
+CREATE TRIGGER contract_hist AFTER INSERT OR UPDATE ON public.contracts FOR EACH ROW EXECUTE FUNCTION public.log_work_change();
+CREATE TRIGGER stages_hist AFTER INSERT OR UPDATE ON public.work_stages FOR EACH ROW EXECUTE FUNCTION public.log_work_change();
+CREATE TRIGGER records_hist AFTER INSERT OR UPDATE ON public.work_records FOR EACH ROW EXECUTE FUNCTION public.log_work_change();
+CREATE TRIGGER extras_hist AFTER INSERT OR UPDATE ON public.work_extras FOR EACH ROW EXECUTE FUNCTION public.log_work_change();
