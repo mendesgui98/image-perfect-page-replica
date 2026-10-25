@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Tax } from "@/lib/pricing";
 import { apiConfigured } from "@/lib/api-client";
 import { UsersAdmin } from "@/components/admin/users-admin";
+import { MfaSettings } from "@/components/admin/mfa";
 
 type Company = Database["public"]["Tables"]["company_settings"]["Row"];
 type Pricing = Database["public"]["Tables"]["pricing_settings"]["Row"];
@@ -43,12 +44,16 @@ function Config() {
           <TabsTrigger value="empresa">Empresa</TabsTrigger>
           {me?.canSeeCosts && <TabsTrigger value="precos">Precificação</TabsTrigger>}
           {me?.isAdmin && <TabsTrigger value="usuarios">Usuários</TabsTrigger>}
+          <TabsTrigger value="seguranca">Segurança</TabsTrigger>
         </TabsList>
         <TabsContent value="empresa">
           <Empresa ro={!me?.isAdmin} />
         </TabsContent>
         <TabsContent value="precos">
           <Precos ro={!me?.isAdmin} />
+        </TabsContent>
+        <TabsContent value="seguranca">
+          <MfaSettings required={!!me?.isAdmin} />
         </TabsContent>
         <TabsContent value="usuarios">{apiConfigured ? <UsersAdmin /> : <Usuarios />}</TabsContent>
       </Tabs>

@@ -28,6 +28,8 @@ import { useMe } from "@/hooks/use-me";
 import { GlobalSearch } from "@/components/management/global-search";
 import { Button } from "@/components/ui/button";
 import { OfflineStatus } from "@/components/pwa/offline-status";
+import { useMfa } from "@/hooks/use-mfa";
+import { MfaChallenge } from "@/components/admin/mfa";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -59,7 +61,9 @@ function Shell() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const mfa = useMfa(!!me);
 
+  if (mfa.data?.needsChallenge) return <MfaChallenge onSignOut={signOut} />;
   if (me && !me.roles.length)
     return (
       <div className="mx-auto max-w-lg space-y-4 p-8">

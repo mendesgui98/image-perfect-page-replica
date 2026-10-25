@@ -133,6 +133,10 @@ services:
       GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: /auth/v1/verify
       GOTRUE_PASSWORD_MIN_LENGTH: ${PASSWORD_MIN_LENGTH:-8}
+      # Verificação em duas etapas (aplicativo autenticador / TOTP)
+      GOTRUE_MFA_TOTP_ENROLL_ENABLED: "true"
+      GOTRUE_MFA_TOTP_VERIFY_ENABLED: "true"
+      GOTRUE_MFA_MAX_ENROLLED_FACTORS: 10
 
   rest:
     image: postgrest/postgrest:v12.2.0

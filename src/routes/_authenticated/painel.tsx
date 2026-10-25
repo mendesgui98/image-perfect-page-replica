@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
+import { useMfa } from "@/hooks/use-mfa";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { dashboardSearch } from "@/lib/dashboard-search";
@@ -57,7 +58,12 @@ function Painel() {
     },
   });
 
+  const mfa = useMfa(!!me?.isAdmin);
   const alerts: string[] = [];
+  if (me?.isAdmin && mfa.data && !mfa.data.enabled)
+    alerts.push(
+      "Sua conta de administrador está sem verificação em duas etapas. Ative em Configurações > Segurança.",
+    );
   if (me?.canSeeCosts && data && !data.pricing?.configured)
     alerts.push(
       "As regras de precificação ainda não foram configuradas. Configure antes de emitir o primeiro orçamento real.",
