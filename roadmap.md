@@ -1,5 +1,5 @@
 # Roadmap JMG
-- [ ] Refinamento geral solicitado: auditar duplicidades e apresentar consolidação visual, navegação conectada e detalhamento rastreável sem alterar regras validadas
+- [x] Refinamento geral: auditoria, Painel único, Obras operacional, perfis vinculados, contratos centralizados e detalhamento com origem; testes numéricos e navegação autenticada desktop/celular conferidos
 - [x] Duas entradas em Nova obra, cadastro direto sem orçamento, posição inicial, anexos e mesma gestão/consolidado; validação autenticada com exemplo piloto
 - [x] Complemento solicitado: preparar plano modular para dashboards por obra e consolidado, parcelas e validação de obra piloto
 - [x] Complemento: parcelas, visão por obra e consolidado com gráficos/filtros; caixa separado de resultado e pilotos excluídos por padrão

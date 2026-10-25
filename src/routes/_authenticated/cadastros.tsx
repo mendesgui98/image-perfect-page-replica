@@ -1,7 +1,7 @@
 import { pageMeta } from "@/lib/page-meta";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute,Link,useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ type Person = Database["public"]["Tables"]["people"]["Row"];
 type Kind = Database["public"]["Enums"]["person_kind"];
 
 export const Route = createFileRoute("/_authenticated/cadastros")({
+  validateSearch:(s:Record<string,unknown>):{kind?:string;edit?:string}=>({kind:typeof s['kind']==='string'?s['kind']:'cliente',edit:typeof s['edit']==='string'?s['edit']:''}),
   head: () => pageMeta("Cadastros", "Clientes, arquitetos, fornecedores e prestadores da JMG."),
   component: Cadastros,
 });
@@ -46,7 +47,7 @@ const FIELDS: [keyof Person, string, string?][] = [
 ];
 
 function Cadastros() {
-  const [kind, setKind] = useState<Kind>("cliente");
+  const search=Route.useSearch();const navigate=useNavigate();const kind=KINDS.find(k=>k.k===search.kind)?.k??"cliente";const setKind=(kind:string)=>navigate({to:"/cadastros",search:{kind,edit:""}});
   const [q, setQ] = useState("");
   const [showInactive, setShowInactive] = useState(false);
   const [edit, setEdit] = useState<Partial<Person> | null>(null);
@@ -61,6 +62,7 @@ function Cadastros() {
     },
   });
 
+  useEffect(()=>{if(search.edit){const p=data.find(p=>p.id===search.edit);if(p)setEdit(p);}},[search.edit,data]);
   const save = useMutation({
     mutationFn: async (p: Partial<Person>) => {
       if (!p.name?.trim()) throw new Error("Informe o nome.");
@@ -72,7 +74,7 @@ function Cadastros() {
     },
     onSuccess: () => {
       toast.success("Salvo.");
-      setEdit(null);
+      setEdit(null);navigate({to:"/cadastros",search:{kind,edit:""},replace:true});
       qc.invalidateQueries({ queryKey: ["people"] });
     },
     onError: (e) => toast.error((e as Error).message),
@@ -111,19 +113,7 @@ function Cadastros() {
           <Switch checked={showInactive} onCheckedChange={setShowInactive} /> Mostrar arquivados
         </label>
       </div>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {list.map((p) => (
-          <button key={p.id} onClick={() => setEdit(p)} className="rounded-lg border bg-card p-4 text-left shadow-card hover:border-primary">
-            <div className="flex items-center justify-between gap-2">
-              <div className="font-semibold">{p.name}</div>
-              {!p.active && <span className="text-xs text-muted-foreground">arquivado</span>}
-            </div>
-            <div className="mt-1 text-sm text-muted-foreground">{[p.phone, p.email].filter(Boolean).join(" · ") || "—"}</div>
-            {p.cidade && <div className="text-xs text-muted-foreground">{[p.cidade, p.uf].filter(Boolean).join(" - ")}</div>}
-          </button>
-        ))}
-        {list.length === 0 && <p className="text-sm text-muted-foreground">Nenhum registro.</p>}
-      </div>
+      <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-y text-xs text-muted-foreground"><tr><th className="p-3">Nome</th><th className="p-3">Telefone</th><th className="p-3">E-mail</th><th className="p-3">Especialidade</th><th className="p-3">Status</th><th className="p-3"></th></tr></thead><tbody>{list.map(p=><tr key={p.id} className="border-b"><td className="p-3"><Link to="/cadastros/$id" params={{id:p.id}} className="font-medium text-primary">{p.name}</Link></td><td className="whitespace-nowrap p-3">{p.phone||'—'}</td><td className="p-3">{p.email||'—'}</td><td className="p-3">{p.specialty||'—'}</td><td className="p-3 text-xs">{p.active?'Ativo':'Arquivado'}</td><td className="p-3"><Button size="sm" variant="ghost" onClick={()=>setEdit(p)}>Editar</Button></td></tr>)}</tbody></table>{!list.length&&<p className="py-8 text-center text-muted-foreground">Nenhum registro.</p>}</div>
 
       <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">

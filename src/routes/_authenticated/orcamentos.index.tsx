@@ -11,6 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {loadBudget} from "@/lib/budget-data";
+import {computeBudget} from "@/lib/pricing";
+import {fmtBRL} from "@/lib/format";
+import { Input } from "@/components/ui/input";
 import { fmtDate } from "@/lib/format";
 import { STATUS_LABEL } from "@/lib/budget-status";
 
@@ -34,13 +38,13 @@ function Lista() {
   const [open, setOpen] = useState(false);
   const [clientId, setClientId] = useState("");
   const [architectId, setArchitectId] = useState("");
+  const [q,setQ]=useState("");const [status,setStatus]=useState("");
   const [archived, setArchived] = useState(false);
 
   const { data = [] } = useQuery({
     queryKey: ["budgets", archived],
     enabled: !!me?.canSeeCosts,
-    queryFn: async () =>
-      (await supabase.from("budgets").select("id,number,revision,title,client_display,status,issue_date,archived").eq("archived", archived).order("number", { ascending: false }).order("revision", { ascending: false })).data ?? [],
+    queryFn: async () => {const r=await supabase.from("budgets").select("*").eq("archived",archived).order("number",{ascending:false}).order("revision",{ascending:false});if(r.error)throw r.error;const wr=await supabase.from('work_registry').select('id,linked_budget_id');if(wr.error)throw wr.error;return Promise.all(r.data.map(async b=>{const full=await loadBudget(b.id);return {...b,value:computeBudget(full.items,full.params,b.general_discount).saleNet,work:wr.data.find(w=>w.linked_budget_id===b.id)};}));}
   });
   const { data: people = [] } = useQuery({
     queryKey: ["people", "all"],
@@ -98,18 +102,19 @@ function Lista() {
       <label className="mb-4 flex items-center gap-2 text-sm">
         <Switch checked={archived} onCheckedChange={setArchived} /> Ver arquivados
       </label>
-      <div className="overflow-x-auto rounded-lg border bg-card shadow-card">
+      <div className="mb-4 flex flex-wrap gap-3"><Input className="sm:max-w-sm" aria-label="Buscar orçamento" placeholder="Buscar número, cliente ou projeto" value={q} onChange={e=>setQ(e.target.value)}/><select aria-label="Status do orçamento" className="h-10 rounded-md border bg-background px-3 text-sm" value={status} onChange={e=>setStatus(e.target.value)}><option value="">Todos os status</option>{Object.entries(STATUS_LABEL).map(([v,l])=><option key={v} value={v}>{l}</option>)}<option value="convertido">Convertido em obra</option></select></div>
+      <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted text-left text-muted-foreground">
             <tr>
               <th className="p-3">Nº</th>
               <th className="p-3">Cliente</th>
-              <th className="p-3">Emissão</th>
+              <th className="p-3">Obra / Projeto</th><th className="p-3">Valor</th><th className="p-3">Emissão</th>
               <th className="p-3">Situação</th>
             </tr>
           </thead>
           <tbody>
-            {data.map((b) => (
+            {data.filter(b=>(!status||(status==='convertido'?!!b.work:b.status===status))&&(String(b.number)+b.title+b.client_display).toLowerCase().includes(q.toLowerCase())).map((b) => (
               <tr key={b.id} className="border-t hover:bg-muted/50">
                 <td className="p-3 font-medium">
                   <Link to="/orcamentos/$id" params={{ id: b.id }} className="text-primary hover:underline">
@@ -118,13 +123,13 @@ function Lista() {
                   </Link>
                 </td>
                 <td className="p-3">{b.client_display}</td>
-                <td className="p-3">{fmtDate(b.issue_date)}</td>
-                <td className="p-3">{STATUS_LABEL[b.status]}</td>
+                <td className="p-3">{b.title}</td><td className="whitespace-nowrap p-3 num">{fmtBRL(b.value)}</td><td className="p-3">{fmtDate(b.issue_date)}</td>
+                <td className="p-3">{b.work?<Link to="/obras/$id" params={{id:b.work.id}} className="text-primary">Convertido em obra</Link>:STATUS_LABEL[b.status]}</td>
               </tr>
             ))}
             {data.length === 0 && (
               <tr>
-                <td colSpan={4} className="p-6 text-center text-muted-foreground">
+                <td colSpan={6} className="p-6 text-center text-muted-foreground">
                   Nenhum orçamento.
                 </td>
               </tr>

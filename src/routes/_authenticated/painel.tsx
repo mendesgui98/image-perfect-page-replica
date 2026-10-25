@@ -1,19 +1,17 @@
 import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, FileText, Plus } from "lucide-react";
+import { AlertTriangle, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { fmtDate } from "@/lib/format";
-import { STATUS_LABEL } from "@/lib/budget-status";
-import {FinancialDashboard,dashboardSearch} from '@/components/works/dashboard';
+import {dashboardSearch} from '@/components/works/dashboard';
+import {ExecutivePanel} from '@/components/management/executive';
 import { WorkOverview } from "@/components/works/overview";
 
 export const Route = createFileRoute("/_authenticated/painel")({
-  validateSearch:dashboardSearch,
+  validateSearch:(s:Record<string,unknown>):ReturnType<typeof dashboardSearch>&{detail?:string}=>({...dashboardSearch(s),detail:typeof s['detail']==='string'?s['detail']:''}),
   head: () => pageMeta("Painel", "Acompanhamento de obras, propostas e alertas da JMG."),
   component: Painel,
 });
@@ -41,13 +39,12 @@ function Painel() {
     alerts.push("As regras de precificação ainda não foram configuradas. Configure antes de emitir o primeiro orçamento real.");
   if (data?.company && !data.company.email) alerts.push("O e-mail da JMG não está cadastrado nos dados da empresa.");
 
-  const count = (k: string) => data?.people.filter((p) => p.kind === k).length ?? 0;
 
   return (
     <div>
       <PageHeader
-        title={`Olá${me?.name ? ", " + me.name.split(" ")[0] : ""}`}
-        subtitle="Visão geral da JMG"
+        title="JMG Reformas"
+        subtitle="Visão executiva"
         actions={
           me?.canSeeCosts && (
             <Button asChild>
@@ -73,45 +70,7 @@ function Painel() {
           ))}
         </div>
       )}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          ["Clientes", count("cliente")],
-          ["Arquitetos", count("arquiteto")],
-          ["Fornecedores", count("fornecedor")],
-          ["Prestadores", count("prestador")],
-        ].map(([l, v]) => (
-          <Card key={l as string} className="shadow-card">
-            <CardContent className="p-5">
-              <div className="text-sm text-muted-foreground">{l}</div>
-              <div className="font-display text-3xl font-extrabold text-primary">{v}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      {me?.canSeeCosts?<div className="mt-6"><FinancialDashboard/></div>:<WorkOverview />}
-      {me?.canSeeCosts && (
-        <Card className="mt-6 shadow-card">
-          <CardHeader>
-            <CardTitle className="text-lg">Orçamentos recentes</CardTitle>
-          </CardHeader>
-          <CardContent className="divide-y p-0">
-            {data?.budgets.length === 0 && <p className="p-6 text-sm text-muted-foreground">Nenhum orçamento ainda.</p>}
-            {data?.budgets.map((b) => (
-              <Link key={b.id} to="/orcamentos/$id" params={{ id: b.id }} className="flex items-center gap-3 px-6 py-3 hover:bg-muted">
-                <FileText className="h-4 w-4 text-primary" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">
-                    Nº {b.number}
-                    {b.revision ? ` · Rev. ${b.revision}` : ""} — {b.client_display || b.title}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Atualizado em {fmtDate(b.updated_at)}</div>
-                </div>
-                <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">{STATUS_LABEL[b.status]}</span>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+      {me?.canSeeCosts?<ExecutivePanel/>:<WorkOverview/>}
     </div>
   );
 }
