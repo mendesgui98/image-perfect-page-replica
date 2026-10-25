@@ -155,3 +155,15 @@ progress.accent-warning::-webkit-progress-value { background: var(--warning); }
 progress::-moz-progress-bar { background: var(--primary); }
 progress.accent-success::-moz-progress-bar { background: var(--success); }
 progress.accent-warning::-moz-progress-bar { background: var(--warning); }
+.gantt-track { background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(10% - 1px), var(--border) calc(10% - 1px), var(--border) 10%); }
+@media print {
+  .schedule-print { padding: 14mm; max-width: none; }
+  .schedule-print table { font-size: 9px; }
+  .schedule-print tr, .schedule-print header, .schedule-print footer { break-inside: avoid; }
+  .schedule-print thead { display: table-header-group; }
+  .schedule-print .gantt-wrap { overflow: visible; }
+  .schedule-print .gantt-chart { min-width: 0; }
+  .schedule-print .gantt-chart > div { grid-template-columns: 135px 1fr; }
+  .schedule-print .gantt-track { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .schedule-print .gantt-track span { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}
