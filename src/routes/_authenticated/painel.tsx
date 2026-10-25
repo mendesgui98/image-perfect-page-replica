@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtDate } from "@/lib/format";
 import { STATUS_LABEL } from "@/lib/budget-status";
+import {FinancialDashboard,dashboardSearch} from '@/components/works/dashboard';
 import { WorkOverview } from "@/components/works/overview";
 
 export const Route = createFileRoute("/_authenticated/painel")({
+  validateSearch:dashboardSearch,
   head: () => pageMeta("Painel", "Acompanhamento de obras, propostas e alertas da JMG."),
   component: Painel,
 });
@@ -86,7 +88,7 @@ function Painel() {
           </Card>
         ))}
       </div>
-      <WorkOverview />
+      {me?.canSeeCosts?<div className="mt-6"><FinancialDashboard/></div>:<WorkOverview />}
       {me?.canSeeCosts && (
         <Card className="mt-6 shadow-card">
           <CardHeader>
