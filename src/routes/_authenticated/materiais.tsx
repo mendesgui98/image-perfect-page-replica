@@ -42,7 +42,14 @@ function Materiais() {
   const { data: suppliers = [] } = useQuery({
     queryKey: ["people", "fornecedor"],
     queryFn: async () =>
-      (await supabase.from("people").select("*").eq("kind", "fornecedor").order("name")).data ?? [],
+      (
+        await supabase
+          .from("people")
+          .select("*")
+          .is("deleted_at", null)
+          .eq("kind", "fornecedor")
+          .order("name")
+      ).data ?? [],
   });
   const save = useMutation({
     mutationFn: async (m: Partial<Mat>) => {

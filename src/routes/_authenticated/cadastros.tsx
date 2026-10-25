@@ -1,7 +1,8 @@
+import { RecordDeleteButton, RecordTrash } from "@/components/management/record-deletion";
 import { pageMeta } from "@/lib/page-meta";
-import { createFileRoute,Link,useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,14 +13,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 
 type Person = Database["public"]["Tables"]["people"]["Row"];
 type Kind = Database["public"]["Enums"]["person_kind"];
 
 export const Route = createFileRoute("/_authenticated/cadastros")({
-  validateSearch:(s:Record<string,unknown>):{kind?:string;edit?:string}=>({kind:typeof s['kind']==='string'?s['kind']:'cliente',edit:typeof s['edit']==='string'?s['edit']:''}),
+  validateSearch: (s: Record<string, unknown>): { kind?: string; edit?: string } => ({
+    kind: typeof s["kind"] === "string" ? s["kind"] : "cliente",
+    edit: typeof s["edit"] === "string" ? s["edit"] : "",
+  }),
   head: () => pageMeta("Cadastros", "Clientes, arquitetos, fornecedores e prestadores da JMG."),
   component: Cadastros,
 });
@@ -47,7 +57,10 @@ const FIELDS: [keyof Person, string, string?][] = [
 ];
 
 function Cadastros() {
-  const search=Route.useSearch();const navigate=useNavigate();const kind=KINDS.find(k=>k.k===search.kind)?.k??"cliente";const setKind=(kind:string)=>navigate({to:"/cadastros",search:{kind,edit:""}});
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const kind = KINDS.find((k) => k.k === search.kind)?.k ?? "cliente";
+  const setKind = (kind: string) => navigate({ to: "/cadastros", search: { kind, edit: "" } });
   const [q, setQ] = useState("");
   const [showInactive, setShowInactive] = useState(false);
   const [edit, setEdit] = useState<Partial<Person> | null>(null);
@@ -56,13 +69,23 @@ function Cadastros() {
   const { data = [] } = useQuery({
     queryKey: ["people", kind],
     queryFn: async () => {
-      const { data, error } = await supabase.from("people").select("*").eq("kind", kind).order("name");
+      const { data, error } = await supabase
+        .from("people")
+        .select("*")
+        .is("deleted_at", null)
+        .eq("kind", kind)
+        .order("name");
       if (error) throw error;
       return data;
     },
   });
 
-  useEffect(()=>{if(search.edit){const p=data.find(p=>p.id===search.edit);if(p)setEdit(p);}},[search.edit,data]);
+  useEffect(() => {
+    if (search.edit) {
+      const p = data.find((p) => p.id === search.edit);
+      if (p) setEdit(p);
+    }
+  }, [search.edit, data]);
   const save = useMutation({
     mutationFn: async (p: Partial<Person>) => {
       if (!p.name?.trim()) throw new Error("Informe o nome.");
@@ -74,14 +97,17 @@ function Cadastros() {
     },
     onSuccess: () => {
       toast.success("Salvo.");
-      setEdit(null);navigate({to:"/cadastros",search:{kind,edit:""},replace:true});
+      setEdit(null);
+      navigate({ to: "/cadastros", search: { kind, edit: "" }, replace: true });
       qc.invalidateQueries({ queryKey: ["people"] });
     },
     onError: (e) => toast.error((e as Error).message),
   });
 
   const list = data.filter(
-    (p) => (showInactive || p.active) && (p.name + (p.document ?? "") + (p.phone ?? "")).toLowerCase().includes(q.toLowerCase()),
+    (p) =>
+      (showInactive || p.active) &&
+      (p.name + (p.document ?? "") + (p.phone ?? "")).toLowerCase().includes(q.toLowerCase()),
   );
 
   return (
@@ -90,9 +116,12 @@ function Cadastros() {
         title="Cadastros"
         subtitle="Clientes, contatos, arquitetos, fornecedores e prestadores."
         actions={
-          <Button onClick={() => setEdit({ kind, active: true })}>
-            <Plus className="h-4 w-4" /> Novo
-          </Button>
+          <>
+            <RecordTrash entity="people" />
+            <Button onClick={() => setEdit({ kind, active: true })}>
+              <Plus className="h-4 w-4" /> Novo
+            </Button>
+          </>
         }
       />
       <Tabs value={kind} onValueChange={(v) => setKind(v as Kind)}>
@@ -107,13 +136,57 @@ function Cadastros() {
       <div className="my-4 flex flex-wrap items-center gap-4">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Buscar" value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input
+            className="pl-9"
+            placeholder="Buscar"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
         </div>
         <label className="flex items-center gap-2 text-sm">
           <Switch checked={showInactive} onCheckedChange={setShowInactive} /> Mostrar arquivados
         </label>
       </div>
-      <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-y text-xs text-muted-foreground"><tr><th className="p-3">Nome</th><th className="p-3">Telefone</th><th className="p-3">E-mail</th><th className="p-3">Especialidade</th><th className="p-3">Status</th><th className="p-3"></th></tr></thead><tbody>{list.map(p=><tr key={p.id} className="border-b"><td className="p-3"><Link to="/cadastros/$id" params={{id:p.id}} className="font-medium text-primary">{p.name}</Link></td><td className="whitespace-nowrap p-3">{p.phone||'—'}</td><td className="p-3">{p.email||'—'}</td><td className="p-3">{p.specialty||'—'}</td><td className="p-3 text-xs">{p.active?'Ativo':'Arquivado'}</td><td className="p-3"><Button size="sm" variant="ghost" onClick={()=>setEdit(p)}>Editar</Button></td></tr>)}</tbody></table>{!list.length&&<p className="py-8 text-center text-muted-foreground">Nenhum registro.</p>}</div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead className="border-y text-xs text-muted-foreground">
+            <tr>
+              <th className="p-3">Nome</th>
+              <th className="p-3">Telefone</th>
+              <th className="p-3">E-mail</th>
+              <th className="p-3">Especialidade</th>
+              <th className="p-3">Status</th>
+              <th className="p-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map((p) => (
+              <tr key={p.id} className="border-b">
+                <td className="p-3">
+                  <Link
+                    to="/cadastros/$id"
+                    params={{ id: p.id }}
+                    className="font-medium text-primary"
+                  >
+                    {p.name}
+                  </Link>
+                </td>
+                <td className="whitespace-nowrap p-3">{p.phone || "—"}</td>
+                <td className="p-3">{p.email || "—"}</td>
+                <td className="p-3">{p.specialty || "—"}</td>
+                <td className="p-3 text-xs">{p.active ? "Ativo" : "Arquivado"}</td>
+                <td className="p-3">
+                  <Button size="sm" variant="ghost" onClick={() => setEdit(p)}>
+                    Editar
+                  </Button>
+                  <RecordDeleteButton entity="people" id={p.id} name={p.name} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!list.length && <p className="py-8 text-center text-muted-foreground">Nenhum registro.</p>}
+      </div>
 
       <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
@@ -137,17 +210,32 @@ function Cadastros() {
                 </select>
               </div>
               {FIELDS.map(([f, l]) => (
-                <div key={f} className={f === "name" || f === "endereco" ? "space-y-1 sm:col-span-2" : "space-y-1"}>
+                <div
+                  key={f}
+                  className={
+                    f === "name" || f === "endereco" ? "space-y-1 sm:col-span-2" : "space-y-1"
+                  }
+                >
                   <Label>{l}</Label>
-                  <Input value={(edit[f] as string) ?? ""} onChange={(e) => setEdit({ ...edit, [f]: e.target.value })} />
+                  <Input
+                    value={(edit[f] as string) ?? ""}
+                    onChange={(e) => setEdit({ ...edit, [f]: e.target.value })}
+                  />
                 </div>
               ))}
               <div className="space-y-1 sm:col-span-2">
                 <Label>Observações</Label>
-                <Textarea value={edit.notes ?? ""} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} />
+                <Textarea
+                  value={edit.notes ?? ""}
+                  onChange={(e) => setEdit({ ...edit, notes: e.target.value })}
+                />
               </div>
               <label className="flex items-center gap-2 text-sm">
-                <Switch checked={edit.active ?? true} onCheckedChange={(v) => setEdit({ ...edit, active: v })} /> Ativo
+                <Switch
+                  checked={edit.active ?? true}
+                  onCheckedChange={(v) => setEdit({ ...edit, active: v })}
+                />{" "}
+                Ativo
               </label>
             </div>
           )}

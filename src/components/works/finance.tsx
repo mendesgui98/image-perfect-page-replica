@@ -27,7 +27,7 @@ export const financeOptions = {
       supabase.from("financial_accounts").select("*").eq("active", true),
       supabase.from("account_transfers").select("*"),
       supabase.from("work_registry").select("id,name"),
-      supabase.from("people").select("id,name"),
+      supabase.from("people").select("id,name,deleted_at"),
       supabase.from("cost_categories").select("name").eq("active", true),
       supabase.from("expense_allocations").select("*"),
       supabase.from("work_openings").select("*"),
@@ -503,11 +503,13 @@ export function Finance({ workId }: { workId?: string }) {
                   Cliente / fornecedor / prestador
                   <select name="person" className={selectClass}>
                     <option value="">Selecionar</option>
-                    {data?.people.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
+                    {data?.people
+                      .filter((p) => !p.deleted_at)
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
                   </select>
                 </label>
                 <Field name="amount" label="Valor (R$)" type="number" required />

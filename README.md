@@ -25,6 +25,8 @@ As regras de contribuição ficam em `AGENTS.md`. As tabelas e regras persistida
 
 Consulte [correções de integridade e aplicação da migração](docs/audit-corrections.md) antes de disponibilizar a versão corrigida.
 
+Consulte também [exclusão e lixeira](docs/record-trash.md) para aplicar a migração 0016 e entender os vínculos preservados.
+
 ## Lovable
 
 Este projeto mantém integração com o [editor Lovable](https://lovable.dev/projects/b15d814b-dd91-4a53-9dbd-84f193080e19). Preserve o histórico publicado e mantenha a branch conectada funcional.

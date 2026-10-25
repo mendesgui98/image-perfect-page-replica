@@ -1,3 +1,4 @@
+import { DeletedRecordNotice } from "@/components/management/record-deletion";
 import { businessDate } from "@/lib/dashboard-math";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -24,6 +25,7 @@ function Document() {
   const { version } = Route.useSearch();
   const { data } = useSuspenseQuery(scheduleOptions(id));
   const h = data.header;
+  if (h.deleted_at) return <DeletedRecordNotice entity="schedules" id={id} name={h.name} />;
   const saved = data.versions.find((v) => v.version === version);
   const stages = saved ? snapshotStages(saved.stages) : data.stages;
   const missing = version !== undefined && !saved;

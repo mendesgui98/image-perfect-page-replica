@@ -1,12 +1,277 @@
-import {useQuery} from '@tanstack/react-query';
-import {Link} from '@tanstack/react-router';
-import {relationshipOptions} from '@/lib/relationship-data';
-import {dashboardOptions} from '@/lib/dashboard-data';
-import {financeOptions} from '@/components/works/finance';
-import {useMe} from '@/hooks/use-me';
-import {PageHeader} from '@/components/page-header';
-import {Button} from '@/components/ui/button';
-import {Attachment} from '@/components/works/fields';
-import {fmtBRL,fmtDate} from '@/lib/format';
-import {entryState} from '@/lib/dashboard-math';
-export function PersonProfile({id}:{id:string}){const {data:me}=useMe();const {data,error}=useQuery(relationshipOptions(!!me?.canSeeCosts));const {data:dash}=useQuery({...dashboardOptions,enabled:!!me?.canSeeCosts});const {data:finance}=useQuery({...financeOptions,enabled:!!me?.canSeeCosts});if(error)return <p role="alert" className="text-destructive">{error.message}</p>;const person=data?.people.find(p=>p.id===id);if(!data)return <p>Carregando cadastro…</p>;if(!person)return <p>Cadastro não encontrado.</p>;const budgets=data.budgets.filter(b=>b.client_id===id||b.architect_id===id);const purchases=data.purchases.filter(p=>p.supplier_id===id);const workIds=new Set([...data.works.filter(w=>w.client_id===id||w.architect_id===id).map(w=>w.id),...purchases.map(p=>p.work_id)]);const works=data.works.filter(w=>workIds.has(w.id));const sums=dash?.works.filter(w=>workIds.has(w.work.id))??[];const entries=finance?.entries.filter(e=>!e.canceled&&(e.person_id===id||person.kind==='fornecedor'&&purchases.some(p=>p.id===e.payable_order_id||p.id===e.purchase_order_id)))??[];const settled=(direction:string)=>entries.filter(e=>e.direction===direction).reduce((t,e)=>t+entryState(e,finance?.settlements??[]).paid,0);const pending=entries.filter(e=>e.direction==='saida').reduce((t,e)=>t+entryState(e,finance?.settlements??[]).pending,0);const commissionEntries=entries.filter(e=>e.category==='Comissão da arquiteta');const paidCommission=commissionEntries.reduce((t,e)=>t+entryState(e,finance?.settlements??[]).paid,0);const commission=sums.reduce((t,w)=>t+w.result.commission,0);return <div className="space-y-6"><Link to="/cadastros" search={{kind:person.kind}} className="text-sm text-muted-foreground">← Cadastros</Link><PageHeader title={person.name} subtitle={`${person.kind} · ${person.active?'Ativo':'Arquivado'}`} actions={<Button asChild variant="outline"><Link to="/cadastros" search={{kind:person.kind,edit:id}}>Editar cadastro</Link></Button>}/><dl className="grid gap-5 border-y py-5 sm:grid-cols-3">{[['Telefone',person.phone],['E-mail',person.email],['Documento',person.document],['Endereço',[person.endereco,person.bairro,person.cidade,person.uf].filter(Boolean).join(', ')],['Especialidade',person.specialty],['Observações',person.notes]].map(([l,v])=><div key={l}><dt className="text-xs text-muted-foreground">{l}</dt><dd className="mt-1 whitespace-pre-wrap text-sm">{v||'—'}</dd></div>)}</dl>{me?.canSeeCosts&&<dl className="grid grid-cols-2 gap-5 border-b pb-5 lg:grid-cols-4">{(person.kind==='arquiteto'?[['Valor das obras vinculadas',sums.reduce((t,w)=>t+w.result.sale,0)],['Comissão prevista',commission],['Comissão paga com vínculo',paidCommission],['Comissão pendente',Math.max(0,commission-paidCommission)]]:person.kind==='fornecedor'?[['Total comprado',purchases.filter(p=>p.status!=='cancelado').reduce((t,p)=>t+p.purchase_lines.reduce((s,l)=>s+l.quantity*l.unit_price,0),0)],['Pagamentos',settled('saida')],['A pagar',pending]]:[['Valores contratados',sums.reduce((t,w)=>t+w.result.sale,0)],['Recebido',sums.reduce((t,w)=>t+w.totals.received,0)],['Saldo contratual',sums.reduce((t,w)=>t+w.balance.receivable,0)]]).map(([l,v])=><div key={String(l)}><dt className="text-xs text-muted-foreground">{String(l)}</dt><dd className="mt-1 font-semibold num">{fmtBRL(Number(v))}</dd></div>)}</dl>}<section><h2 className="mb-3 font-semibold">Obras atuais e anteriores</h2><div className="divide-y">{works.map(w=><Link key={w.id} to="/obras/$id" params={{id:w.id}} className="flex flex-wrap justify-between gap-3 py-3 text-sm"><span className="text-primary">{w.name}<span className="block text-xs text-muted-foreground">{data.people.find(p=>p.id===w.client_id)?.name}</span></span><span className="text-xs text-muted-foreground">{w.status} · {fmtDate(w.planned_end)}</span></Link>)}{!works.length&&<p className="py-3 text-sm text-muted-foreground">Nenhuma obra vinculada.</p>}</div></section>{me?.canSeeCosts&&<><section className="border-t pt-5"><h2 className="mb-3 font-semibold">Orçamentos</h2>{budgets.map(b=><Link key={b.id} to="/orcamentos/$id" params={{id:b.id}} className="flex justify-between gap-3 py-3 text-sm"><span className="text-primary">#{b.number} · {b.title}</span><span>{b.status}</span></Link>)}</section><section className="border-t pt-5"><h2 className="mb-3 font-semibold">Contratos</h2>{data.contracts.filter(c=>workIds.has(c.work_id)).map(c=><div key={c.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><Link to="/obras/$id" params={{id:c.work_id}} search={{tab:'contrato'}} className="text-sm text-primary">{works.find(w=>w.id===c.work_id)?.name} · {c.status}</Link><Attachment path={c.signed_path}/></div>)}</section>{person.kind==='fornecedor'&&<section className="border-t pt-5"><h2 className="mb-3 font-semibold">Compras</h2>{purchases.map(p=><div key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"><Link to="/obras/$id" params={{id:p.work_id}} search={{tab:'compras',record:p.id}} className="text-primary">{p.description} · {works.find(w=>w.id===p.work_id)?.name}</Link><span>{p.status} · {fmtBRL(p.purchase_lines.reduce((t,l)=>t+l.quantity*l.unit_price,0))}</span><Attachment path={p.file_path}/></div>)}</section>}<section className="border-t pt-5"><h2 className="mb-3 font-semibold">Pagamentos e contas vinculadas</h2>{entries.map(e=><div key={e.id} className="flex flex-wrap justify-between gap-3 border-b py-3 text-sm"><Link to="/financeiro" search={{work:e.work_id||'',entry:e.id}} className="text-primary">{e.description} · parcela {e.installment_index}/{e.installment_count}</Link><span>{fmtBRL(e.amount)} · saldo {fmtBRL(entryState(e,finance?.settlements??[]).pending)}</span></div>)}</section><section className="border-t pt-5"><h2 className="mb-3 font-semibold">Documentos das obras</h2>{data.records.filter(r=>workIds.has(r.work_id)).map(r=><div key={r.id} className="flex items-center gap-3 py-2"><Link to="/obras/$id" params={{id:r.work_id}} search={{tab:'documento',record:r.id}} className="text-sm text-primary">{r.title}</Link><Attachment path={r.file_path}/></div>)}</section><section className="border-t pt-5"><h2 className="mb-3 font-semibold">Histórico cadastral</h2>{data.history.filter(h=>h.entity_id===id).map(h=><p key={h.id} className="py-2 text-xs text-muted-foreground">Alteração registrada · {fmtDate(h.changed_at)}</p>)}</section></>}</div>;}
+import { RecordDeleteButton, DeletedRecordNotice } from "@/components/management/record-deletion";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { relationshipOptions } from "@/lib/relationship-data";
+import { dashboardOptions } from "@/lib/dashboard-data";
+import { financeOptions } from "@/components/works/finance";
+import { useMe } from "@/hooks/use-me";
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { Attachment } from "@/components/works/fields";
+import { fmtBRL, fmtDate } from "@/lib/format";
+import { entryState } from "@/lib/dashboard-math";
+export function PersonProfile({ id }: { id: string }) {
+  const { data: me } = useMe();
+  const { data, error } = useQuery(relationshipOptions(!!me?.canSeeCosts));
+  const { data: dash } = useQuery({ ...dashboardOptions, enabled: !!me?.canSeeCosts });
+  const { data: finance } = useQuery({ ...financeOptions, enabled: !!me?.canSeeCosts });
+  if (error)
+    return (
+      <p role="alert" className="text-destructive">
+        {error.message}
+      </p>
+    );
+  const person = data?.people.find((p) => p.id === id);
+  if (!data) return <p>Carregando cadastro…</p>;
+  if (!person) return <p>Cadastro não encontrado.</p>;
+  if (person.deleted_at) return <DeletedRecordNotice entity="people" id={id} name={person.name} />;
+  const budgets = data.budgets.filter(
+    (b) => (!b.deleted_at && b.client_id === id) || b.architect_id === id,
+  );
+  const purchases = data.purchases.filter((p) => p.supplier_id === id);
+  const workIds = new Set([
+    ...data.works.filter((w) => w.client_id === id || w.architect_id === id).map((w) => w.id),
+    ...purchases.map((p) => p.work_id),
+  ]);
+  const works = data.works.filter((w) => workIds.has(w.id));
+  const sums = dash?.works.filter((w) => workIds.has(w.work.id)) ?? [];
+  const entries =
+    finance?.entries.filter(
+      (e) =>
+        !e.canceled &&
+        (e.person_id === id ||
+          (person.kind === "fornecedor" &&
+            purchases.some((p) => p.id === e.payable_order_id || p.id === e.purchase_order_id))),
+    ) ?? [];
+  const settled = (direction: string) =>
+    entries
+      .filter((e) => e.direction === direction)
+      .reduce((t, e) => t + entryState(e, finance?.settlements ?? []).paid, 0);
+  const pending = entries
+    .filter((e) => e.direction === "saida")
+    .reduce((t, e) => t + entryState(e, finance?.settlements ?? []).pending, 0);
+  const commissionEntries = entries.filter((e) => e.category === "Comissão da arquiteta");
+  const paidCommission = commissionEntries.reduce(
+    (t, e) => t + entryState(e, finance?.settlements ?? []).paid,
+    0,
+  );
+  const commission = sums.reduce((t, w) => t + w.result.commission, 0);
+  return (
+    <div className="space-y-6">
+      <Link
+        to="/cadastros"
+        search={{ kind: person.kind }}
+        className="text-sm text-muted-foreground"
+      >
+        ← Cadastros
+      </Link>
+      <PageHeader
+        title={person.name}
+        subtitle={`${person.kind} · ${person.active ? "Ativo" : "Arquivado"}`}
+        actions={
+          <>
+            <RecordDeleteButton entity="people" id={id} name={person.name} />
+            <Button asChild variant="outline">
+              <Link to="/cadastros" search={{ kind: person.kind, edit: id }}>
+                Editar cadastro
+              </Link>
+            </Button>
+          </>
+        }
+      />
+      <dl className="grid gap-5 border-y py-5 sm:grid-cols-3">
+        {[
+          ["Telefone", person.phone],
+          ["E-mail", person.email],
+          ["Documento", person.document],
+          [
+            "Endereço",
+            [person.endereco, person.bairro, person.cidade, person.uf].filter(Boolean).join(", "),
+          ],
+          ["Especialidade", person.specialty],
+          ["Observações", person.notes],
+        ].map(([l, v]) => (
+          <div key={l}>
+            <dt className="text-xs text-muted-foreground">{l}</dt>
+            <dd className="mt-1 whitespace-pre-wrap text-sm">{v || "—"}</dd>
+          </div>
+        ))}
+      </dl>
+      {me?.canSeeCosts && (
+        <dl className="grid grid-cols-2 gap-5 border-b pb-5 lg:grid-cols-4">
+          {(person.kind === "arquiteto"
+            ? [
+                ["Valor das obras vinculadas", sums.reduce((t, w) => t + w.result.sale, 0)],
+                ["Comissão prevista", commission],
+                ["Comissão paga com vínculo", paidCommission],
+                ["Comissão pendente", Math.max(0, commission - paidCommission)],
+              ]
+            : person.kind === "fornecedor"
+              ? [
+                  [
+                    "Total comprado",
+                    purchases
+                      .filter((p) => p.status !== "cancelado")
+                      .reduce(
+                        (t, p) =>
+                          t + p.purchase_lines.reduce((s, l) => s + l.quantity * l.unit_price, 0),
+                        0,
+                      ),
+                  ],
+                  ["Pagamentos", settled("saida")],
+                  ["A pagar", pending],
+                ]
+              : [
+                  ["Valores contratados", sums.reduce((t, w) => t + w.result.sale, 0)],
+                  ["Recebido", sums.reduce((t, w) => t + w.totals.received, 0)],
+                  ["Saldo contratual", sums.reduce((t, w) => t + w.balance.receivable, 0)],
+                ]
+          ).map(([l, v]) => (
+            <div key={String(l)}>
+              <dt className="text-xs text-muted-foreground">{String(l)}</dt>
+              <dd className="mt-1 font-semibold num">{fmtBRL(Number(v))}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      <section>
+        <h2 className="mb-3 font-semibold">Obras atuais e anteriores</h2>
+        <div className="divide-y">
+          {works.map((w) => (
+            <Link
+              key={w.id}
+              to="/obras/$id"
+              params={{ id: w.id }}
+              className="flex flex-wrap justify-between gap-3 py-3 text-sm"
+            >
+              <span className="text-primary">
+                {w.name}
+                <span className="block text-xs text-muted-foreground">
+                  {data.people.find((p) => p.id === w.client_id)?.name}
+                </span>
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {w.status} · {fmtDate(w.planned_end)}
+              </span>
+            </Link>
+          ))}
+          {!works.length && (
+            <p className="py-3 text-sm text-muted-foreground">Nenhuma obra vinculada.</p>
+          )}
+        </div>
+      </section>
+      {me?.canSeeCosts && (
+        <>
+          <section className="border-t pt-5">
+            <h2 className="mb-3 font-semibold">Orçamentos</h2>
+            {budgets.map((b) => (
+              <Link
+                key={b.id}
+                to="/orcamentos/$id"
+                params={{ id: b.id }}
+                className="flex justify-between gap-3 py-3 text-sm"
+              >
+                <span className="text-primary">
+                  #{b.number} · {b.title}
+                </span>
+                <span>{b.status}</span>
+              </Link>
+            ))}
+          </section>
+          <section className="border-t pt-5">
+            <h2 className="mb-3 font-semibold">Contratos</h2>
+            {data.contracts
+              .filter((c) => !c.deleted_at && workIds.has(c.work_id))
+              .map((c) => (
+                <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                  <Link
+                    to="/obras/$id"
+                    params={{ id: c.work_id }}
+                    search={{ tab: "contrato" }}
+                    className="text-sm text-primary"
+                  >
+                    {works.find((w) => w.id === c.work_id)?.name} · {c.status}
+                  </Link>
+                  <Attachment path={c.signed_path} />
+                </div>
+              ))}
+          </section>
+          {person.kind === "fornecedor" && (
+            <section className="border-t pt-5">
+              <h2 className="mb-3 font-semibold">Compras</h2>
+              {purchases.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"
+                >
+                  <Link
+                    to="/obras/$id"
+                    params={{ id: p.work_id }}
+                    search={{ tab: "compras", record: p.id }}
+                    className="text-primary"
+                  >
+                    {p.description} · {works.find((w) => w.id === p.work_id)?.name}
+                  </Link>
+                  <span>
+                    {p.status} ·{" "}
+                    {fmtBRL(p.purchase_lines.reduce((t, l) => t + l.quantity * l.unit_price, 0))}
+                  </span>
+                  <Attachment path={p.file_path} />
+                </div>
+              ))}
+            </section>
+          )}
+          <section className="border-t pt-5">
+            <h2 className="mb-3 font-semibold">Pagamentos e contas vinculadas</h2>
+            {entries.map((e) => (
+              <div
+                key={e.id}
+                className="flex flex-wrap justify-between gap-3 border-b py-3 text-sm"
+              >
+                <Link
+                  to="/financeiro"
+                  search={{ work: e.work_id || "", entry: e.id }}
+                  className="text-primary"
+                >
+                  {e.description} · parcela {e.installment_index}/{e.installment_count}
+                </Link>
+                <span>
+                  {fmtBRL(e.amount)} · saldo{" "}
+                  {fmtBRL(entryState(e, finance?.settlements ?? []).pending)}
+                </span>
+              </div>
+            ))}
+          </section>
+          <section className="border-t pt-5">
+            <h2 className="mb-3 font-semibold">Documentos das obras</h2>
+            {data.records
+              .filter((r) => workIds.has(r.work_id))
+              .map((r) => (
+                <div key={r.id} className="flex items-center gap-3 py-2">
+                  <Link
+                    to="/obras/$id"
+                    params={{ id: r.work_id }}
+                    search={{ tab: "documento", record: r.id }}
+                    className="text-sm text-primary"
+                  >
+                    {r.title}
+                  </Link>
+                  <Attachment path={r.file_path} />
+                </div>
+              ))}
+          </section>
+          <section className="border-t pt-5">
+            <h2 className="mb-3 font-semibold">Histórico cadastral</h2>
+            {data.history
+              .filter((h) => h.entity_id === id)
+              .map((h) => (
+                <p key={h.id} className="py-2 text-xs text-muted-foreground">
+                  Alteração registrada · {fmtDate(h.changed_at)}
+                </p>
+              ))}
+          </section>
+        </>
+      )}
+    </div>
+  );
+}

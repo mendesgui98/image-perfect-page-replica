@@ -158,4 +158,177 @@ await db.exec("RESET ROLE");
 console.log(
   "PASS: registration, RLS profiles, approval, scoped items, evidence retention, locked budgets, conversion, revision uniqueness, allocations, atomic composition and operational access",
 );
+// Trash and permanent deletion exercise the same RPC used by the interface.
+await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)", [admin]);
+await db.exec("SET ROLE authenticated");
+const manage = async (entity, id, action) =>
+  db.query("SELECT public.manage_record_deletion($1,$2,$3)", [entity, id, action]);
+await rejects(
+  "SELECT public.manage_record_deletion($1,$2,$3)",
+  ["people", client, "permanent"],
+  /lixeira/,
+);
+await rejects(
+  "UPDATE public.people SET deleted_at=now() WHERE id=$1",
+  [client],
+  /operação da lixeira/,
+);
+await rejects(
+  "SELECT public.manage_record_deletion($1,$2,$3)",
+  ["financial_entries", entry, "trash"],
+  /inválida/,
+);
+await manage("budgets", b1, "trash");
+await rejects("SELECT public.convert_budget($1)", [b1], /Restaure/);
+await rejects("SELECT public.copy_budget($1,true)", [b1], /Restaure/);
+await rejects(
+  "UPDATE public.budget_items SET description='Changed' WHERE budget_id=$1",
+  [b1],
+  /Restaure/,
+);
+assert.ok(await value("SELECT deleted_at FROM public.budgets WHERE id=$1", [b1]));
+assert.equal(
+  await value("SELECT linked_budget_id FROM public.work_registry WHERE id=$1", [work]),
+  b1,
+);
+await rejects(
+  "SELECT public.manage_record_deletion($1,$2,$3)",
+  ["budgets", b1, "permanent"],
+  /vínculos/,
+);
+assert.equal(
+  await value("SELECT count(*)::int FROM public.budget_items WHERE budget_id=$1", [b1]),
+  1,
+);
+await manage("budgets", b1, "restore");
+assert.equal(await value("SELECT deleted_at FROM public.budgets WHERE id=$1", [b1]), null);
+await rejects("UPDATE public.budgets SET title='Changed' WHERE id=$1", [b1], /bloqueado/);
+await db.query("INSERT INTO public.budget_sections(budget_id,title) VALUES($1,'Disposable')", [b2]);
+const disposableSection = await value("SELECT id FROM public.budget_sections WHERE budget_id=$1", [
+  b2,
+]);
+await db.query(
+  "INSERT INTO public.budget_items(budget_id,section_id,description) VALUES($1,$2,'Disposable')",
+  [b2, disposableSection],
+);
+await manage("budgets", b2, "trash");
+await manage("budgets", b2, "permanent");
+assert.equal(await value("SELECT count(*)::int FROM public.budgets WHERE id=$1", [b2]), 0);
+assert.equal(
+  await value("SELECT count(*)::int FROM public.budget_items WHERE budget_id=$1", [b2]),
+  0,
+);
+// An approved but unconverted proposal can also be permanently removed from trash.
+const disposableApproved = await value(
+  "INSERT INTO public.budgets(title) VALUES('Approved disposable') RETURNING id",
+);
+const approvedSection = await value(
+  "INSERT INTO public.budget_sections(budget_id,title) VALUES($1,'Approved scope') RETURNING id",
+  [disposableApproved],
+);
+await db.query(
+  "INSERT INTO public.budget_items(budget_id,section_id,description) VALUES($1,$2,'Scope')",
+  [disposableApproved, approvedSection],
+);
+await db.query(
+  "UPDATE public.budgets SET status='aprovado',approval_date='2026-10-25',approval_path='approvals/proof.pdf' WHERE id=$1",
+  [disposableApproved],
+);
+await manage("budgets", disposableApproved, "trash");
+await manage("budgets", disposableApproved, "permanent");
+assert.equal(
+  await value("SELECT count(*)::int FROM public.budgets WHERE id=$1", [disposableApproved]),
+  0,
+);
+const contract = await value(
+  "INSERT INTO public.contracts(work_id,body) VALUES($1,'Texto original') RETURNING id",
+  [work],
+);
+await db.query(
+  "INSERT INTO storage.objects(bucket_id,name,owner_id) VALUES('jmg-documents','contracts/signed.pdf',$1)",
+  [admin],
+);
+await db.query(
+  "UPDATE public.contracts SET status='assinado',signed_path='contracts/signed.pdf',signed_date='2026-10-25' WHERE id=$1",
+  [contract],
+);
+await manage("contracts", contract, "trash");
+await manage("contracts", contract, "restore");
+assert.equal(
+  await value("SELECT body FROM public.contracts WHERE id=$1", [contract]),
+  "Texto original",
+);
+await rejects("UPDATE public.contracts SET body='Changed' WHERE id=$1", [contract], /assinado/);
+await manage("contracts", contract, "trash");
+await manage("contracts", contract, "permanent");
+assert.equal(await value("SELECT count(*)::int FROM public.work_registry WHERE id=$1", [work]), 1);
+const linkedSchedule = await value("SELECT id FROM public.schedules WHERE work_id=$1", [work]);
+await manage("schedules", linkedSchedule, "trash");
+await db.query("UPDATE public.work_registry SET name='Renamed while in trash' WHERE id=$1", [work]);
+assert.ok(await value("SELECT deleted_at FROM public.schedules WHERE id=$1", [linkedSchedule]));
+await manage("schedules", linkedSchedule, "restore");
+await manage("schedules", linkedSchedule, "trash");
+await manage("schedules", linkedSchedule, "permanent");
+await db.query("UPDATE public.work_registry SET name='Renamed after removal' WHERE id=$1", [work]);
+assert.equal(await value("SELECT count(*)::int FROM public.schedules WHERE work_id=$1", [work]), 0);
+assert.equal(
+  await value("SELECT count(*)::int FROM public.work_stages WHERE work_id=$1", [work]),
+  1,
+);
+const standalone = await value("SELECT public.create_schedule($1)", [{ name: "Avulso" }]);
+await db.query("SELECT public.save_standalone_schedule($1,$2,$3,$4,true)", [
+  standalone,
+  [
+    {
+      id: "00000000-0000-0000-0000-000000000010",
+      name: "Stage",
+      planned_start: "2026-10-25",
+      planned_end: "2026-10-26",
+    },
+  ],
+  "",
+  "",
+]);
+await manage("schedules", standalone, "trash");
+await manage("schedules", standalone, "permanent");
+assert.equal(
+  await value("SELECT count(*)::int FROM public.schedule_versions WHERE schedule_id=$1", [
+    standalone,
+  ]),
+  0,
+);
+await db.query("UPDATE public.work_registry SET client_id=$1 WHERE id=$2", [client, work]);
+await manage("people", client, "trash");
+await rejects(
+  "SELECT public.manage_record_deletion($1,$2,$3)",
+  ["people", client, "permanent"],
+  /vínculos/,
+);
+await manage("people", client, "restore");
+const removablePerson = await value(
+  "INSERT INTO public.people(kind,name) VALUES('cliente','Disposable client') RETURNING id",
+);
+await manage("people", removablePerson, "trash");
+await manage("people", removablePerson, "permanent");
+assert.equal(
+  await value("SELECT count(*)::int FROM public.people WHERE id=$1", [removablePerson]),
+  0,
+);
+assert.equal(
+  await value("SELECT count(*)::int FROM public.record_deletion_log WHERE action='permanent'"),
+  6,
+);
+await db.exec("RESET ROLE");
+await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)", [team]);
+await db.exec("SET ROLE authenticated");
+await rejects(
+  "SELECT public.manage_record_deletion($1,$2,$3)",
+  ["people", client, "trash"],
+  /administrador/,
+);
+assert.equal(await value("SELECT count(*)::int FROM public.record_deletion_log"), 0);
+await db.exec("RESET ROLE");
+console.log(
+  "PASS: trash/restore, permanent deletion, signed contracts, approved proposals, linked records, schedule versions, no header resurrection and administrator-only access",
+);
 await db.close();

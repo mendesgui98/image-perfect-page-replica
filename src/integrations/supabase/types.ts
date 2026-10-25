@@ -235,6 +235,9 @@ export type Database = {
       }
       budgets: {
         Row: {
+          deleted_at: string | null
+          deleted_by: string | null
+
           approval_date: string | null
           approval_path: string | null
           architect_id: string | null
@@ -267,6 +270,9 @@ export type Database = {
           validity_date: string | null
         }
         Insert: {
+          deleted_at?: string | null
+          deleted_by?: string | null
+
           approval_date?: string | null
           approval_path?: string | null
           architect_id?: string | null
@@ -299,6 +305,9 @@ export type Database = {
           validity_date?: string | null
         }
         Update: {
+          deleted_at?: string | null
+          deleted_by?: string | null
+
           approval_date?: string | null
           approval_path?: string | null
           architect_id?: string | null
@@ -467,6 +476,9 @@ export type Database = {
       }
       contracts: {
         Row: {
+          deleted_at: string | null
+          deleted_by: string | null
+
           body: string
           created_at: string
           created_by: string | null
@@ -479,6 +491,9 @@ export type Database = {
           work_id: string
         }
         Insert: {
+          deleted_at?: string | null
+          deleted_by?: string | null
+
           body?: string
           created_at?: string
           created_by?: string | null
@@ -491,6 +506,9 @@ export type Database = {
           work_id: string
         }
         Update: {
+          deleted_at?: string | null
+          deleted_by?: string | null
+
           body?: string
           created_at?: string
           created_by?: string | null
@@ -920,6 +938,9 @@ export type Database = {
       }
       people: {
         Row: {
+          deleted_at: string | null
+          deleted_by: string | null
+
           active: boolean
           bairro: string | null
           cep: string | null
@@ -941,6 +962,9 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          deleted_at?: string | null
+          deleted_by?: string | null
+
           active?: boolean
           bairro?: string | null
           cep?: string | null
@@ -962,6 +986,9 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          deleted_at?: string | null
+          deleted_by?: string | null
+
           active?: boolean
           bairro?: string | null
           cep?: string | null
@@ -1197,6 +1224,9 @@ export type Database = {
       }
       schedules: {
         Row: {
+          deleted_at: string | null
+          deleted_by: string | null
+
           address: string | null
           archived: boolean
           budget_id: string | null
@@ -1217,6 +1247,9 @@ export type Database = {
           work_id: string | null
         }
         Insert: {
+          deleted_at?: string | null
+          deleted_by?: string | null
+
           address?: string | null
           archived?: boolean
           budget_id?: string | null
@@ -1237,6 +1270,9 @@ export type Database = {
           work_id?: string | null
         }
         Update: {
+          deleted_at?: string | null
+          deleted_by?: string | null
+
           address?: string | null
           archived?: boolean
           budget_id?: string | null
@@ -2009,6 +2045,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      manage_record_deletion: {
+        Args: { _entity: string; _id: string; _action: string }
+        Returns: undefined
+      }
+
       save_service_composition: {
         Args: { _id: string | null; _data: Json; _composition: Json }
         Returns: string

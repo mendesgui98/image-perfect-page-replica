@@ -113,6 +113,13 @@
       "when": 1792940000000,
       "tag": "0015_audit_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792945000000,
+      "tag": "0016_record_trash",
+      "breakpoints": true
     }
   ]
 }

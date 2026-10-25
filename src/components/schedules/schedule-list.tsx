@@ -1,3 +1,4 @@
+import { RecordDeleteButton, RecordTrash } from "@/components/management/record-deletion";
 import { businessDate } from "@/lib/dashboard-math";
 import { useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -52,6 +53,7 @@ export function ScheduleList() {
   });
   return (
     <section className="space-y-5">
+      <RecordTrash entity="schedules" />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Input
           aria-label="Buscar cronograma"
@@ -142,6 +144,7 @@ export function ScheduleList() {
                 "Término previsto",
                 "Avanço",
                 "Situação",
+                "Ações",
               ].map((l) => (
                 <th key={l} className="whitespace-nowrap p-3">
                   {l}
@@ -205,6 +208,9 @@ export function ScheduleList() {
                     className={`whitespace-nowrap p-3 text-xs ${state === "atrasado" ? "text-destructive" : state === "concluido" ? "text-success" : "text-muted-foreground"}`}
                   >
                     {labels[state]}
+                  </td>
+                  <td className="p-3">
+                    <RecordDeleteButton entity="schedules" id={h.id} name={h.name} />
                   </td>
                 </tr>
               );
