@@ -5,7 +5,7 @@ import { useMe } from "@/hooks/use-me";
 import { supabase } from "@/integrations/supabase/client";
 import { weightedProgress, financeTotals } from "@/lib/operations";
 import { worksOptions } from "@/lib/work-data";
-import { financeOptions } from "./finance";
+import { financeOptions } from "@/lib/finance-data";
 import { fmtBRL, fmtDate, fmtNum } from "@/lib/format";
 export function WorkOverview() {
   const { data: me } = useMe();

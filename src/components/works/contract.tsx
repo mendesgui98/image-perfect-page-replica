@@ -13,7 +13,8 @@ import { fmtBRL, fmtDate, reaisPorExtenso } from "@/lib/format";
 import { uploadDocument } from "@/lib/work-data";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Field, Attachment, text } from "./fields";
+import { Field, Attachment } from "./fields";
+import { text } from "@/lib/form-values";
 export function Contract({
   workId,
   budgetId,

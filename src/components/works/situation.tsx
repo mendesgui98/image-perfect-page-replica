@@ -2,7 +2,7 @@ import { businessDate } from "@/lib/dashboard-math";
 import { Link } from "@tanstack/react-router";
 import { fmtDate, fmtNum } from "@/lib/format";
 import { physicalProgress, workDeadline, stageStatus } from "@/lib/work-progress";
-import { stageLabels } from "./schedule";
+import { stageLabels } from "@/lib/stage-labels";
 import { ScheduleSituation } from "./schedule-situation";
 import { scheduleSituation } from "@/lib/work-schedule";
 import type { Database } from "@/integrations/supabase/types";

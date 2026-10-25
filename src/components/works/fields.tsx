@@ -61,5 +61,3 @@ export function Attachment({ path }: { path?: string | null | undefined }) {
     </Button>
   ) : null;
 }
-export const text = (d: FormData, k: string) => String(d.get(k) ?? "").trim();
-export const number = (d: FormData, k: string) => Number(d.get(k)) || 0;

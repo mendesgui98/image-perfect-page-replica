@@ -8,7 +8,8 @@ import { calendarDays, endFromDuration, snapshotStages } from "@/lib/work-schedu
 import { Gantt } from "@/components/works/gantt";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Field, Memo, text, number, selectClass } from "@/components/works/fields";
+import { Field, Memo, selectClass } from "@/components/works/fields";
+import { text, number } from "@/lib/form-values";
 import { fmtDate, fmtNum } from "@/lib/format";
 import { useMe } from "@/hooks/use-me";
 type Version = {

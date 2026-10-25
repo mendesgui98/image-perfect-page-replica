@@ -8,8 +8,10 @@ import { financeTotals, accountBalances } from "@/lib/operations";
 import { fmtBRL, fmtDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
-import { Field, text, number, selectClass, Attachment } from "./fields";
+import { Field, selectClass, Attachment } from "./fields";
+import { text, number } from "@/lib/form-values";
 import { uploadDocument } from "@/lib/work-data";
+import { financeOptions } from "@/lib/finance-data";
 import { Installments } from "./installments";
 import { DraftForm } from "./draft-form";
 import { entryState } from "@/lib/dashboard-math";
@@ -18,34 +20,6 @@ import { Link } from "@tanstack/react-router";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
 type Entry = Database["public"]["Tables"]["financial_entries"]["Row"];
-export const financeOptions = {
-  queryKey: ["finance"],
-  queryFn: async () => {
-    const [e, s, a, t, w, p, c, l, op] = await Promise.all([
-      supabase.from("financial_entries").select("*").order("due_date"),
-      supabase.from("financial_settlements").select("*"),
-      supabase.from("financial_accounts").select("*").eq("active", true),
-      supabase.from("account_transfers").select("*"),
-      supabase.from("work_registry").select("id,name"),
-      supabase.from("people").select("id,name,deleted_at"),
-      supabase.from("cost_categories").select("name").eq("active", true),
-      supabase.from("expense_allocations").select("*"),
-      supabase.from("work_openings").select("*"),
-    ]);
-    for (const r of [e, s, a, t, w, p, c, l, op]) if (r.error) throw r.error;
-    return {
-      entries: e.data ?? [],
-      settlements: s.data ?? [],
-      accounts: a.data ?? [],
-      transfers: t.data ?? [],
-      works: w.data ?? [],
-      people: p.data ?? [],
-      categories: c.data ?? [],
-      allocations: l.data ?? [],
-      openings: op.data ?? [],
-    };
-  },
-};
 export function Finance({ workId }: { workId?: string }) {
   const qc = useQueryClient();
   const navigate = useNavigate();

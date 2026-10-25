@@ -7,7 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { worksOptions } from "@/lib/work-data";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Field, Memo, text, selectClass } from "@/components/works/fields";
+import { Field, Memo, selectClass } from "@/components/works/fields";
+import { text } from "@/lib/form-values";
 export function NewSchedule({ copyId }: { copyId?: string }) {
   const [open, setOpen] = useState(false),
     [mode, setMode] = useState(copyId ? "avulso" : "");

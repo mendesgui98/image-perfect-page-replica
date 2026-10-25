@@ -27,7 +27,7 @@ import { fmtBRL, fmtDate, fmtNum } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { selectClass } from "@/components/works/fields";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-export const indicators: { id: Indicator; label: string; icon: typeof HardHat }[] = [
+const indicators: { id: Indicator; label: string; icon: typeof HardHat }[] = [
   { id: "active", label: "Obras ativas", icon: HardHat },
   { id: "received", label: "Recebido", icon: Receipt },
   { id: "receivable", label: "A receber", icon: Clock },

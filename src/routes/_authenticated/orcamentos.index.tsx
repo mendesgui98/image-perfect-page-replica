@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/orcamentos/")({
   component: Lista,
 });
 
-export const DEFAULT_TERMS = [
+const DEFAULT_TERMS = [
   { label: "ÍNICIO (ASSINATURA DO CONTRATO)", pct: 30 },
   { label: "AO INICIAR ETAPA FORRO", pct: 12.5 },
   { label: "AO INICIAR ETAPA REVESTIMENTOS", pct: 12.5 },

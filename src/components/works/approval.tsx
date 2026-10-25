@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Field, Attachment, text } from "./fields";
+import { Field, Attachment } from "./fields";
+import { text } from "@/lib/form-values";
 import { uploadDocument } from "@/lib/work-data";
 export function Approval({
   budgetId,

@@ -5,7 +5,7 @@ import { computeBudget, computeWorkResult } from "./pricing";
 import { financeTotals } from "./operations";
 import { physicalProgress } from "./work-progress";
 import { contractBalance, entryState } from "./dashboard-math";
-import { financeOptions } from "@/components/works/finance";
+import { financeOptions } from "@/lib/finance-data";
 export async function loadDashboard() {
   const [wr, st, ex, po, es, people, finance, op] = await Promise.all([
     supabase.from("work_registry").select("*").eq("archived", false),

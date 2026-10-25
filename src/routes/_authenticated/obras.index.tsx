@@ -1,6 +1,6 @@
 import { WorkList } from "@/components/management/work-list";
 import { NewWork } from "@/components/works/new-work";
-import { dashboardSearch } from "@/components/works/dashboard";
+import { dashboardSearch } from "@/lib/dashboard-search";
 import { useMe } from "@/hooks/use-me";
 import { createFileRoute } from "@tanstack/react-router";
 import { worksOptions } from "@/lib/work-data";

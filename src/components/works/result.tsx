@@ -8,10 +8,11 @@ import { computeBudget, computeWorkResult } from "@/lib/pricing";
 import { fmtBRL, fmtPct, fmtDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
-import { Field, Memo, text, number, Attachment } from "./fields";
+import { Field, Memo, Attachment } from "./fields";
+import { text, number } from "@/lib/form-values";
 import { uploadDocument } from "@/lib/work-data";
 import { dashboardOptions } from "@/lib/dashboard-data";
-import { financeOptions } from "./finance";
+import { financeOptions } from "@/lib/finance-data";
 export function WorkResult({ workId, budgetId }: { workId: string; budgetId: string | null }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);

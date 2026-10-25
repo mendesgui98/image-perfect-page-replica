@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
-import { Field, Memo, text, number, selectClass } from "./fields";
+import { Field, Memo, selectClass } from "./fields";
+import { text, number } from "@/lib/form-values";
 import { weightedProgress } from "@/lib/operations";
 import { physicalProgress } from "@/lib/work-progress";
 import { calendarDays, endFromDuration } from "@/lib/work-schedule";
@@ -19,15 +20,9 @@ import { useRecordFocus } from "@/hooks/use-record-focus";
 import { fmtDate, fmtNum } from "@/lib/format";
 import { Plus, Pencil, Camera, ArrowUp, ArrowDown, Copy, Trash2 } from "lucide-react";
 import { StagePhotos } from "./photos";
+import { stageLabels } from "@/lib/stage-labels";
 type Stage = Database["public"]["Tables"]["work_stages"]["Row"];
 type RecordRow = Database["public"]["Tables"]["work_records"]["Row"];
-export const stageLabels: Record<string, string> = {
-  nao_iniciado: "Não iniciado",
-  andamento: "Em andamento",
-  pausado: "Pausado",
-  concluido: "Concluído",
-  atrasado: "Atrasado",
-};
 export function Schedule({
   workId,
   stages,

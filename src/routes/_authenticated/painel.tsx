@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { dashboardSearch } from "@/components/works/dashboard";
+import { dashboardSearch } from "@/lib/dashboard-search";
 import { ExecutivePanel } from "@/components/management/executive";
 import { WorkOverview } from "@/components/works/overview";
 

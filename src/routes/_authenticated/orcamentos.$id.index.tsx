@@ -1187,5 +1187,3 @@ function Row({ l, v, strong, muted }: { l: string; v: number; strong?: boolean; 
     </div>
   );
 }
-
-export { fmtDate };

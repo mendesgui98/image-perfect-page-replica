@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { relationshipOptions } from "@/lib/relationship-data";
 import { dashboardOptions } from "@/lib/dashboard-data";
-import { financeOptions } from "@/components/works/finance";
+import { financeOptions } from "@/lib/finance-data";
 import { useMe } from "@/hooks/use-me";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";

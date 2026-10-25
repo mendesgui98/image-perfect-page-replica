@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
 import { Installments } from "./installments";
-import { Field, text, number, selectClass, Attachment } from "./fields";
+import { Field, selectClass, Attachment } from "./fields";
+import { text, number } from "@/lib/form-values";
 export function Purchases({ workId, budgetId }: { workId: string; budgetId: string | null }) {
   const qc = useQueryClient();
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());

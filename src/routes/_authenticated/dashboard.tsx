@@ -1,5 +1,6 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { FinancialDashboard, dashboardSearch } from "@/components/works/dashboard";
+import { FinancialDashboard } from "@/components/works/dashboard";
+import { dashboardSearch } from "@/lib/dashboard-search";
 import { useMe } from "@/hooks/use-me";
 import { NoAccess, PageHeader } from "@/components/page-header";
 import { pageMeta } from "@/lib/page-meta";
