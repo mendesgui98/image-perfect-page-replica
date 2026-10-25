@@ -3,6 +3,7 @@ import {executiveComposition,indicatorTotal,type ExecutiveData} from './executiv
 // Minimal numeric fixture; no application or database side effects.
 const fixture={works:[{work:{id:'w',name:'Teste',status:'execucao',origin:'direto',is_pilot:false,client_id:'c'},client:'Cliente',result:{sale:300000,cost:75000,result:225000,estimateConfirmed:false},balance:{receivable:180000},extras:[],opening:{reference_date:'2026-10-01',existing_extras:0,received:120000,paid:75000,pending_payable:0}}],finance:{entries:[],settlements:[],people:[]}} as unknown as ExecutiveData;
 describe('composição compartilhada',()=>{
+ it('aditivos pendentes não entram no total aprovado',()=>{const data={...fixture,works:fixture.works.map(w=>({...w,extras:[{id:'a',approved:true,price:1000},{id:'b',approved:false,price:9000}]}))} as unknown as ExecutiveData;expect(indicatorTotal(executiveComposition(data,{}).extras)).toBe(1000);});
  it('recebido corresponde aos 120 mil da posição inicial',()=>expect(indicatorTotal(executiveComposition(fixture,{}).received)).toBe(120000));
  it('saldo contratual sem parcelas corresponde a 180 mil',()=>expect(indicatorTotal(executiveComposition(fixture,{}).receivable)).toBe(180000));
  it('caixa é recebido menos 75 mil pagos, não lucro',()=>expect(indicatorTotal(executiveComposition(fixture,{}).cash)).toBe(45000));

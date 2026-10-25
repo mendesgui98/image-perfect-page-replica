@@ -16,7 +16,7 @@ export function executiveComposition(data:ExecutiveData,filter:ExecutiveFilter,n
  for(const s of works){
   const b=base(s);if(['execucao','contratacao'].includes(s.work.status)){rows.active.push({...b,amount:1});rows.value.push({...b,amount:s.result.sale});}
   rows.result.push({...b,amount:s.work.origin==='direto'&&!s.result.estimateConfirmed?null:s.result.result,description:`Contrato ${s.result.sale} · custos ${s.result.cost}`,tab:'resultado'});
-  for(const x of s.extras)rows.extras.push({...b,id:x.id,recordId:x.id,description:x.description,date:x.approval_date,amount:x.price,status:x.approved?'aprovado':'pendente',tab:'resultado',paid:null,pending:null});
+  for(const x of s.extras.filter(x=>x.approved))rows.extras.push({...b,id:x.id,recordId:x.id,description:x.description,date:x.approval_date,amount:x.price,status:x.approved?'aprovado':'pendente',tab:'resultado',paid:null,pending:null});
   if(s.opening?.existing_extras)rows.extras.push({...b,id:`extras-${s.work.id}`,description:'Aditivos da posição inicial',date:s.opening.reference_date,amount:s.opening.existing_extras,tab:'resultado',status:'posição inicial',paid:null,pending:null});
   const opening=s.opening;
   if(opening&&inPeriod(opening.reference_date,range.from,range.to)){

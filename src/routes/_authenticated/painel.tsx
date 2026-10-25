@@ -1,14 +1,11 @@
 import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, FileText, Plus } from "lucide-react";
+import { AlertTriangle, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { fmtDate } from "@/lib/format";
-import { STATUS_LABEL } from "@/lib/budget-status";
 import {dashboardSearch} from '@/components/works/dashboard';
 import {ExecutivePanel} from '@/components/management/executive';
 import { WorkOverview } from "@/components/works/overview";
@@ -42,7 +39,6 @@ function Painel() {
     alerts.push("As regras de precificação ainda não foram configuradas. Configure antes de emitir o primeiro orçamento real.");
   if (data?.company && !data.company.email) alerts.push("O e-mail da JMG não está cadastrado nos dados da empresa.");
 
-  const count = (k: string) => data?.people.filter((p) => p.kind === k).length ?? 0;
 
   return (
     <div>
