@@ -1,4 +1,6 @@
 # Roadmap JMG
+- [ ] Pedido atual: conectar repositório e sincronização de commits; depende da conexão em Configurações → Git pelo proprietário
+- [ ] Continuação: conferir contrato/PDF e recuperação de rascunhos; corrigir problemas encontrados e validar fluxos autenticados
 - [x] Módulo Cronogramas no menu: listagem filtrada, criação vinculada/avulsa, etapas editáveis com exclusão/duplicação, modelos, vínculo posterior preservando IDs e histórico, edição bidirecional e PDF; fluxos autenticados validados no computador/celular, testes passaram
 - [x] Cronograma integrado: importação idempotente restrita ao escopo, original imutável e reprogramações, Gantt previsto/real, duração, ordem, PDF cliente e situação compartilhada; piloto autenticado validado no computador/celular e etapas simultâneas com dependências
 - [x] Complemento de avanço: página individual com resumo e indicadores clicáveis; listagem com avanços físico/financeiro; etapas ponderadas com detalhes e fotos; alertas e validação piloto
