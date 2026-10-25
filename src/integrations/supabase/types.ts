@@ -613,13 +613,21 @@ export type Database = {
           amount: number
           canceled: boolean
           category: string
+          cost_center: string | null
           created_at: string
           created_by: string | null
           description: string
           direction: string
           due_date: string
+          file_path: string | null
+          group_id: string | null
           id: string
           incurred: boolean
+          installment_count: number
+          installment_index: number
+          notes: string | null
+          payable_order_id: string | null
+          payment_method: string | null
           person_id: string | null
           purchase_order_id: string | null
           stage_id: string | null
@@ -631,13 +639,21 @@ export type Database = {
           amount: number
           canceled?: boolean
           category?: string
+          cost_center?: string | null
           created_at?: string
           created_by?: string | null
           description: string
           direction: string
           due_date: string
+          file_path?: string | null
+          group_id?: string | null
           id?: string
           incurred?: boolean
+          installment_count?: number
+          installment_index?: number
+          notes?: string | null
+          payable_order_id?: string | null
+          payment_method?: string | null
           person_id?: string | null
           purchase_order_id?: string | null
           stage_id?: string | null
@@ -649,13 +665,21 @@ export type Database = {
           amount?: number
           canceled?: boolean
           category?: string
+          cost_center?: string | null
           created_at?: string
           created_by?: string | null
           description?: string
           direction?: string
           due_date?: string
+          file_path?: string | null
+          group_id?: string | null
           id?: string
           incurred?: boolean
+          installment_count?: number
+          installment_index?: number
+          notes?: string | null
+          payable_order_id?: string | null
+          payment_method?: string | null
           person_id?: string | null
           purchase_order_id?: string | null
           stage_id?: string | null
@@ -664,6 +688,20 @@ export type Database = {
           work_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "financial_entries_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "financial_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_entries_payable_order_id_fkey"
+            columns: ["payable_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "financial_entries_person_id_fkey"
             columns: ["person_id"]
@@ -694,6 +732,41 @@ export type Database = {
           },
         ]
       }
+      financial_groups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          source: string
+          total: number
+          work_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id: string
+          source?: string
+          total: number
+          work_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          source?: string
+          total?: number
+          work_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_groups_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_settlements: {
         Row: {
           account_id: string
@@ -703,7 +776,9 @@ export type Database = {
           entry_id: string
           file_path: string | null
           id: string
+          notes: string | null
           paid_date: string
+          payment_method: string | null
         }
         Insert: {
           account_id: string
@@ -713,7 +788,9 @@ export type Database = {
           entry_id: string
           file_path?: string | null
           id?: string
+          notes?: string | null
           paid_date: string
+          payment_method?: string | null
         }
         Update: {
           account_id?: string
@@ -723,7 +800,9 @@ export type Database = {
           entry_id?: string
           file_path?: string | null
           id?: string
+          notes?: string | null
           paid_date?: string
+          payment_method?: string | null
         }
         Relationships: [
           {
@@ -1519,6 +1598,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          is_pilot: boolean
           name: string
           planned_end: string | null
           planned_start: string | null
@@ -1538,6 +1618,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_pilot?: boolean
           name: string
           planned_end?: string | null
           planned_start?: string | null
@@ -1557,6 +1638,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_pilot?: boolean
           name?: string
           planned_end?: string | null
           planned_start?: string | null
@@ -1598,6 +1680,37 @@ export type Database = {
       convert_budget: { Args: { _budget_id: string }; Returns: string }
       copy_budget: {
         Args: { _as_revision: boolean; _budget_id: string }
+        Returns: string
+      }
+      create_financial_installments: {
+        Args: {
+          _category: string
+          _cost_center: string
+          _description: string
+          _direction: string
+          _file_path: string
+          _incurred: boolean
+          _notes: string
+          _payment_method: string
+          _person_id: string
+          _request_id: string
+          _rows: Json
+          _source: string
+          _total: number
+          _work_id: string
+        }
+        Returns: string
+      }
+      create_installment_purchase: {
+        Args: {
+          _description: string
+          _expected_date: string
+          _lines: Json
+          _request_id: string
+          _rows: Json
+          _supplier_id: string
+          _work_id: string
+        }
         Returns: string
       }
       create_purchase: {

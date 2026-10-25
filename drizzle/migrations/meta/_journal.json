@@ -29,6 +29,13 @@
       "when": 1792890240429,
       "tag": "0003_audit_and_approval_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792890544073,
+      "tag": "0004_financial_installments_dashboard",
+      "breakpoints": true
     }
   ]
 }
