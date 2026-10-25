@@ -1,4 +1,5 @@
 # Roadmap JMG
+- [ ] Pedido atual: duas entradas em Nova obra, cadastro direto sem orçamento, posição inicial, anexos e integração à mesma gestão/consolidado; preparar plano de alteração financeira e estrutural
 - [x] Complemento solicitado: preparar plano modular para dashboards por obra e consolidado, parcelas e validação de obra piloto
 - [x] Complemento: parcelas, visão por obra e consolidado com gráficos/filtros; caixa separado de resultado e pilotos excluídos por padrão
 - [x] Piloto: orçamento/desconto/conversão única, contrato/PDF, compra 12 mil em quatro parcelas, recebimento parcial, caixa 150 mil − 100 mil = 50 mil, cronograma, foto/relatório, filtros e rascunho após queda de conexão; celular 390px sem extrapolar largura
