@@ -1,4 +1,5 @@
 # Roadmap JMG
+
 - [x] Pedido atual: Git conectado conforme confirmação do proprietário; alterações seguem a sincronização automática do Lovable
 - [x] Continuação: recuperação de campos, opções desmarcadas e parcelas conferida em sessão autenticada; anexos excluídos, helpers compartilhados e 63 testes passando
 - [x] Módulo Cronogramas no menu: listagem filtrada, criação vinculada/avulsa, etapas editáveis com exclusão/duplicação, modelos, vínculo posterior preservando IDs e histórico, edição bidirecional e PDF; fluxos autenticados validados no computador/celular, testes passaram

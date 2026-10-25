@@ -3,6 +3,7 @@
 Desenvolvimento direto pelo GitHub (sem Lovable). Trabalhe em branches e abra PR para a `main`; o CI precisa passar.
 
 ## Project rules
+
 - All price/margin math lives in `src/lib/pricing.ts` (pure, tested in `pricing.test.ts`); UI and PDF only call `computeBudget` — never duplicate formulas.
 - Budget items snapshot catalog costs/composition (jsonb `materials`) so catalog edits never silently change existing budgets.
 - Cost data access is enforced by RLS via `public.can_see_costs()` (admin/financeiro); roles live in `user_roles`, never on profiles.

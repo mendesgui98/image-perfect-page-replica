@@ -170,7 +170,8 @@ export function computeBudget(
     };
   });
 
-  const sum = (f: (x: (typeof itemResults)[number]) => number) => itemResults.reduce((s, x) => s + f(x), 0);
+  const sum = (f: (x: (typeof itemResults)[number]) => number) =>
+    itemResults.reduce((s, x) => s + f(x), 0);
   const laborCost = sum((x) => x.laborCost);
   const materialsCost = sum((x) => x.materialsCost);
   const laborList = sum((x) => x.laborList);
@@ -194,10 +195,13 @@ export function computeBudget(
   // Desconto geral adicional máximo mantendo a margem mínima.
   // Com desconto proporcional extra d, venda e MO caem pelo mesmo fator k=(1-d).
   // margem(k) = a − C/(S·k), onde a = 1 − taxaVenda − (taxaMO+comissão)·L/S
-  const sRate = (params.taxes || []).filter((t) => t.base !== "mao_de_obra").reduce((s, t) => s + pct(t.rate), 0);
+  const sRate = (params.taxes || [])
+    .filter((t) => t.base !== "mao_de_obra")
+    .reduce((s, t) => s + pct(t.rate), 0);
   const lRate =
-    (params.taxes || []).filter((t) => t.base === "mao_de_obra").reduce((s, t) => s + pct(t.rate), 0) +
-    pct(params.architect_commission);
+    (params.taxes || [])
+      .filter((t) => t.base === "mao_de_obra")
+      .reduce((s, t) => s + pct(t.rate), 0) + pct(params.architect_commission);
   let maxExtraDiscount = 0;
   if (saleNet > 0) {
     const a = 1 - sRate - (lRate * laborNet) / saleNet;
@@ -248,19 +252,44 @@ export function splitPayments(total: number, terms: { label: string; pct: number
 }
 
 /** Custo econômico não duplica parcelas nem pedidos já incluídos nos lançamentos. */
-export function computeWorkResult(base: BudgetResult, approvedExtras: {price:number;cost:number}[], incurred:number, committed:number, additional:number|null, recordedCommission=0, recordedTaxes=0) {
-  const extraValue=approvedExtras.reduce((s,e)=>s+e.price,0);
-  const sale=base.saleNet+extraValue;
-  const commission=Math.max(base.commission,recordedCommission);
-  const taxes=Math.max(base.taxesTotal,recordedTaxes);
-  const remainingEstimate=additional??Math.max(0,base.totalCost+approvedExtras.reduce((s,e)=>s+e.cost,0)-incurred-committed);
-  const cost=incurred+committed+remainingEstimate+commission+taxes;
-  const result=sale-cost;
-  const accumulatedResult=sale-incurred-commission-taxes;
-  return {sale,extraValue,commission,taxes,cost,result,accumulatedResult,remainingEstimate,estimateConfirmed:additional!==null,margin:sale>0?result/sale:0};
+export function computeWorkResult(
+  base: BudgetResult,
+  approvedExtras: { price: number; cost: number }[],
+  incurred: number,
+  committed: number,
+  additional: number | null,
+  recordedCommission = 0,
+  recordedTaxes = 0,
+) {
+  const extraValue = approvedExtras.reduce((s, e) => s + e.price, 0);
+  const sale = base.saleNet + extraValue;
+  const commission = Math.max(base.commission, recordedCommission);
+  const taxes = Math.max(base.taxesTotal, recordedTaxes);
+  const remainingEstimate =
+    additional ??
+    Math.max(
+      0,
+      base.totalCost + approvedExtras.reduce((s, e) => s + e.cost, 0) - incurred - committed,
+    );
+  const cost = incurred + committed + remainingEstimate + commission + taxes;
+  const result = sale - cost;
+  const accumulatedResult = sale - incurred - commission - taxes;
+  return {
+    sale,
+    extraValue,
+    commission,
+    taxes,
+    cost,
+    result,
+    accumulatedResult,
+    remainingEstimate,
+    estimateConfirmed: additional !== null,
+    margin: sale > 0 ? result / sale : 0,
+  };
 }
 
 /** Contract value supplied directly, without inferred catalog pricing or rates. */
-export function directContractBase(value:number):BudgetResult {
- const r=computeBudget([],emptyParams,0);return {...r,saleNet:value,listTotal:value,result:value};
+export function directContractBase(value: number): BudgetResult {
+  const r = computeBudget([], emptyParams, 0);
+  return { ...r, saleNet: value, listTotal: value, result: value };
 }

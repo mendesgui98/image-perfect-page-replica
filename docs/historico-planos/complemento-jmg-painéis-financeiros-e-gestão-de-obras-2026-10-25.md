@@ -1,9 +1,11 @@
 # Complemento JMG — painéis financeiros e gestão de obras
 
 ## Objetivo
+
 Mostrar quanto cada obra vale, quanto recebeu e pagou, seus valores pendentes, caixa e resultado econômico, além da situação consolidada da JMG. Evoluir o que já funciona, sem reconstruir a plataforma.
 
 ## 1. Base financeira confiável e parcelamento
+
 - Começar identificando a obra piloto e verificando os fluxos existentes; reutilizá-la na validação de cada módulo, mantendo-a fora dos indicadores reais.
 - Reaproveitar orçamento aprovado, cliente, endereço, etapas, descontos e condições de pagamento na obra, mantendo a conversão única.
 - Permitir conferir os vencimentos das condições de pagamento antes de gerar as contas a receber; não inventar datas ausentes.
@@ -13,6 +15,7 @@ Mostrar quanto cada obra vale, quanto recebeu e pagou, seus valores pendentes, c
 - Separar despesas pagas, custos incorridos, compromissos futuros e estimativa para concluir; nunca confundir caixa com lucro.
 
 ## 2. Visão geral de cada obra
+
 - Abrir a obra em **Visão Geral**, antes das abas existentes.
 - Mostrar cliente, localização, datas e status; contrato original, extras/aditivos aprovados e total atualizado; recebido, saldo contratual a receber, parcelas futuras/vencidas, despesas pagas, contas a pagar e caixa.
 - Exibir custo incorrido, compromissos e resultado econômico projetado separadamente; identificar estimativas ainda não conferidas.
@@ -20,6 +23,7 @@ Mostrar quanto cada obra vale, quanto recebeu e pagou, seus valores pendentes, c
 - Manter atalhos para financeiro, compras, cronograma, fotos/diário, relatórios, documentos e aditivos, sem remover telas atuais.
 
 ## 3. Painéis geral e consolidado
+
 - Ampliar a lista de obras com todos os indicadores financeiros e operacionais pedidos, em comparação rápida no computador e apresentação legível no celular.
 - Criar visão consolidada com obras ativas, contratos, aditivos, recebimentos, saldo a receber, despesas, contas a pagar/receber, caixa, resultado acumulado e previsto.
 - Separar caixa das obras do saldo das contas da empresa; considerar despesas gerais e rateios sem somá-los duas vezes.
@@ -29,6 +33,7 @@ Mostrar quanto cada obra vale, quanto recebeu e pagou, seus valores pendentes, c
 - Destacar obras mais lucrativas, com maiores custos e pagamentos atrasados. Usar dados reais; os números ilustrativos do documento não viram cadastros reais.
 
 ## 4. Uso em obra e proteção do preenchimento
+
 - Manter a obra e filtros selecionados entre telas; oferecer busca nos cadastros existentes e ações rápidas de entrada/saída.
 - Formulários curtos, botões grandes, valores legíveis e tabelas adaptadas ao celular.
 - Salvar rascunhos automaticamente com indicação clara de rascunho/salvo; preservar preenchimento após falha de conexão e reabertura.
@@ -36,7 +41,9 @@ Mostrar quanto cada obra vale, quanto recebeu e pagou, seus valores pendentes, c
 - Manter custos e resultados restritos a administrador/financeiro, inclusive nas consultas e gráficos; equipe vê somente informações operacionais permitidas.
 
 ## 5. Obra piloto — condição para liberar e ampliar
+
 Criar uma obra claramente marcada **PILOTO — TESTE**, sem misturar seus números aos resultados reais. Validar e corrigir os fluxos relacionados antes de prosseguir para novos módulos ou melhorias:
+
 1. Cliente → orçamento com desconto → comissão somente na mão de obra após descontos → PDF.
 2. Aprovação comprovada → contrato → conversão única, mantendo os vínculos e informações existentes.
 3. Compra de R$ 12.000 em quatro parcelas de R$ 3.000, com baixas individuais.
@@ -47,6 +54,7 @@ Criar uma obra claramente marcada **PILOTO — TESTE**, sem misturar seus númer
 8. Verificação de administrador, financeiro e equipe, incluindo tentativas de acesso indevido aos dados financeiros.
 
 ## Detalhes técnicos
+
 - Manter cálculos econômicos puros e testados em `pricing.ts`; caixa, parcelas e agregações operacionais em helpers testados, sem fórmulas duplicadas nos gráficos.
 - Evoluir o banco de forma aditiva, com políticas de acesso, permissões explícitas, histórico e operações atômicas para parcelamento e geração de recebíveis.
 - Unificar os dados de resumo usados nos painéis por obra e consolidado, com invalidação após compras, recebimentos, pagamentos, aditivos e alterações de avanço.
@@ -54,4 +62,5 @@ Criar uma obra claramente marcada **PILOTO — TESTE**, sem misturar seus númer
 - Testar cada módulo ao entregá-lo; a validação integral da obra piloto é o critério de liberação, não apenas a ausência de erros nas páginas.
 
 ## Limites e dependências
+
 Não inclui portal do cliente, emissão fiscal ou conexão bancária automática. Percentuais, tributos, dados comerciais e cláusulas reais dependem dos dados da JMG; nenhuma alíquota será presumida. Não chamar faturamento fiscal de recebimento: sem emissão de nota, o indicador será identificado como **Recebido**. Resultado acumulado será identificado como contrato atualizado menos custos incorridos registrados; resultado previsto também inclui compromissos e estimativa para concluir, sem presumir regime contábil ou reconhecimento fiscal de receitas.

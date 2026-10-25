@@ -4,7 +4,9 @@ import { emptyParams, type ItemMaterial, type PricingParams } from "./pricing";
 
 export type Budget = Database["public"]["Tables"]["budgets"]["Row"];
 export type Section = Database["public"]["Tables"]["budget_sections"]["Row"];
-export type Item = Omit<Database["public"]["Tables"]["budget_items"]["Row"], "materials"> & { materials: ItemMaterial[] };
+export type Item = Omit<Database["public"]["Tables"]["budget_items"]["Row"], "materials"> & {
+  materials: ItemMaterial[];
+};
 export type Term = { label: string; pct: number };
 
 export async function loadBudget(id: string) {

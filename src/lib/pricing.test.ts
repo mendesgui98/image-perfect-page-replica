@@ -1,14 +1,32 @@
 import { describe, it, expect } from "vitest";
-import { computeBudget, computeWorkResult, emptyParams, splitPayments, type PricingItem } from "./pricing";
+import {
+  computeBudget,
+  computeWorkResult,
+  emptyParams,
+  splitPayments,
+  type PricingItem,
+} from "./pricing";
 import { reaisPorExtenso } from "./format";
 
 const mat = (over = {}) => ({
-  name: "Argamassa", consumption_unit: "kg", purchase_unit: "saco 20kg", conversion: 20,
-  consumption: 5, loss_pct: 10, price: 40, supplied_by: "jmg" as const, ...over,
+  name: "Argamassa",
+  consumption_unit: "kg",
+  purchase_unit: "saco 20kg",
+  conversion: 20,
+  consumption: 5,
+  loss_pct: 10,
+  price: 40,
+  supplied_by: "jmg" as const,
+  ...over,
 });
 
 describe("precificação JMG", () => {
-  const params = { ...emptyParams, labor_markup: 50, materials_markup: 20, architect_commission: 10 };
+  const params = {
+    ...emptyParams,
+    labor_markup: 50,
+    materials_markup: 20,
+    architect_commission: 10,
+  };
   // MO: 10 × 100 = 1000 custo -> 1500 venda. Mat: 10×5×1,1 = 55kg × R$2 = 110 custo -> 132 venda
   const items: PricingItem[] = [{ quantity: 10, labor_cost_unit: 100, materials: [mat()] }];
 
@@ -33,13 +51,25 @@ describe("precificação JMG", () => {
   });
 
   it("material fornecido pelo cliente não gera custo nem preço", () => {
-    const r = computeBudget([{ ...items[0] ?? {quantity:0,labor_cost_unit:0,materials:[]}, materials: [mat({ supplied_by: "cliente" })] }], params);
+    const r = computeBudget(
+      [
+        {
+          ...(items[0] ?? { quantity: 0, labor_cost_unit: 0, materials: [] }),
+          materials: [mat({ supplied_by: "cliente" })],
+        },
+      ],
+      params,
+    );
     expect(r.materialsCost).toBe(0);
     expect(r.materialsNet).toBe(0);
   });
 
   it("resultado = venda − custos − tributos − comissão, reinvestimento não deduz", () => {
-    const p = { ...params, taxes: [{ name: "Imposto teste", rate: 10, base: "venda" as const }], reinvestment_share: 50 };
+    const p = {
+      ...params,
+      taxes: [{ name: "Imposto teste", rate: 10, base: "venda" as const }],
+      reinvestment_share: 50,
+    };
     const r = computeBudget(items, p);
     expect(r.taxesTotal).toBe(163.2);
     expect(r.commission).toBe(150);
@@ -63,8 +93,12 @@ describe("precificação JMG", () => {
 
   it("parcelas fecham o total", () => {
     const { rows } = splitPayments(270800, [
-      { label: "a", pct: 30 }, { label: "b", pct: 12.5 }, { label: "c", pct: 12.5 },
-      { label: "d", pct: 12.5 }, { label: "e", pct: 12.5 }, { label: "f", pct: 20 },
+      { label: "a", pct: 30 },
+      { label: "b", pct: 12.5 },
+      { label: "c", pct: 12.5 },
+      { label: "d", pct: 12.5 },
+      { label: "e", pct: 12.5 },
+      { label: "f", pct: 20 },
     ]);
     expect(rows[0]?.value).toBe(81240);
     expect(rows[5]?.value).toBe(54160);
@@ -77,10 +111,38 @@ describe("precificação JMG", () => {
   });
 });
 
- describe("resultado econômico da obra",()=>{
- it("considera custos incorridos, compromissos e estimativa sem repetir comissão",()=>{const base=computeBudget([{quantity:1,labor_cost_unit:100,materials:[]}],{...emptyParams,labor_markup:100,architect_commission:10});const r=computeWorkResult(base,[{price:50,cost:0}],60,40,10,20,0);expect(r.sale).toBe(250);expect(r.cost).toBe(130);expect(r.result).toBe(120);expect(r.margin).toBe(0.48);});
+describe("resultado econômico da obra", () => {
+  it("considera custos incorridos, compromissos e estimativa sem repetir comissão", () => {
+    const base = computeBudget([{ quantity: 1, labor_cost_unit: 100, materials: [] }], {
+      ...emptyParams,
+      labor_markup: 100,
+      architect_commission: 10,
+    });
+    const r = computeWorkResult(base, [{ price: 50, cost: 0 }], 60, 40, 10, 20, 0);
+    expect(r.sale).toBe(250);
+    expect(r.cost).toBe(130);
+    expect(r.result).toBe(120);
+    expect(r.margin).toBe(0.48);
+  });
 });
 
-it("não presume que custos ainda não registrados desapareceram",()=>{const base=computeBudget([{quantity:1,labor_cost_unit:1000,materials:[]}],{...emptyParams,labor_markup:50});const r=computeWorkResult(base,[],80,120,null);expect(r.remainingEstimate).toBe(800);expect(r.cost).toBe(1000);expect(r.result).toBe(500);expect(r.estimateConfirmed).toBe(false);});
-it("resultado acumulado considera custo incorrido e não pagamentos de caixa",()=>{const base=computeBudget([{quantity:1,labor_cost_unit:200000,materials:[]}],{...emptyParams,labor_markup:50});const r=computeWorkResult(base,[],100000,20000,null);expect(r.accumulatedResult).toBe(200000);expect(r.result).toBe(100000);});
-
+it("não presume que custos ainda não registrados desapareceram", () => {
+  const base = computeBudget([{ quantity: 1, labor_cost_unit: 1000, materials: [] }], {
+    ...emptyParams,
+    labor_markup: 50,
+  });
+  const r = computeWorkResult(base, [], 80, 120, null);
+  expect(r.remainingEstimate).toBe(800);
+  expect(r.cost).toBe(1000);
+  expect(r.result).toBe(500);
+  expect(r.estimateConfirmed).toBe(false);
+});
+it("resultado acumulado considera custo incorrido e não pagamentos de caixa", () => {
+  const base = computeBudget([{ quantity: 1, labor_cost_unit: 200000, materials: [] }], {
+    ...emptyParams,
+    labor_markup: 50,
+  });
+  const r = computeWorkResult(base, [], 100000, 20000, null);
+  expect(r.accumulatedResult).toBe(200000);
+  expect(r.result).toBe(100000);
+});

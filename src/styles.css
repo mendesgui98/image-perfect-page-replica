@@ -125,45 +125,131 @@
 }
 
 @layer base {
-  body { font-family: var(--font-body); }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: 0; }
+  body {
+    font-family: var(--font-body);
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: 0;
+  }
 }
 
-@utility num { font-variant-numeric: tabular-nums; }
+@utility num {
+  font-variant-numeric: tabular-nums;
+}
 
 /* Documento A4 para impressão / PDF */
 .doc-page {
-  width: 210mm; min-height: 297mm; background: var(--card); color: oklch(0.38 0 0);
-  position: relative; overflow: hidden; margin: 0 auto 16px; box-shadow: var(--shadow-card);
-  font-family: "Montserrat", sans-serif; break-after: page; page-break-after: always;
+  width: 210mm;
+  min-height: 297mm;
+  background: var(--card);
+  color: oklch(0.38 0 0);
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto 16px;
+  box-shadow: var(--shadow-card);
+  font-family: "Montserrat", sans-serif;
+  break-after: page;
+  page-break-after: always;
 }
 @media print {
-  @page { size: A4; margin: 0; }
-  body { background: white; }
-  .doc-page { margin: 0; box-shadow: none; }
-  .no-print { display: none !important; }
-  .contract-print { max-width: none; box-shadow: none; padding: 18mm; }
-  .contract-print section, .contract-print figure { break-inside: avoid; }
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  body {
+    background: white;
+  }
+  .doc-page {
+    margin: 0;
+    box-shadow: none;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .contract-print {
+    max-width: none;
+    box-shadow: none;
+    padding: 18mm;
+  }
+  .contract-print section,
+  .contract-print figure {
+    break-inside: avoid;
+  }
 }
 
 /* Native progress bars keep their semantic color across browsers. */
-progress { appearance: none; border: none; background: var(--muted); border-radius: var(--radius-sm); overflow: hidden; }
-progress::-webkit-progress-bar { background: var(--muted); }
-progress::-webkit-progress-value { background: var(--primary); }
-progress.accent-success::-webkit-progress-value { background: var(--success); }
-progress.accent-warning::-webkit-progress-value { background: var(--warning); }
-progress::-moz-progress-bar { background: var(--primary); }
-progress.accent-success::-moz-progress-bar { background: var(--success); }
-progress.accent-warning::-moz-progress-bar { background: var(--warning); }
-.gantt-track { background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(10% - 1px), var(--border) calc(10% - 1px), var(--border) 10%); }
+progress {
+  appearance: none;
+  border: none;
+  background: var(--muted);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+progress::-webkit-progress-bar {
+  background: var(--muted);
+}
+progress::-webkit-progress-value {
+  background: var(--primary);
+}
+progress.accent-success::-webkit-progress-value {
+  background: var(--success);
+}
+progress.accent-warning::-webkit-progress-value {
+  background: var(--warning);
+}
+progress::-moz-progress-bar {
+  background: var(--primary);
+}
+progress.accent-success::-moz-progress-bar {
+  background: var(--success);
+}
+progress.accent-warning::-moz-progress-bar {
+  background: var(--warning);
+}
+.gantt-track {
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(10% - 1px),
+    var(--border) calc(10% - 1px),
+    var(--border) 10%
+  );
+}
 @media print {
-  .schedule-print { padding: 14mm; max-width: none; }
-  .schedule-print table { font-size: 9px; }
-  .schedule-print tr, .schedule-print header, .schedule-print footer { break-inside: avoid; }
-  .schedule-print thead { display: table-header-group; }
-  .schedule-print .gantt-wrap { overflow: visible; }
-  .schedule-print .gantt-chart { min-width: 0; }
-  .schedule-print .gantt-chart > div { grid-template-columns: 135px 1fr; }
-  .schedule-print .gantt-track { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  .schedule-print .gantt-track span { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .schedule-print {
+    padding: 14mm;
+    max-width: none;
+  }
+  .schedule-print table {
+    font-size: 9px;
+  }
+  .schedule-print tr,
+  .schedule-print header,
+  .schedule-print footer {
+    break-inside: avoid;
+  }
+  .schedule-print thead {
+    display: table-header-group;
+  }
+  .schedule-print .gantt-wrap {
+    overflow: visible;
+  }
+  .schedule-print .gantt-chart {
+    min-width: 0;
+  }
+  .schedule-print .gantt-chart > div {
+    grid-template-columns: 135px 1fr;
+  }
+  .schedule-print .gantt-track {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .schedule-print .gantt-track span {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }

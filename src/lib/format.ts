@@ -18,20 +18,65 @@ export const UNIT_LABEL: Record<string, string> = {
   vb: "serviço fechado",
 };
 
-const UN: string[] = ["", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove", "dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove"];
-const DEZ: string[] = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
-const CEN: string[] = ["", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos", "seiscentos", "setecentos", "oitocentos", "novecentos"];
+const UN: string[] = [
+  "",
+  "um",
+  "dois",
+  "três",
+  "quatro",
+  "cinco",
+  "seis",
+  "sete",
+  "oito",
+  "nove",
+  "dez",
+  "onze",
+  "doze",
+  "treze",
+  "quatorze",
+  "quinze",
+  "dezesseis",
+  "dezessete",
+  "dezoito",
+  "dezenove",
+];
+const DEZ: string[] = [
+  "",
+  "",
+  "vinte",
+  "trinta",
+  "quarenta",
+  "cinquenta",
+  "sessenta",
+  "setenta",
+  "oitenta",
+  "noventa",
+];
+const CEN: string[] = [
+  "",
+  "cento",
+  "duzentos",
+  "trezentos",
+  "quatrocentos",
+  "quinhentos",
+  "seiscentos",
+  "setecentos",
+  "oitocentos",
+  "novecentos",
+];
 
 function ate999(n: number): string {
   if (n === 0) return "";
   if (n === 100) return "cem";
-  const c = Math.floor(n / 100), r = n % 100;
+  const c = Math.floor(n / 100),
+    r = n % 100;
   const parts: string[] = [];
   if (c) parts.push(CEN[c]!);
   if (r) {
     if (r < 20) parts.push(UN[r]!);
     else {
-      const d = Math.floor(r / 10), u = r % 10;
+      const d = Math.floor(r / 10),
+        u = r % 10;
       parts.push(u ? `${DEZ[d]} e ${UN[u]}` : DEZ[d]!);
     }
   }

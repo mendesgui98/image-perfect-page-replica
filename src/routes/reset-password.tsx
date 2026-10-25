@@ -30,7 +30,10 @@ function Reset() {
         onSubmit={async (e) => {
           e.preventDefault();
           const { error } = await supabase.auth.updateUser({ password: pw });
-          if (error) { toast.error(error.message); return; }
+          if (error) {
+            toast.error(error.message);
+            return;
+          }
           toast.success("Senha atualizada.");
           navigate({ to: "/painel" });
         }}
@@ -38,7 +41,13 @@ function Reset() {
         <h1 className="text-xl font-bold">Definir nova senha</h1>
         <div className="space-y-2">
           <Label>Nova senha</Label>
-          <Input type="password" minLength={6} value={pw} onChange={(e) => setPw(e.target.value)} required />
+          <Input
+            type="password"
+            minLength={6}
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+            required
+          />
         </div>
         <Button className="w-full">Salvar</Button>
       </form>

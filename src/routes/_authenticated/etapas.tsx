@@ -13,7 +13,8 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_authenticated/etapas")({
-  head: () => pageMeta("Etapas e categorias", "Organização de serviços e categorias das obras JMG."),
+  head: () =>
+    pageMeta("Etapas e categorias", "Organização de serviços e categorias das obras JMG."),
   component: Etapas,
 });
 
@@ -41,8 +42,18 @@ function EditableList({ table, title }: { table: "stages" | "cost_categories"; t
     queryFn: async () => (await supabase.from(table).select("*").order("sort")).data ?? [],
   });
   const upd = useMutation({
-    mutationFn: async ({ id, ...p }: { id?: string; name?: string; active?: boolean; sort?: number }) => {
-      const { error } = id ? await supabase.from(table).update(p).eq("id", id) : await supabase.from(table).insert(p as { name: string });
+    mutationFn: async ({
+      id,
+      ...p
+    }: {
+      id?: string;
+      name?: string;
+      active?: boolean;
+      sort?: number;
+    }) => {
+      const { error } = id
+        ? await supabase.from(table).update(p).eq("id", id)
+        : await supabase.from(table).insert(p as { name: string });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [table] }),
@@ -54,7 +65,9 @@ function EditableList({ table, title }: { table: "stages" | "cost_categories"; t
     <Card className="shadow-card">
       <CardHeader>
         <CardTitle className="text-lg">{title}</CardTitle>
-        {ro && <p className="text-xs text-muted-foreground">Somente o administrador pode alterar.</p>}
+        {ro && (
+          <p className="text-xs text-muted-foreground">Somente o administrador pode alterar.</p>
+        )}
       </CardHeader>
       <CardContent className="space-y-2">
         {data.map((s) => (
@@ -64,15 +77,26 @@ function EditableList({ table, title }: { table: "stages" | "cost_categories"; t
               type="number"
               defaultValue={s.sort}
               disabled={ro}
-              onBlur={(e) => Number(e.target.value) !== s.sort && upd.mutate({ id: s.id, sort: Number(e.target.value) })}
+              onBlur={(e) =>
+                Number(e.target.value) !== s.sort &&
+                upd.mutate({ id: s.id, sort: Number(e.target.value) })
+              }
             />
             <Input
               defaultValue={s.name}
               disabled={ro}
               className={s.active ? "" : "opacity-50"}
-              onBlur={(e) => e.target.value.trim() && e.target.value !== s.name && upd.mutate({ id: s.id, name: e.target.value.trim() })}
+              onBlur={(e) =>
+                e.target.value.trim() &&
+                e.target.value !== s.name &&
+                upd.mutate({ id: s.id, name: e.target.value.trim() })
+              }
             />
-            <Switch checked={s.active} disabled={ro} onCheckedChange={(v) => upd.mutate({ id: s.id, active: v })} />
+            <Switch
+              checked={s.active}
+              disabled={ro}
+              onCheckedChange={(v) => upd.mutate({ id: s.id, active: v })}
+            />
           </div>
         ))}
         {!ro && (
@@ -85,7 +109,11 @@ function EditableList({ table, title }: { table: "stages" | "cost_categories"; t
               setNewName("");
             }}
           >
-            <Input placeholder="Nova" value={newName} onChange={(e) => setNewName(e.target.value)} />
+            <Input
+              placeholder="Nova"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+            />
             <Button type="submit" size="icon" aria-label="Adicionar">
               <Plus className="h-4 w-4" />
             </Button>
