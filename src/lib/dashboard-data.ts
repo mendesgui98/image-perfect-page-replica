@@ -3,6 +3,7 @@ import {supabase} from '@/integrations/supabase/client';
 import {loadWorkBudget,workBase} from './work-budget';
 import {computeBudget,computeWorkResult} from './pricing';
 import {financeTotals,weightedProgress} from './operations';
+import {physicalProgress} from './work-progress';
 import {contractBalance,entryState} from './dashboard-math';
 import {financeOptions} from '@/components/works/finance';
 export async function loadDashboard(){
