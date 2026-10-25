@@ -34,3 +34,15 @@ A implementação foi preparada e testada em banco isolado; aplicar ao Supabase 
 - `npm test`: confirmação digitada, cancelamento e falhas de exclusão, além dos testes existentes.
 - `npm run test:db`: aplica todas as migrações e testa lixo/restauração, exclusão definitiva de propostas aprovadas e contratos assinados, vínculos bloqueados, remoção de versões avulsas, preservação das etapas de obra, não recriação de cabeçalho e restrição por perfil.
 - `npx tsc --noEmit` e `npm run build`.
+
+## Erro de função ausente (PGRST202)
+
+`Could not find the function public.manage_record_deletion(...) in the schema cache` indica que a API do banco ainda não disponibiliza a função com os argumentos esperados. A ordem alfabética dos argumentos na mensagem é normal; mudar a ordem das propriedades no cliente não resolve.
+
+Execute `supabase/diagnostics/record_trash_status.sql` no editor SQL do projeto configurado em `VITE_SUPABASE_URL`. A consulta não altera dados. Se a função/campos estiverem ausentes, aplicar as migrações pendentes. Se a função, seus argumentos e as permissões estiverem corretos, executar:
+
+```sql
+NOTIFY pgrst, 'reload schema';
+```
+
+A chave pública do aplicativo não permite instalar funções ou aplicar migrações. É necessário acesso administrativo ao banco que pertence ao aplicativo, inclusive quando ele é gerenciado por Lovable Cloud. Não conectar o frontend a outro banco vazio apenas para contornar esse erro.

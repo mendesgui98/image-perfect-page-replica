@@ -1,3 +1,4 @@
+import { recordDeletionErrorMessage } from "@/lib/record-deletion-errors";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -24,7 +25,7 @@ function useDeletion() {
       _id: id,
       _action: action,
     });
-    if (result.error) throw new Error(result.error.message);
+    if (result.error) throw new Error(recordDeletionErrorMessage(result.error));
     await qc.invalidateQueries();
     toast.success(
       action === "restore"
@@ -156,7 +157,7 @@ export function RecordTrash({ entity }: { entity: DeletableEntity }) {
           </p>
           {error && (
             <p role="alert" className="text-sm text-destructive">
-              {error.message}
+              {recordDeletionErrorMessage(error)}
             </p>
           )}
           {isPending && !error && <p>Carregando lixeira…</p>}
