@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtDate } from "@/lib/format";
 import { STATUS_LABEL } from "@/lib/budget-status";
+import { WorkOverview } from "@/components/works/overview";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   head: () => pageMeta("Painel", "Acompanhamento de obras, propostas e alertas da JMG."),
@@ -85,6 +86,7 @@ function Painel() {
           </Card>
         ))}
       </div>
+      <WorkOverview />
       {me?.canSeeCosts && (
         <Card className="mt-6 shadow-card">
           <CardHeader>
