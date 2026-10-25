@@ -22,3 +22,5 @@
 - Contract wording comes from the supplied model; saved bodies are snapshots and signed contracts/approved extras are immutable.
 - Unconfirmed completion estimates retain the unregistered original budget cost; never interpret absent estimates as zero remaining cost.
 - Work, contract, schedule, diary and extra changes append database audit snapshots in work_history so revisions retain authorship and prior values.
+- Financial dashboard aggregation is shared by company and work views; economic results use pricing helpers, and installment payables never add a second purchase expense.
+- Form drafts are scoped to the signed-in user and form on the current device; restore installment values but require users to reselect attachments.
