@@ -8,6 +8,7 @@
 //   bun run stack:reset      apaga containers E dados locais (pede confirmação)
 import { spawn, spawnSync } from "node:child_process";
 import { copyFileSync, existsSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
@@ -30,20 +31,62 @@ const fail = (msg) => {
   process.exit(1);
 };
 
-function ensureDocker() {
-  const v = spawnSync("docker", ["compose", "version"], { stdio: "ignore" });
-  if (v.error || v.status !== 0) {
+// Docker Desktop instala o binário dentro do app; o atalho em /usr/local/bin só aparece
+// depois de abrir o app (e às vezes nem assim). Procuramos nos lugares conhecidos.
+const DOCKER_CANDIDATES = [
+  "docker",
+  "/usr/local/bin/docker",
+  "/opt/homebrew/bin/docker",
+  join(homedir(), ".docker", "bin", "docker"),
+  "/Applications/Docker.app/Contents/Resources/bin/docker",
+  join(homedir(), ".orbstack", "bin", "docker"),
+  "/Applications/OrbStack.app/Contents/MacOS/xbin/docker",
+];
+let DOCKER = "docker";
+
+const run = (args, opts = {}) => spawnSync(DOCKER, args, { stdio: "ignore", ...opts });
+
+async function ensureDocker() {
+  const found = DOCKER_CANDIDATES.find(
+    (bin) => spawnSync(bin, ["--version"], { stdio: "ignore" }).status === 0,
+  );
+  if (!found) {
     fail(
       `Docker não encontrado.\n\n  Instale um destes e abra o aplicativo uma vez:\n` +
-        `  • Docker Desktop: https://www.docker.com/products/docker-desktop/  (ou: brew install --cask docker)\n` +
-        `  • OrbStack (mais leve no Mac): brew install orbstack\n\n  Depois rode o comando de novo.`,
+        `  • Docker Desktop: https://www.docker.com/products/docker-desktop/\n` +
+        `  • OrbStack (mais leve no Mac): https://orbstack.dev\n\n  Depois rode o comando de novo.`,
     );
   }
-  const info = spawnSync("docker", ["info"], { stdio: "ignore" });
-  if (info.status !== 0)
+  DOCKER = found;
+  // Plugins (compose, credenciais) ficam na mesma pasta do binário.
+  if (found.includes("/")) process.env.PATH = `${dirname(found)}:${process.env.PATH}`;
+
+  if (run(["info"]).status !== 0) {
+    if (process.platform === "darwin") {
+      const app =
+        existsSync("/Applications/OrbStack.app") && !existsSync("/Applications/Docker.app")
+          ? "OrbStack"
+          : "Docker";
+      console.log(`Abrindo o ${app}…`);
+      spawnSync("open", ["-a", app], { stdio: "ignore" });
+    }
+    process.stdout.write("aguardando o Docker iniciar");
+    for (let i = 0; i < 60 && run(["info"]).status !== 0; i++) {
+      process.stdout.write(".");
+      await new Promise((r) => setTimeout(r, 3000));
+    }
+    process.stdout.write("\n");
+    if (run(["info"]).status !== 0) {
+      fail(
+        "O Docker não iniciou. Abra o Docker Desktop, aceite os termos na primeira vez e espere o ícone da baleia ficar parado; depois rode de novo.",
+      );
+    }
+  }
+  if (run(["compose", "version"]).status !== 0) {
     fail(
-      "O Docker está instalado mas não está rodando. Abra o Docker Desktop (ou OrbStack) e tente de novo.",
+      "O Docker está rodando mas o plugin 'compose' não foi encontrado. Atualize o Docker Desktop.",
     );
+  }
 }
 
 /** Cria/completa o infra/.env: copia o exemplo, gera segredos vazios e acrescenta chaves novas. */
@@ -70,7 +113,7 @@ function ensureInfraEnv() {
 }
 
 function compose(args, opts = {}) {
-  const r = spawnSync("docker", ["compose", "--profile", "dev", ...args], {
+  const r = spawnSync(DOCKER, ["compose", "--profile", "dev", ...args], {
     cwd: infra,
     stdio: "inherit",
     ...opts,
@@ -118,7 +161,7 @@ ${c.g("✔")} ${c.b("JMG Obras no ar")} ${c.d(`(${mode})`)}
 const [command = "up", ...rest] = process.argv.slice(2);
 
 if (command === "up") {
-  ensureDocker();
+  await ensureDocker();
   const env = ensureInfraEnv();
   compose(["up", "-d", "--build", "--remove-orphans"]);
   await waitFor(`http://localhost:${env.KONG_PORT || 8000}/auth/v1/health`, "Auth", {
@@ -128,7 +171,7 @@ if (command === "up") {
   await waitFor(`http://localhost:${env.WEB_PORT || 3000}/`, "App");
   summary(env, "docker");
 } else if (command === "dev") {
-  ensureDocker();
+  await ensureDocker();
   const env = ensureInfraEnv();
   compose(["up", "-d", "--build", ...BACKEND]);
   await waitFor(`http://localhost:${env.KONG_PORT || 8000}/auth/v1/health`, "Auth", {
@@ -191,15 +234,15 @@ if (command === "up") {
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
 } else if (command === "down") {
-  ensureDocker();
+  await ensureDocker();
   compose(["down"]);
 } else if (command === "logs") {
-  ensureDocker();
+  await ensureDocker();
   compose(["logs", "-f", "--tail", "100", ...rest]);
 } else if (command === "admin") {
   const email = rest[0];
   if (!email) fail("Informe o e-mail: bun run stack:admin seu@email.com");
-  ensureDocker();
+  await ensureDocker();
   const sql = `insert into public.user_roles(user_id, role)
     select id, 'admin' from auth.users where lower(email) = lower('${email.replace(/'/g, "''")}')
     on conflict do nothing returning user_id;`;
@@ -215,7 +258,7 @@ if (command === "up") {
     );
   console.log(`${c.g("✔")} ${email} agora é administrador. Saia e entre de novo no app.`);
 } else if (command === "reset") {
-  ensureDocker();
+  await ensureDocker();
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   const answer = await rl.question(
     "Isso APAGA o banco e os arquivos locais. Digite APAGAR para confirmar: ",
