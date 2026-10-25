@@ -1154,6 +1154,132 @@ export type Database = {
           },
         ]
       }
+      schedule_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          reason: string
+          schedule_id: string
+          stages: Json
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          reason: string
+          schedule_id: string
+          stages: Json
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string
+          schedule_id?: string
+          stages?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_versions_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedules: {
+        Row: {
+          address: string | null
+          archived: boolean
+          budget_id: string | null
+          client_id: string | null
+          client_name: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_template: boolean
+          name: string
+          notes: string | null
+          planned_end: string | null
+          planned_start: string | null
+          responsible: string | null
+          standalone_stages: Json
+          updated_at: string
+          work_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          archived?: boolean
+          budget_id?: string | null
+          client_id?: string | null
+          client_name?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_template?: boolean
+          name: string
+          notes?: string | null
+          planned_end?: string | null
+          planned_start?: string | null
+          responsible?: string | null
+          standalone_stages?: Json
+          updated_at?: string
+          work_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          archived?: boolean
+          budget_id?: string | null
+          client_id?: string | null
+          client_name?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_template?: boolean
+          name?: string
+          notes?: string | null
+          planned_end?: string | null
+          planned_start?: string | null
+          responsible?: string | null
+          standalone_stages?: Json
+          updated_at?: string
+          work_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedules_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: true
+            referencedRelation: "work_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_materials: {
         Row: {
           consumption: number
@@ -1937,6 +2063,15 @@ export type Database = {
         }
         Returns: string
       }
+      create_schedule: {
+        Args: {
+          _budget_id?: string
+          _copy_id?: string
+          _data: Json
+          _work_id?: string
+        }
+        Returns: string
+      }
       evidence_exists: {
         Args: { _path: string; _prefix: string }
         Returns: boolean
@@ -1949,12 +2084,30 @@ export type Database = {
         Returns: boolean
       }
       import_work_schedule: { Args: { _work_id: string }; Returns: number }
+      link_schedule_work: {
+        Args: { _schedule_id: string; _work_id: string }
+        Returns: undefined
+      }
       receive_purchase: {
         Args: { _line_id: string; _quantity: number }
         Returns: undefined
       }
       reorder_work_schedule: {
         Args: { _ids: string[]; _reason: string; _work_id: string }
+        Returns: undefined
+      }
+      save_standalone_schedule: {
+        Args: {
+          _approve?: boolean
+          _id: string
+          _notes: string
+          _reason: string
+          _stages: Json
+        }
+        Returns: undefined
+      }
+      validate_standalone_stages: {
+        Args: { _stages: Json }
         Returns: undefined
       }
     }
