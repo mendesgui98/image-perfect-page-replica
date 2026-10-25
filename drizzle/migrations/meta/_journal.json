@@ -15,6 +15,13 @@
       "when": 1792889439092,
       "tag": "0001_works_contracts_operations",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792889557582,
+      "tag": "0002_enforce_operational_invariants",
+      "breakpoints": true
     }
   ]
 }

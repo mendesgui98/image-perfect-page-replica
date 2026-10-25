@@ -1559,12 +1559,31 @@ export type Database = {
         Args: { _as_revision: boolean; _budget_id: string }
         Returns: string
       }
+      create_purchase: {
+        Args: {
+          _description: string
+          _due_date: string
+          _expected_date: string
+          _lines: Json
+          _supplier_id: string
+          _work_id: string
+        }
+        Returns: string
+      }
+      evidence_exists: {
+        Args: { _path: string; _prefix: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      receive_purchase: {
+        Args: { _line_id: string; _quantity: number }
+        Returns: undefined
       }
     }
     Enums: {
