@@ -50,6 +50,13 @@
       "when": 1792890767848,
       "tag": "0006_normalize_company_finance_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792890810667,
+      "tag": "0007_fix_work_history_record_shape",
+      "breakpoints": true
     }
   ]
 }
