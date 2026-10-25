@@ -17,6 +17,8 @@ import { budgetKey, loadBudget, type Item, type Section, type Term } from "@/lib
 import { computeBudget, materialQty, splitPayments, type BudgetResult, type ItemMaterial, type PricingParams } from "@/lib/pricing";
 import { fmtBRL, fmtDate, fmtNum, fmtPct, UNIT_LABEL } from "@/lib/format";
 import { STATUS_LABEL } from "@/lib/budget-status";
+import { Approval } from "@/components/works/approval";
+import { Attachment } from "@/components/works/fields";
 
 export const Route = createFileRoute("/_authenticated/orcamentos/$id/")({
   head: () => ({ meta: [{ title: "Orçamento — JMG Reformas" }] }),
@@ -64,8 +66,9 @@ function Editor() {
   const locked = budget.status === "aprovado" || budget.status === "recusado";
 
   async function setStatus(status: string) {
+    if (!result) return;
     await updBudget.mutateAsync({ status });
-    await supabase.from("budget_history").insert({ budget_id: id, action: `status:${status}`, summary: { total: result!.saleNet } });
+    await supabase.from("budget_history").insert({ budget_id: id, action: `status:${status}`, summary: { total: result.saleNet } });
     toast.success(`Situação: ${STATUS_LABEL[status]}`);
   }
 
@@ -113,9 +116,8 @@ function Editor() {
             <Button size="sm" variant="secondary" onClick={() => setStatus("recusado")}>Marcar como recusado</Button>
           </>
         )}
-        {(budget.status === "elaboracao" || budget.status === "enviado") && (
-          <span className="self-center text-xs text-muted-foreground">A aprovação com comprovante e contrato chega na Etapa 2.</span>
-        )}
+        <Approval budgetId={id} status={budget.status} onChange={refresh} />
+        <Attachment path={budget.approval_path} />
         {!budget.archived ? (
           <Button size="sm" variant="ghost" onClick={() => updBudget.mutate({ archived: true })}>Arquivar</Button>
         ) : (
@@ -421,7 +423,7 @@ function DadosEditor({
   const field = (k: keyof typeof f, l: string, type = "text", span = "") => (
     <div className={`space-y-1 ${span}`}>
       <Label>{l}</Label>
-      <Input type={type} disabled={locked && k !== "client_display"} value={(f[k] as string) ?? ""} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+      <Input type={type} disabled={locked} value={(f[k] as string) ?? ""} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
     </div>
   );
   return (
@@ -475,6 +477,7 @@ function DadosEditor({
           </div>
         </div>
         <Button
+          disabled={locked}
           onClick={() => {
             if (Math.abs(pctSum - 100) > 1e-9) { toast.error("As parcelas precisam somar 100%."); return; }
             const { client_display, endereco, bairro, cidade, uf, cep, validity_date, estimated_term, notes, exclusions, closing_text } = f;

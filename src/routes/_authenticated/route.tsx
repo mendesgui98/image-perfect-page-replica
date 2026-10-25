@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { LayoutDashboard, FileText, Users, Wrench, Package, Layers, Settings, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, FileText, Users, Wrench, Package, Layers, Settings, LogOut, Menu, X, HardHat, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,8 @@ export const Route = createFileRoute("/_authenticated")({
 const NAV = [
   { to: "/painel", label: "Painel", icon: LayoutDashboard },
   { to: "/orcamentos", label: "Orçamentos", icon: FileText, costs: true },
+  { to: "/obras", label: "Obras", icon: HardHat },
+  { to: "/financeiro", label: "Financeiro", icon: Wallet, costs: true },
   { to: "/cadastros", label: "Cadastros", icon: Users },
   { to: "/servicos", label: "Serviços", icon: Wrench, costs: true },
   { to: "/materiais", label: "Materiais", icon: Package, costs: true },
