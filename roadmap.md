@@ -1,4 +1,5 @@
 # Roadmap JMG
+- [ ] Complemento de avanço: página individual com resumo e indicadores clicáveis; listagem com avanços físico/financeiro; etapas ponderadas com detalhes e fotos; alertas e validação piloto
 - [x] Refinamento geral: auditoria, Painel único, Obras operacional, perfis vinculados, contratos centralizados e detalhamento com origem; testes numéricos e navegação autenticada desktop/celular conferidos
 - [x] Duas entradas em Nova obra, cadastro direto sem orçamento, posição inicial, anexos e mesma gestão/consolidado; validação autenticada com exemplo piloto
 - [x] Complemento solicitado: preparar plano modular para dashboards por obra e consolidado, parcelas e validação de obra piloto
