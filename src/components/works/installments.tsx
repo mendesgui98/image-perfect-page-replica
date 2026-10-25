@@ -29,7 +29,9 @@ export function Installments({
             setRows(restored);
             setCount(restored.length || 1);
           }
-        } catch {}
+        } catch (error) {
+          console.warn("Rascunho de parcelas inválido; valores atuais mantidos.", error);
+        }
       }
     };
     form.addEventListener("jmg-draft-restored", restore);
