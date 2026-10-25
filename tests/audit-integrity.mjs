@@ -8,9 +8,9 @@ CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(
 CREATE TABLE storage.objects(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),bucket_id text,name text,owner_id text); ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 CREATE FUNCTION storage.foldername(text) RETURNS text[] LANGUAGE sql AS $$ SELECT string_to_array($1,'/') $$;
 GRANT USAGE ON SCHEMA auth,storage,public TO authenticated,anon; GRANT SELECT,INSERT,DELETE ON storage.objects TO authenticated; GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated,anon;`);
-for (const name of (await readdir("drizzle/migrations")).filter((n) => n.endsWith(".sql")).sort()) {
+for (const name of (await readdir("supabase/migrations")).filter((n) => n.endsWith(".sql")).sort()) {
   try {
-    await db.exec(await readFile("drizzle/migrations/" + name, "utf8"));
+    await db.exec(await readFile("supabase/migrations/" + name, "utf8"));
     console.log("migration OK", name);
   } catch (e) {
     console.error("migration FAILED", name, e.message);

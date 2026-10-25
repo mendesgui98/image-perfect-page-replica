@@ -25,7 +25,7 @@ O banco registra quem enviou, restaurou e excluiu definitivamente, com a versão
 
 ## Instalação
 
-Aplicar `drizzle/migrations/0016_record_trash.sql` **depois de 0015** e antes de usar esta interface. A migração adiciona os campos da lixeira, a função `manage_record_deletion`, os bloqueios e a auditoria. Ela não exclui registros existentes. Atualizar apenas a interface sem a migração causará erros de coluna/função ausente.
+Aplicar `supabase/migrations/20261016000016_record_trash.sql` **depois de 0015** e antes de usar esta interface. A migração adiciona os campos da lixeira, a função `manage_record_deletion`, os bloqueios e a auditoria. Ela não exclui registros existentes. Atualizar apenas a interface sem a migração causará erros de coluna/função ausente.
 
 A implementação foi preparada e testada em banco isolado; aplicar ao Supabase do projeto requer uma conexão administrativa do ambiente de destino.
 
