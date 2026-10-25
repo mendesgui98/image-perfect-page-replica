@@ -1,0 +1,2 @@
+CREATE FUNCTION public.guard_schedule_version_immutable() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN RAISE EXCEPTION 'Versões de cronograma são imutáveis.'; END $$;
+CREATE TRIGGER schedule_version_immutable BEFORE UPDATE OR DELETE ON public.work_schedule_versions FOR EACH ROW EXECUTE FUNCTION public.guard_schedule_version_immutable();
