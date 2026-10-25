@@ -1,4 +1,5 @@
 # Roadmap JMG
+- [ ] Complemento solicitado: plano modular para dashboards por obra e consolidado, parcelas e validação de obra piloto
 - [x] Etapa 1: cadastros, catálogo, precificação, orçamento em PDF
 - [x] Etapa 2: aprovação comprovada, contrato revisável/assinado e conversão única em obra; fluxo verificado
 - [x] Etapa 3 — primeira versão: compras, recebimentos/baixas parciais, contas, transferências, rateios e resultado por obra
