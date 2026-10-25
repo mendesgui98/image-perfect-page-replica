@@ -57,6 +57,13 @@
       "when": 1792890810667,
       "tag": "0007_fix_work_history_record_shape",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792891609727,
+      "tag": "0008_independent_work_registry",
+      "breakpoints": true
     }
   ]
 }
