@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeBudget, emptyParams, splitPayments, type PricingItem } from "./pricing";
+import { computeBudget, computeWorkResult, emptyParams, splitPayments, type PricingItem } from "./pricing";
 import { reaisPorExtenso } from "./format";
 
 const mat = (over = {}) => ({
@@ -75,4 +75,8 @@ describe("precificação JMG", () => {
     expect(reaisPorExtenso(241000)).toBe("duzentos e quarenta e um mil reais");
     expect(reaisPorExtenso(29800)).toBe("vinte e nove mil e oitocentos reais");
   });
+});
+
+ describe("resultado econômico da obra",()=>{
+ it("considera custos incorridos, compromissos e estimativa sem repetir comissão",()=>{const base=computeBudget([{quantity:1,labor_cost_unit:100,materials:[]}],{...emptyParams,labor_markup:100,architect_commission:10});const r=computeWorkResult(base,[{price:50,cost:0}],60,40,10,20,0);expect(r.sale).toBe(250);expect(r.cost).toBe(130);expect(r.result).toBe(120);expect(r.margin).toBe(0.48);});
 });
