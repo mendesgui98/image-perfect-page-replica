@@ -1,0 +1,8 @@
+import {useEffect,useRef,useState,type FormEvent,type ReactNode} from 'react';
+import {useMe} from '@/hooks/use-me';
+export function DraftForm({scope,onSubmit,children,className}:{scope:string;onSubmit:(e:FormEvent<HTMLFormElement>)=>void;children:ReactNode;className?:string}){
+ const ref=useRef<HTMLFormElement>(null);const {data:me}=useMe();const key=me?`jmg-draft:${me.id}:${scope}`:'';const [ready,setReady]=useState(false);const [status,setStatus]=useState('');
+ useEffect(()=>{if(!key||!ref.current)return;const form=ref.current;try{const values=JSON.parse(localStorage.getItem(key)||'{}') as Record<string,string>;for(const [name,value] of Object.entries(values)){const e=form.elements.namedItem(name);if(e instanceof HTMLInputElement&&e.type!=='file'){if(e.type==='checkbox')e.checked=value==='on';else e.value=value;}else if(e instanceof HTMLSelectElement||e instanceof HTMLTextAreaElement)e.value=value;}if(Object.keys(values).length){form.dispatchEvent(new CustomEvent('jmg-draft-restored',{bubbles:true}));setStatus('Rascunho recuperado · confira os anexos');}}catch{setStatus('Não foi possível recuperar o rascunho');}setReady(true);},[key]);
+ function save(){if(!key||!ready||!ref.current)return;const values:Record<string,string>={};for(const [k,v] of new FormData(ref.current).entries())if(typeof v==='string')values[k]=v;try{localStorage.setItem(key,JSON.stringify(values));setStatus('Rascunho salvo neste dispositivo');}catch{setStatus('Rascunho não salvo — mantenha esta tela aberta');}}
+ return <form ref={ref} className={className} onInput={save} onChange={save} onSubmit={e=>{save();onSubmit(e);}}>{children}<p role="status" className="text-xs text-muted-foreground">{status}</p></form>;
+}

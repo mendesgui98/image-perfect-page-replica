@@ -256,5 +256,6 @@ export function computeWorkResult(base: BudgetResult, approvedExtras: {price:num
   const remainingEstimate=additional??Math.max(0,base.totalCost+approvedExtras.reduce((s,e)=>s+e.cost,0)-incurred-committed);
   const cost=incurred+committed+remainingEstimate+commission+taxes;
   const result=sale-cost;
-  return {sale,extraValue,commission,taxes,cost,result,remainingEstimate,estimateConfirmed:additional!==null,margin:sale>0?result/sale:0};
+  const accumulatedResult=sale-incurred-commission-taxes;
+  return {sale,extraValue,commission,taxes,cost,result,accumulatedResult,remainingEstimate,estimateConfirmed:additional!==null,margin:sale>0?result/sale:0};
 }
