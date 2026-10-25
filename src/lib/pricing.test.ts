@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeBudget, emptyParams, splitPayments, type PricingItem } from "./pricing";
+import { computeBudget, computeWorkResult, emptyParams, splitPayments, type PricingItem } from "./pricing";
 import { reaisPorExtenso } from "./format";
 
 const mat = (over = {}) => ({
@@ -33,7 +33,7 @@ describe("precificação JMG", () => {
   });
 
   it("material fornecido pelo cliente não gera custo nem preço", () => {
-    const r = computeBudget([{ ...items[0]!, materials: [mat({ supplied_by: "cliente" })] }], params);
+    const r = computeBudget([{ ...items[0] ?? {quantity:0,labor_cost_unit:0,materials:[]}, materials: [mat({ supplied_by: "cliente" })] }], params);
     expect(r.materialsCost).toBe(0);
     expect(r.materialsNet).toBe(0);
   });
@@ -66,8 +66,8 @@ describe("precificação JMG", () => {
       { label: "a", pct: 30 }, { label: "b", pct: 12.5 }, { label: "c", pct: 12.5 },
       { label: "d", pct: 12.5 }, { label: "e", pct: 12.5 }, { label: "f", pct: 20 },
     ]);
-    expect(rows[0]!.value).toBe(81240);
-    expect(rows[5]!.value).toBe(54160);
+    expect(rows[0]?.value).toBe(81240);
+    expect(rows[5]?.value).toBe(54160);
   });
 
   it("valor por extenso", () => {
@@ -76,3 +76,9 @@ describe("precificação JMG", () => {
     expect(reaisPorExtenso(29800)).toBe("vinte e nove mil e oitocentos reais");
   });
 });
+
+ describe("resultado econômico da obra",()=>{
+ it("considera custos incorridos, compromissos e estimativa sem repetir comissão",()=>{const base=computeBudget([{quantity:1,labor_cost_unit:100,materials:[]}],{...emptyParams,labor_markup:100,architect_commission:10});const r=computeWorkResult(base,[{price:50,cost:0}],60,40,10,20,0);expect(r.sale).toBe(250);expect(r.cost).toBe(130);expect(r.result).toBe(120);expect(r.margin).toBe(0.48);});
+});
+
+it("não presume que custos ainda não registrados desapareceram",()=>{const base=computeBudget([{quantity:1,labor_cost_unit:1000,materials:[]}],{...emptyParams,labor_markup:50});const r=computeWorkResult(base,[],80,120,null);expect(r.remainingEstimate).toBe(800);expect(r.cost).toBe(1000);expect(r.result).toBe(500);expect(r.estimateConfirmed).toBe(false);});

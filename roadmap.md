@@ -1,7 +1,10 @@
 # Roadmap JMG
 - [x] Etapa 1: cadastros, catálogo, precificação, orçamento em PDF
-- [ ] Etapa 2: aprovação com comprovante, contrato do modelo, conversão em obra
-- [ ] Etapa 3: compras, financeiro, resultado
-- [ ] Etapa 4: cronograma, diário, relatórios, entrega e assistência
-- [ ] Pedido atual: avançar nas etapas 2, 3 e 4 conforme o brief e os modelos enviados
+- [x] Etapa 2: aprovação comprovada, contrato revisável/assinado e conversão única em obra; fluxo verificado
+- [x] Etapa 3 — primeira versão: compras, recebimentos/baixas parciais, contas, transferências, rateios e resultado por obra
+- [x] Etapa 4 — primeira versão: cronograma ponderado, diário, relatório revisável, entrega e assistência
+- [x] Pedido atual: avançar nas etapas 2, 3 e 4; dados de teste arquivados e financeiro de teste removido
+- [x] Registrado para evolução: parcelas com vencimentos individuais, resultado consolidado/desvios, aprovação posterior de extras, medições e previsão avançada por dependências
+- [x] Registrado para evolução: exportação integral/backup/restauração, conferência final de custos e termo de entrega dedicado
+- [ ] Antes de uso real: revisão jurídica/comercial das cláusulas e comparação do contrato/PDF com o modelo; depende do administrador
 - [ ] Pendente do usuário: regras de precificação e tributos; e-mail da JMG; logo em alta resolução

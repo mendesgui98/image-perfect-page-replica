@@ -20,3 +20,5 @@
 - Uploaded evidence and work documents use the private `jmg-documents` bucket and temporary signed URLs; team access is limited to operational records.
 - Purchases create commitments atomically; partial receipts determine incurred purchase cost, while settlements affect only cash, never a second expense.
 - Contract wording comes from the supplied model; saved bodies are snapshots and signed contracts/approved extras are immutable.
+- Unconfirmed completion estimates retain the unregistered original budget cost; never interpret absent estimates as zero remaining cost.
+- Work, contract, schedule, diary and extra changes append database audit snapshots in work_history so revisions retain authorship and prior values.

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtDate } from "@/lib/format";
 import { STATUS_LABEL } from "@/lib/budget-status";
+import { WorkOverview } from "@/components/works/overview";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   head: () => pageMeta("Painel", "Acompanhamento de obras, propostas e alertas da JMG."),
@@ -23,8 +24,8 @@ function Painel() {
     queryFn: async () => {
       const [company, pricing, budgets, people] = await Promise.all([
         supabase.from("company_settings").select("*").maybeSingle(),
-        me!.canSeeCosts ? supabase.from("pricing_settings").select("configured").maybeSingle() : Promise.resolve({ data: null }),
-        me!.canSeeCosts
+        me?.canSeeCosts ? supabase.from("pricing_settings").select("configured").maybeSingle() : Promise.resolve({ data: null }),
+        me?.canSeeCosts
           ? supabase.from("budgets").select("id,number,revision,title,client_display,status,updated_at").eq("archived", false).order("updated_at", { ascending: false }).limit(8)
           : Promise.resolve({ data: [] }),
         supabase.from("people").select("kind", { count: "exact" }).eq("active", true),
@@ -44,7 +45,7 @@ function Painel() {
     <div>
       <PageHeader
         title={`Olá${me?.name ? ", " + me.name.split(" ")[0] : ""}`}
-        subtitle="Etapa 1: cadastros, catálogo, precificação e orçamento em PDF."
+        subtitle="Visão geral da JMG"
         actions={
           me?.canSeeCosts && (
             <Button asChild>
@@ -85,6 +86,7 @@ function Painel() {
           </Card>
         ))}
       </div>
+      <WorkOverview />
       {me?.canSeeCosts && (
         <Card className="mt-6 shadow-card">
           <CardHeader>

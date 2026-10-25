@@ -22,6 +22,13 @@
       "when": 1792889557582,
       "tag": "0002_enforce_operational_invariants",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792890240429,
+      "tag": "0003_audit_and_approval_guards",
+      "breakpoints": true
     }
   ]
 }
