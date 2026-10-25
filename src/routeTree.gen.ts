@@ -23,8 +23,11 @@ import { Route as AuthenticatedMateriaisRouteImport } from './routes/_authentica
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedServicosRouteImport } from './routes/_authenticated/servicos'
 import { Route as AuthenticatedCadastrosIdRouteImport } from './routes/_authenticated/cadastros_.$id'
+import { Route as AuthenticatedCronogramasIndexRouteImport } from './routes/_authenticated/cronogramas.index'
+import { Route as AuthenticatedCronogramasIdRouteImport } from './routes/_authenticated/cronogramas.$id'
 import { Route as AuthenticatedObrasIndexRouteImport } from './routes/_authenticated/obras.index'
 import { Route as AuthenticatedOrcamentosIndexRouteImport } from './routes/_authenticated/orcamentos.index'
+import { Route as AuthenticatedCronogramasIdPdfRouteImport } from './routes/_authenticated/cronogramas.$id_.pdf'
 import { Route as AuthenticatedObrasIdIndexRouteImport } from './routes/_authenticated/obras.$id.index'
 import { Route as AuthenticatedOrcamentosIdIndexRouteImport } from './routes/_authenticated/orcamentos.$id.index'
 import { Route as AuthenticatedOrcamentosIdPdfRouteImport } from './routes/_authenticated/orcamentos.$id.pdf'
@@ -103,6 +106,18 @@ const AuthenticatedCadastrosIdRoute =
     path: '/cadastros/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCronogramasIndexRoute =
+  AuthenticatedCronogramasIndexRouteImport.update({
+    id: '/cronogramas/',
+    path: '/cronogramas/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCronogramasIdRoute =
+  AuthenticatedCronogramasIdRouteImport.update({
+    id: '/cronogramas/$id',
+    path: '/cronogramas/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedObrasIndexRoute = AuthenticatedObrasIndexRouteImport.update({
   id: '/obras/',
   path: '/obras/',
@@ -112,6 +127,12 @@ const AuthenticatedOrcamentosIndexRoute =
   AuthenticatedOrcamentosIndexRouteImport.update({
     id: '/orcamentos/',
     path: '/orcamentos/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCronogramasIdPdfRoute =
+  AuthenticatedCronogramasIdPdfRouteImport.update({
+    id: '/cronogramas/$id_/pdf',
+    path: '/cronogramas/$id/pdf',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedObrasIdIndexRoute =
@@ -165,8 +186,11 @@ export interface FileRoutesByFullPath {
   '/painel': typeof AuthenticatedPainelRoute
   '/servicos': typeof AuthenticatedServicosRoute
   '/cadastros/$id': typeof AuthenticatedCadastrosIdRoute
+  '/cronogramas/$id': typeof AuthenticatedCronogramasIdRoute
+  '/cronogramas/': typeof AuthenticatedCronogramasIndexRoute
   '/obras/': typeof AuthenticatedObrasIndexRoute
   '/orcamentos/': typeof AuthenticatedOrcamentosIndexRoute
+  '/cronogramas/$id/pdf': typeof AuthenticatedCronogramasIdPdfRoute
   '/orcamentos/$id/pdf': typeof AuthenticatedOrcamentosIdPdfRoute
   '/obras/$id/': typeof AuthenticatedObrasIdIndexRoute
   '/orcamentos/$id/': typeof AuthenticatedOrcamentosIdIndexRoute
@@ -188,8 +212,11 @@ export interface FileRoutesByTo {
   '/painel': typeof AuthenticatedPainelRoute
   '/servicos': typeof AuthenticatedServicosRoute
   '/cadastros/$id': typeof AuthenticatedCadastrosIdRoute
+  '/cronogramas/$id': typeof AuthenticatedCronogramasIdRoute
+  '/cronogramas': typeof AuthenticatedCronogramasIndexRoute
   '/obras': typeof AuthenticatedObrasIndexRoute
   '/orcamentos': typeof AuthenticatedOrcamentosIndexRoute
+  '/cronogramas/$id/pdf': typeof AuthenticatedCronogramasIdPdfRoute
   '/orcamentos/$id/pdf': typeof AuthenticatedOrcamentosIdPdfRoute
   '/obras/$id': typeof AuthenticatedObrasIdIndexRoute
   '/orcamentos/$id': typeof AuthenticatedOrcamentosIdIndexRoute
@@ -213,8 +240,11 @@ export interface FileRoutesById {
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/servicos': typeof AuthenticatedServicosRoute
   '/_authenticated/cadastros_/$id': typeof AuthenticatedCadastrosIdRoute
+  '/_authenticated/cronogramas/$id': typeof AuthenticatedCronogramasIdRoute
+  '/_authenticated/cronogramas/': typeof AuthenticatedCronogramasIndexRoute
   '/_authenticated/obras/': typeof AuthenticatedObrasIndexRoute
   '/_authenticated/orcamentos/': typeof AuthenticatedOrcamentosIndexRoute
+  '/_authenticated/cronogramas/$id_/pdf': typeof AuthenticatedCronogramasIdPdfRoute
   '/_authenticated/orcamentos/$id/pdf': typeof AuthenticatedOrcamentosIdPdfRoute
   '/_authenticated/obras/$id/': typeof AuthenticatedObrasIdIndexRoute
   '/_authenticated/orcamentos/$id/': typeof AuthenticatedOrcamentosIdIndexRoute
@@ -238,8 +268,11 @@ export interface FileRouteTypes {
     | '/painel'
     | '/servicos'
     | '/cadastros/$id'
+    | '/cronogramas/$id'
+    | '/cronogramas/'
     | '/obras/'
     | '/orcamentos/'
+    | '/cronogramas/$id/pdf'
     | '/orcamentos/$id/pdf'
     | '/obras/$id/'
     | '/orcamentos/$id/'
@@ -261,8 +294,11 @@ export interface FileRouteTypes {
     | '/painel'
     | '/servicos'
     | '/cadastros/$id'
+    | '/cronogramas/$id'
+    | '/cronogramas'
     | '/obras'
     | '/orcamentos'
+    | '/cronogramas/$id/pdf'
     | '/orcamentos/$id/pdf'
     | '/obras/$id'
     | '/orcamentos/$id'
@@ -285,8 +321,11 @@ export interface FileRouteTypes {
     | '/_authenticated/painel'
     | '/_authenticated/servicos'
     | '/_authenticated/cadastros_/$id'
+    | '/_authenticated/cronogramas/$id'
+    | '/_authenticated/cronogramas/'
     | '/_authenticated/obras/'
     | '/_authenticated/orcamentos/'
+    | '/_authenticated/cronogramas/$id_/pdf'
     | '/_authenticated/orcamentos/$id/pdf'
     | '/_authenticated/obras/$id/'
     | '/_authenticated/orcamentos/$id/'
@@ -402,6 +441,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCadastrosIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cronogramas/': {
+      id: '/_authenticated/cronogramas/'
+      path: '/cronogramas'
+      fullPath: '/cronogramas/'
+      preLoaderRoute: typeof AuthenticatedCronogramasIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cronogramas/$id': {
+      id: '/_authenticated/cronogramas/$id'
+      path: '/cronogramas/$id'
+      fullPath: '/cronogramas/$id'
+      preLoaderRoute: typeof AuthenticatedCronogramasIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/obras/': {
       id: '/_authenticated/obras/'
       path: '/obras'
@@ -414,6 +467,13 @@ declare module '@tanstack/react-router' {
       path: '/orcamentos'
       fullPath: '/orcamentos/'
       preLoaderRoute: typeof AuthenticatedOrcamentosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cronogramas/$id_/pdf': {
+      id: '/_authenticated/cronogramas/$id_/pdf'
+      path: '/cronogramas/$id/pdf'
+      fullPath: '/cronogramas/$id/pdf'
+      preLoaderRoute: typeof AuthenticatedCronogramasIdPdfRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/obras/$id/': {
@@ -472,8 +532,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
   AuthenticatedServicosRoute: typeof AuthenticatedServicosRoute
   AuthenticatedCadastrosIdRoute: typeof AuthenticatedCadastrosIdRoute
+  AuthenticatedCronogramasIdRoute: typeof AuthenticatedCronogramasIdRoute
+  AuthenticatedCronogramasIndexRoute: typeof AuthenticatedCronogramasIndexRoute
   AuthenticatedObrasIndexRoute: typeof AuthenticatedObrasIndexRoute
   AuthenticatedOrcamentosIndexRoute: typeof AuthenticatedOrcamentosIndexRoute
+  AuthenticatedCronogramasIdPdfRoute: typeof AuthenticatedCronogramasIdPdfRoute
   AuthenticatedOrcamentosIdPdfRoute: typeof AuthenticatedOrcamentosIdPdfRoute
   AuthenticatedObrasIdIndexRoute: typeof AuthenticatedObrasIdIndexRoute
   AuthenticatedOrcamentosIdIndexRoute: typeof AuthenticatedOrcamentosIdIndexRoute
@@ -493,8 +556,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
   AuthenticatedServicosRoute: AuthenticatedServicosRoute,
   AuthenticatedCadastrosIdRoute: AuthenticatedCadastrosIdRoute,
+  AuthenticatedCronogramasIdRoute: AuthenticatedCronogramasIdRoute,
+  AuthenticatedCronogramasIndexRoute: AuthenticatedCronogramasIndexRoute,
   AuthenticatedObrasIndexRoute: AuthenticatedObrasIndexRoute,
   AuthenticatedOrcamentosIndexRoute: AuthenticatedOrcamentosIndexRoute,
+  AuthenticatedCronogramasIdPdfRoute: AuthenticatedCronogramasIdPdfRoute,
   AuthenticatedOrcamentosIdPdfRoute: AuthenticatedOrcamentosIdPdfRoute,
   AuthenticatedObrasIdIndexRoute: AuthenticatedObrasIdIndexRoute,
   AuthenticatedOrcamentosIdIndexRoute: AuthenticatedOrcamentosIdIndexRoute,

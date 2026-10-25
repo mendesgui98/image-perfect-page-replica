@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { LayoutDashboard, FileText, Users, Wrench, Package, Layers, Settings, LogOut, Menu, X, HardHat, Wallet } from "lucide-react";
+import { LayoutDashboard, FileText, Users, Wrench, Package, Layers, Settings, LogOut, Menu, X, HardHat, Wallet, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import {GlobalSearch} from '@/components/management/global-search';
@@ -22,6 +22,7 @@ const NAV = [
   { to: "/contratos", label: "Contratos", icon: FileText, costs: true },
   { to: "/orcamentos", label: "Orçamentos", icon: FileText, costs: true },
   { to: "/obras", label: "Obras", icon: HardHat },
+  { to: "/cronogramas", label: "Cronogramas", icon: CalendarDays },
   { to: "/financeiro", label: "Financeiro", icon: Wallet, costs: true },
   { to: "/cadastros", label: "Cadastros", icon: Users },
   { to: "/servicos", label: "Serviços", icon: Wrench, costs: true },
@@ -104,7 +105,7 @@ function Shell() {
       </header>
       {open && (
         <div className="fixed inset-0 z-40 flex lg:hidden">
-          <div className="flex w-72 flex-col gap-6 bg-sidebar p-4 text-sidebar-foreground">
+          <div className="flex w-72 flex-col gap-6 overflow-y-auto bg-sidebar p-4 text-sidebar-foreground">
             <div className="flex items-center justify-between">
               {brand}
               <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Fechar menu">
