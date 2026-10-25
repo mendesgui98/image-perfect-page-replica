@@ -15,12 +15,14 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedCadastrosRouteImport } from './routes/_authenticated/cadastros'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
+import { Route as AuthenticatedContratosRouteImport } from './routes/_authenticated/contratos'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEtapasRouteImport } from './routes/_authenticated/etapas'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
 import { Route as AuthenticatedMateriaisRouteImport } from './routes/_authenticated/materiais'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedServicosRouteImport } from './routes/_authenticated/servicos'
+import { Route as AuthenticatedCadastrosIdRouteImport } from './routes/_authenticated/cadastros.$id'
 import { Route as AuthenticatedObrasIndexRouteImport } from './routes/_authenticated/obras.index'
 import { Route as AuthenticatedOrcamentosIndexRouteImport } from './routes/_authenticated/orcamentos.index'
 import { Route as AuthenticatedObrasIdIndexRouteImport } from './routes/_authenticated/obras.$id.index'
@@ -59,6 +61,11 @@ const AuthenticatedConfiguracoesRoute =
     path: '/configuracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedContratosRoute = AuthenticatedContratosRouteImport.update({
+  id: '/contratos',
+  path: '/contratos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -89,6 +96,12 @@ const AuthenticatedServicosRoute = AuthenticatedServicosRouteImport.update({
   path: '/servicos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCadastrosIdRoute =
+  AuthenticatedCadastrosIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedCadastrosRoute,
+  } as any)
 const AuthenticatedObrasIndexRoute = AuthenticatedObrasIndexRouteImport.update({
   id: '/obras/',
   path: '/obras/',
@@ -135,14 +148,16 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/cadastros': typeof AuthenticatedCadastrosRoute
+  '/cadastros': typeof AuthenticatedCadastrosRouteWithChildren
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/contratos': typeof AuthenticatedContratosRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/etapas': typeof AuthenticatedEtapasRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/materiais': typeof AuthenticatedMateriaisRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/servicos': typeof AuthenticatedServicosRoute
+  '/cadastros/$id': typeof AuthenticatedCadastrosIdRoute
   '/obras/': typeof AuthenticatedObrasIndexRoute
   '/orcamentos/': typeof AuthenticatedOrcamentosIndexRoute
   '/orcamentos/$id/pdf': typeof AuthenticatedOrcamentosIdPdfRoute
@@ -155,14 +170,16 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/cadastros': typeof AuthenticatedCadastrosRoute
+  '/cadastros': typeof AuthenticatedCadastrosRouteWithChildren
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/contratos': typeof AuthenticatedContratosRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/etapas': typeof AuthenticatedEtapasRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/materiais': typeof AuthenticatedMateriaisRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/servicos': typeof AuthenticatedServicosRoute
+  '/cadastros/$id': typeof AuthenticatedCadastrosIdRoute
   '/obras': typeof AuthenticatedObrasIndexRoute
   '/orcamentos': typeof AuthenticatedOrcamentosIndexRoute
   '/orcamentos/$id/pdf': typeof AuthenticatedOrcamentosIdPdfRoute
@@ -177,14 +194,16 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/_authenticated/cadastros': typeof AuthenticatedCadastrosRoute
+  '/_authenticated/cadastros': typeof AuthenticatedCadastrosRouteWithChildren
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/_authenticated/contratos': typeof AuthenticatedContratosRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/etapas': typeof AuthenticatedEtapasRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRoute
   '/_authenticated/materiais': typeof AuthenticatedMateriaisRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/servicos': typeof AuthenticatedServicosRoute
+  '/_authenticated/cadastros/$id': typeof AuthenticatedCadastrosIdRoute
   '/_authenticated/obras/': typeof AuthenticatedObrasIndexRoute
   '/_authenticated/orcamentos/': typeof AuthenticatedOrcamentosIndexRoute
   '/_authenticated/orcamentos/$id/pdf': typeof AuthenticatedOrcamentosIdPdfRoute
@@ -201,12 +220,14 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/cadastros'
     | '/configuracoes'
+    | '/contratos'
     | '/dashboard'
     | '/etapas'
     | '/financeiro'
     | '/materiais'
     | '/painel'
     | '/servicos'
+    | '/cadastros/$id'
     | '/obras/'
     | '/orcamentos/'
     | '/orcamentos/$id/pdf'
@@ -221,12 +242,14 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/cadastros'
     | '/configuracoes'
+    | '/contratos'
     | '/dashboard'
     | '/etapas'
     | '/financeiro'
     | '/materiais'
     | '/painel'
     | '/servicos'
+    | '/cadastros/$id'
     | '/obras'
     | '/orcamentos'
     | '/orcamentos/$id/pdf'
@@ -242,12 +265,14 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/cadastros'
     | '/_authenticated/configuracoes'
+    | '/_authenticated/contratos'
     | '/_authenticated/dashboard'
     | '/_authenticated/etapas'
     | '/_authenticated/financeiro'
     | '/_authenticated/materiais'
     | '/_authenticated/painel'
     | '/_authenticated/servicos'
+    | '/_authenticated/cadastros/$id'
     | '/_authenticated/obras/'
     | '/_authenticated/orcamentos/'
     | '/_authenticated/orcamentos/$id/pdf'
@@ -308,6 +333,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/contratos': {
+      id: '/_authenticated/contratos'
+      path: '/contratos'
+      fullPath: '/contratos'
+      preLoaderRoute: typeof AuthenticatedContratosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -349,6 +381,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/servicos'
       preLoaderRoute: typeof AuthenticatedServicosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cadastros/$id': {
+      id: '/_authenticated/cadastros/$id'
+      path: '/$id'
+      fullPath: '/cadastros/$id'
+      preLoaderRoute: typeof AuthenticatedCadastrosIdRouteImport
+      parentRoute: typeof AuthenticatedCadastrosRoute
     }
     '/_authenticated/obras/': {
       id: '/_authenticated/obras/'
@@ -402,9 +441,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedCadastrosRouteChildren {
+  AuthenticatedCadastrosIdRoute: typeof AuthenticatedCadastrosIdRoute
+}
+
+const AuthenticatedCadastrosRouteChildren: AuthenticatedCadastrosRouteChildren =
+  {
+    AuthenticatedCadastrosIdRoute: AuthenticatedCadastrosIdRoute,
+  }
+
+const AuthenticatedCadastrosRouteWithChildren =
+  AuthenticatedCadastrosRoute._addFileChildren(
+    AuthenticatedCadastrosRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedCadastrosRoute: typeof AuthenticatedCadastrosRoute
+  AuthenticatedCadastrosRoute: typeof AuthenticatedCadastrosRouteWithChildren
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
+  AuthenticatedContratosRoute: typeof AuthenticatedContratosRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEtapasRoute: typeof AuthenticatedEtapasRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRoute
@@ -421,8 +475,9 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedCadastrosRoute: AuthenticatedCadastrosRoute,
+  AuthenticatedCadastrosRoute: AuthenticatedCadastrosRouteWithChildren,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
+  AuthenticatedContratosRoute: AuthenticatedContratosRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEtapasRoute: AuthenticatedEtapasRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRoute,

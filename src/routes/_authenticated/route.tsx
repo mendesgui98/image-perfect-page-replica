@@ -4,6 +4,8 @@ import { useState } from "react";
 import { LayoutDashboard, FileText, Users, Wrench, Package, Layers, Settings, LogOut, Menu, X, HardHat, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
+import {GlobalSearch} from '@/components/management/global-search';
+import {Button} from '@/components/ui/button';
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -17,7 +19,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 const NAV = [
   { to: "/painel", label: "Painel", icon: LayoutDashboard },
-  { to: "/dashboard", label: "Obras e resultados", icon: LayoutDashboard, costs: true },
+  { to: "/contratos", label: "Contratos", icon: FileText, costs: true },
   { to: "/orcamentos", label: "Orçamentos", icon: FileText, costs: true },
   { to: "/obras", label: "Obras", icon: HardHat },
   { to: "/financeiro", label: "Financeiro", icon: Wallet, costs: true },
@@ -80,9 +82,9 @@ function Shell() {
     <div className="mt-auto border-t border-sidebar-border pt-4 text-sm">
       <div className="truncate px-2 font-medium">{me?.name}</div>
       <div className="px-2 text-xs capitalize opacity-70">{me?.roles.join(", ") || "sem perfil"}</div>
-      <button onClick={signOut} className="mt-3 flex w-full items-center gap-2 rounded-md px-2 py-2 hover:bg-sidebar-accent/60">
+      <Button variant="ghost" onClick={signOut} className="mt-3 flex w-full items-center gap-2 rounded-md px-2 py-2 hover:bg-sidebar-accent/60">
         <LogOut className="h-4 w-4" /> Sair
-      </button>
+      </Button>
     </div>
   );
 
@@ -90,25 +92,27 @@ function Shell() {
     <div className="min-h-screen bg-background lg:flex">
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-6 bg-sidebar p-4 text-sidebar-foreground lg:flex">
         {brand}
+        <GlobalSearch/>
         {nav}
         {footer}
       </aside>
       <header className="sticky top-0 z-30 flex items-center justify-between bg-sidebar px-4 py-3 text-sidebar-foreground lg:hidden">
         {brand}
-        <button onClick={() => setOpen(true)} aria-label="Abrir menu" className="p-2">
+        <Button variant="ghost" size="icon" onClick={() => setOpen(true)} aria-label="Abrir menu" className="p-2">
           <Menu className="h-6 w-6" />
-        </button>
+        </Button>
       </header>
       {open && (
         <div className="fixed inset-0 z-40 flex lg:hidden">
           <div className="flex w-72 flex-col gap-6 bg-sidebar p-4 text-sidebar-foreground">
             <div className="flex items-center justify-between">
               {brand}
-              <button onClick={() => setOpen(false)} aria-label="Fechar menu">
+              <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Fechar menu">
                 <X className="h-5 w-5" />
-              </button>
+              </Button>
             </div>
-            {nav}
+            <GlobalSearch/>
+        {nav}
             {footer}
           </div>
           <div className="flex-1 bg-foreground/40" onClick={() => setOpen(false)} />
