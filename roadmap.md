@@ -1,5 +1,5 @@
 # Roadmap JMG
-- [ ] Cronograma integrado: importação do escopo, planejamento original/versionado, Gantt previsto/real, reordenação, PDF cliente e situação compartilhada; validar piloto
+- [x] Cronograma integrado: importação idempotente restrita ao escopo, original imutável e reprogramações, Gantt previsto/real, duração, ordem, PDF cliente e situação compartilhada; piloto autenticado validado no computador/celular e etapas simultâneas com dependências
 - [x] Complemento de avanço: página individual com resumo e indicadores clicáveis; listagem com avanços físico/financeiro; etapas ponderadas com detalhes e fotos; alertas e validação piloto
 - [x] Refinamento geral: auditoria, Painel único, Obras operacional, perfis vinculados, contratos centralizados e detalhamento com origem; testes numéricos e navegação autenticada desktop/celular conferidos
 - [x] Duas entradas em Nova obra, cadastro direto sem orçamento, posição inicial, anexos e mesma gestão/consolidado; validação autenticada com exemplo piloto
