@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
+import { compressImage } from "./image-compress";
 import { supabase } from "@/integrations/supabase/client";
 export const worksOptions = queryOptions({
   queryKey: ["works"],
@@ -49,7 +50,9 @@ export const workOptions = (id: string) =>
       return { work: w.data, stages: s.data, records: r.data };
     },
   });
-export async function uploadDocument(file: File, folder: string) {
+/** Envia um arquivo ao bucket privado. Fotos grandes são comprimidas antes do envio. */
+export async function uploadDocument(original: File, folder: string) {
+  const file = await compressImage(original);
   const path = `${folder}/${crypto.randomUUID()}.${
     file.name
       .split(".")
