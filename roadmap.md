@@ -1,5 +1,5 @@
 # Roadmap JMG
-- [ ] Módulo Cronogramas no menu: listagem filtrada, criação vinculada/avulsa, etapas editáveis com exclusão/duplicação, modelos, vínculo posterior sem cópia/histórico perdido e PDF; validar fluxos
+- [x] Módulo Cronogramas no menu: listagem filtrada, criação vinculada/avulsa, etapas editáveis com exclusão/duplicação, modelos, vínculo posterior preservando IDs e histórico, edição bidirecional e PDF; fluxos autenticados validados no computador/celular, testes passaram
 - [x] Cronograma integrado: importação idempotente restrita ao escopo, original imutável e reprogramações, Gantt previsto/real, duração, ordem, PDF cliente e situação compartilhada; piloto autenticado validado no computador/celular e etapas simultâneas com dependências
 - [x] Complemento de avanço: página individual com resumo e indicadores clicáveis; listagem com avanços físico/financeiro; etapas ponderadas com detalhes e fotos; alertas e validação piloto
 - [x] Refinamento geral: auditoria, Painel único, Obras operacional, perfis vinculados, contratos centralizados e detalhamento com origem; testes numéricos e navegação autenticada desktop/celular conferidos
