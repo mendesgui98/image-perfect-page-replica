@@ -22,7 +22,7 @@ import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authentic
 import { Route as AuthenticatedMateriaisRouteImport } from './routes/_authenticated/materiais'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedServicosRouteImport } from './routes/_authenticated/servicos'
-import { Route as AuthenticatedCadastrosIdRouteImport } from './routes/_authenticated/cadastros.$id'
+import { Route as AuthenticatedCadastrosIdRouteImport } from './routes/_authenticated/cadastros_.$id'
 import { Route as AuthenticatedObrasIndexRouteImport } from './routes/_authenticated/obras.index'
 import { Route as AuthenticatedOrcamentosIndexRouteImport } from './routes/_authenticated/orcamentos.index'
 import { Route as AuthenticatedObrasIdIndexRouteImport } from './routes/_authenticated/obras.$id.index'
@@ -98,9 +98,9 @@ const AuthenticatedServicosRoute = AuthenticatedServicosRouteImport.update({
 } as any)
 const AuthenticatedCadastrosIdRoute =
   AuthenticatedCadastrosIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedCadastrosRoute,
+    id: '/cadastros_/$id',
+    path: '/cadastros/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedObrasIndexRoute = AuthenticatedObrasIndexRouteImport.update({
   id: '/obras/',
@@ -148,7 +148,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/cadastros': typeof AuthenticatedCadastrosRouteWithChildren
+  '/cadastros': typeof AuthenticatedCadastrosRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/contratos': typeof AuthenticatedContratosRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -170,7 +170,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/cadastros': typeof AuthenticatedCadastrosRouteWithChildren
+  '/cadastros': typeof AuthenticatedCadastrosRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/contratos': typeof AuthenticatedContratosRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -194,7 +194,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/_authenticated/cadastros': typeof AuthenticatedCadastrosRouteWithChildren
+  '/_authenticated/cadastros': typeof AuthenticatedCadastrosRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/contratos': typeof AuthenticatedContratosRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -203,7 +203,7 @@ export interface FileRoutesById {
   '/_authenticated/materiais': typeof AuthenticatedMateriaisRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/servicos': typeof AuthenticatedServicosRoute
-  '/_authenticated/cadastros/$id': typeof AuthenticatedCadastrosIdRoute
+  '/_authenticated/cadastros_/$id': typeof AuthenticatedCadastrosIdRoute
   '/_authenticated/obras/': typeof AuthenticatedObrasIndexRoute
   '/_authenticated/orcamentos/': typeof AuthenticatedOrcamentosIndexRoute
   '/_authenticated/orcamentos/$id/pdf': typeof AuthenticatedOrcamentosIdPdfRoute
@@ -272,7 +272,7 @@ export interface FileRouteTypes {
     | '/_authenticated/materiais'
     | '/_authenticated/painel'
     | '/_authenticated/servicos'
-    | '/_authenticated/cadastros/$id'
+    | '/_authenticated/cadastros_/$id'
     | '/_authenticated/obras/'
     | '/_authenticated/orcamentos/'
     | '/_authenticated/orcamentos/$id/pdf'
@@ -382,12 +382,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedServicosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/cadastros/$id': {
-      id: '/_authenticated/cadastros/$id'
-      path: '/$id'
+    '/_authenticated/cadastros_/$id': {
+      id: '/_authenticated/cadastros_/$id'
+      path: '/cadastros/$id'
       fullPath: '/cadastros/$id'
       preLoaderRoute: typeof AuthenticatedCadastrosIdRouteImport
-      parentRoute: typeof AuthenticatedCadastrosRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/obras/': {
       id: '/_authenticated/obras/'
@@ -441,22 +441,8 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedCadastrosRouteChildren {
-  AuthenticatedCadastrosIdRoute: typeof AuthenticatedCadastrosIdRoute
-}
-
-const AuthenticatedCadastrosRouteChildren: AuthenticatedCadastrosRouteChildren =
-  {
-    AuthenticatedCadastrosIdRoute: AuthenticatedCadastrosIdRoute,
-  }
-
-const AuthenticatedCadastrosRouteWithChildren =
-  AuthenticatedCadastrosRoute._addFileChildren(
-    AuthenticatedCadastrosRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedCadastrosRoute: typeof AuthenticatedCadastrosRouteWithChildren
+  AuthenticatedCadastrosRoute: typeof AuthenticatedCadastrosRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedContratosRoute: typeof AuthenticatedContratosRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -465,6 +451,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMateriaisRoute: typeof AuthenticatedMateriaisRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
   AuthenticatedServicosRoute: typeof AuthenticatedServicosRoute
+  AuthenticatedCadastrosIdRoute: typeof AuthenticatedCadastrosIdRoute
   AuthenticatedObrasIndexRoute: typeof AuthenticatedObrasIndexRoute
   AuthenticatedOrcamentosIndexRoute: typeof AuthenticatedOrcamentosIndexRoute
   AuthenticatedOrcamentosIdPdfRoute: typeof AuthenticatedOrcamentosIdPdfRoute
@@ -475,7 +462,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedCadastrosRoute: AuthenticatedCadastrosRouteWithChildren,
+  AuthenticatedCadastrosRoute: AuthenticatedCadastrosRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedContratosRoute: AuthenticatedContratosRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
@@ -484,6 +471,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMateriaisRoute: AuthenticatedMateriaisRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
   AuthenticatedServicosRoute: AuthenticatedServicosRoute,
+  AuthenticatedCadastrosIdRoute: AuthenticatedCadastrosIdRoute,
   AuthenticatedObrasIndexRoute: AuthenticatedObrasIndexRoute,
   AuthenticatedOrcamentosIndexRoute: AuthenticatedOrcamentosIndexRoute,
   AuthenticatedOrcamentosIdPdfRoute: AuthenticatedOrcamentosIdPdfRoute,
