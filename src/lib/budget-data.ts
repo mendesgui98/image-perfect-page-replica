@@ -14,6 +14,8 @@ export async function loadBudget(id: string) {
     supabase.from("budget_items").select("*").eq("budget_id", id).order("sort"),
   ]);
   if (b.error) throw b.error;
+  if (s.error) throw s.error;
+  if (i.error) throw i.error;
   return {
     budget: b.data,
     params: { ...emptyParams, ...((b.data.params as object) ?? {}) } as PricingParams,

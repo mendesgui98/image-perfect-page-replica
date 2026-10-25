@@ -248,12 +248,13 @@ export function splitPayments(total: number, terms: { label: string; pct: number
 }
 
 /** Custo econômico não duplica parcelas nem pedidos já incluídos nos lançamentos. */
-export function computeWorkResult(base: BudgetResult, approvedExtras: {price:number;cost:number}[], incurred:number, committed:number, additional:number, recordedCommission=0, recordedTaxes=0) {
+export function computeWorkResult(base: BudgetResult, approvedExtras: {price:number;cost:number}[], incurred:number, committed:number, additional:number|null, recordedCommission=0, recordedTaxes=0) {
   const extraValue=approvedExtras.reduce((s,e)=>s+e.price,0);
   const sale=base.saleNet+extraValue;
   const commission=Math.max(base.commission,recordedCommission);
   const taxes=Math.max(base.taxesTotal,recordedTaxes);
-  const cost=incurred+committed+additional+commission+taxes;
+  const remainingEstimate=additional??Math.max(0,base.totalCost+approvedExtras.reduce((s,e)=>s+e.cost,0)-incurred-committed);
+  const cost=incurred+committed+remainingEstimate+commission+taxes;
   const result=sale-cost;
-  return {sale,extraValue,commission,taxes,cost,result,margin:sale>0?result/sale:0};
+  return {sale,extraValue,commission,taxes,cost,result,remainingEstimate,estimateConfirmed:additional!==null,margin:sale>0?result/sale:0};
 }
