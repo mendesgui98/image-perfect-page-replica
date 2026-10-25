@@ -14,7 +14,7 @@ import {ExecutivePanel} from '@/components/management/executive';
 import { WorkOverview } from "@/components/works/overview";
 
 export const Route = createFileRoute("/_authenticated/painel")({
-  validateSearch:(s:Record<string,unknown>)=>({...dashboardSearch(s),detail:typeof s['detail']==='string'?s['detail']:''}),
+  validateSearch:(s:Record<string,unknown>):ReturnType<typeof dashboardSearch>&{detail?:string}=>({...dashboardSearch(s),detail:typeof s['detail']==='string'?s['detail']:''}),
   head: () => pageMeta("Painel", "Acompanhamento de obras, propostas e alertas da JMG."),
   component: Painel,
 });
