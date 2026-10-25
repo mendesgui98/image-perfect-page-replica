@@ -17,7 +17,7 @@ export function weightedProgress(stages: {weight:number;progress:number}[]) {
   const sum = stages.reduce((s,r)=>s+r.weight,0);
   return { weightSum:sum, valid: Math.abs(sum-100)<0.001, progress:sum ? stages.reduce((s,r)=>s+r.weight*r.progress,0)/sum : 0 };
 }
-export type EntryLike = {id:string;work_id:string|null;direction:string;amount:number;incurred:boolean;canceled:boolean;purchase_order_id:string|null;category:string};
+export type EntryLike = {id:string;work_id:string|null;direction:string;amount:number;incurred:boolean;canceled:boolean;purchase_order_id:string|null;payable_order_id?:string|null;category:string};
 export type SettlementLike = {entry_id:string;amount:number;account_id:string};
 export function financeTotals(entries: EntryLike[], settlements: SettlementLike[]) {
   const active=entries.filter(e=>!e.canceled);
@@ -30,5 +30,5 @@ export function accountBalances(accounts:{id:string;opening_balance:number}[], e
  return accounts.map(a=>({...a,balance:a.opening_balance+settlements.filter(s=>s.account_id===a.id).reduce((v,s)=>v+(entries.find(e=>e.id===s.entry_id)?.direction==='entrada'?s.amount:-s.amount),0)+transfers.reduce((v,t)=>v+(t.to_account_id===a.id?t.amount:0)-(t.from_account_id===a.id?t.amount:0),0)}));
 }
 export function allocatedCost(entries:EntryLike[], allocations:{entry_id:string;work_id:string;amount:number}[], workId?:string) {
-  return entries.filter(e=>!e.canceled&&e.direction==='saida'&&!e.purchase_order_id).reduce((total,e)=>total+(workId ? (e.work_id===workId?e.amount:allocations.filter(a=>a.entry_id===e.id&&a.work_id===workId).reduce((t,a)=>t+a.amount,0)) : e.amount),0);
+  return entries.filter(e=>!e.canceled&&e.direction==='saida'&&!e.purchase_order_id&&!e.payable_order_id).reduce((total,e)=>total+(workId ? (e.work_id===workId?e.amount:allocations.filter(a=>a.entry_id===e.id&&a.work_id===workId).reduce((t,a)=>t+a.amount,0)) : e.amount),0);
 }
