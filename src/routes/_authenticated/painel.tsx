@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { dashboardSearch } from "@/lib/dashboard-search";
 import { ExecutivePanel } from "@/components/management/executive";
 import { WorkOverview } from "@/components/works/overview";
+import { FieldPanel } from "@/components/works/field-panel";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   validateSearch: (
@@ -68,7 +69,7 @@ function Painel() {
     <div>
       <PageHeader
         title="JMG Reformas"
-        subtitle="Visão executiva"
+        subtitle={me?.canSeeCosts ? "Visão executiva" : "Equipe de campo"}
         actions={
           me?.canSeeCosts && (
             <Button asChild>
@@ -97,7 +98,14 @@ function Painel() {
           ))}
         </div>
       )}
-      {me?.canSeeCosts ? <ExecutivePanel /> : <WorkOverview />}
+      {me?.canSeeCosts ? (
+        <ExecutivePanel />
+      ) : (
+        <>
+          <FieldPanel />
+          <WorkOverview />
+        </>
+      )}
     </div>
   );
 }

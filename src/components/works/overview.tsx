@@ -14,7 +14,7 @@ export function WorkOverview() {
   const { data: stages = [] } = useQuery({
     queryKey: ["all-work-stages"],
     queryFn: async () => {
-      const r = await supabase.from("work_stages").select("*");
+      const r = await supabase.from("work_stages").select("*").eq("removed", false);
       if (r.error) throw r.error;
       return r.data;
     },
