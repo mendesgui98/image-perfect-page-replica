@@ -1,4 +1,6 @@
 # Roadmap JMG
+- [x] Pedido atual: Git conectado conforme confirmação do proprietário; alterações seguem a sincronização automática do Lovable
+- [x] Continuação: recuperação de campos, opções desmarcadas e parcelas conferida em sessão autenticada; anexos excluídos, helpers compartilhados e 63 testes passando
 - [x] Módulo Cronogramas no menu: listagem filtrada, criação vinculada/avulsa, etapas editáveis com exclusão/duplicação, modelos, vínculo posterior preservando IDs e histórico, edição bidirecional e PDF; fluxos autenticados validados no computador/celular, testes passaram
 - [x] Cronograma integrado: importação idempotente restrita ao escopo, original imutável e reprogramações, Gantt previsto/real, duração, ordem, PDF cliente e situação compartilhada; piloto autenticado validado no computador/celular e etapas simultâneas com dependências
 - [x] Complemento de avanço: página individual com resumo e indicadores clicáveis; listagem com avanços físico/financeiro; etapas ponderadas com detalhes e fotos; alertas e validação piloto
@@ -7,7 +9,7 @@
 - [x] Complemento solicitado: preparar plano modular para dashboards por obra e consolidado, parcelas e validação de obra piloto
 - [x] Complemento: parcelas, visão por obra e consolidado com gráficos/filtros; caixa separado de resultado e pilotos excluídos por padrão
 - [x] Piloto: conversão única, compras/recebimento parcial e caixa; celular 390px sem extrapolar largura
-- [ ] Conferência final do piloto anterior: contrato/PDF e recuperação de rascunhos ainda sem comprovação completa
+- [ ] Conferência final do piloto anterior: contrato/PDF depende de contrato piloto salvo; listagem atual sem contratos. Rascunhos e parcelas já conferidos em sessão autenticada
 - [ ] Piloto: testar acesso autenticado como financeiro e equipe; bloqueado pela ausência de contas desses perfis (somente admin cadastrado); políticas revisadas, grupos financeiros conferidos sem divergências
 - [x] Etapa 1: cadastros, catálogo, precificação, orçamento em PDF
 - [x] Etapa 2: aprovação comprovada, contrato revisável/assinado e conversão única em obra; fluxo verificado

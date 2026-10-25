@@ -25,6 +25,7 @@
 - Opening snapshots are immutable and separate from transactions and account balances; direct-work forecasts stay unconfirmed until a completion estimate is entered.
 - Financial dashboard aggregation is shared by company and work views; economic results use pricing helpers, and installment payables never add a second purchase expense.
 - Form drafts are scoped to the signed-in user and form on the current device; restore installment values but require users to reselect attachments.
+- Draft capture and restoration use the shared form-draft helpers, including explicit unchecked values and file exclusion, so forms preserve selections consistently.
 
 - Executive indicators and financial drilldowns use executive.ts compositions from dashboard-data; totals and source rows share one selector to prevent divergence.
 - Relationship screens reuse relationship-data queries and navigate to existing work editors; the person profile route is unnested from the directory list to render independently.
