@@ -123,6 +123,12 @@ function compose(args, opts = {}) {
   return r;
 }
 
+function showMigrateLogsAndFail() {
+  console.log(c.b("\nLogs das migrações do banco:"));
+  compose(["logs", "--no-log-prefix", "--tail", "40", "migrate"], { allowFail: true });
+  fail("A subida parou. Copie as linhas acima (logs das migrações) e envie para análise.");
+}
+
 async function waitFor(url, label, headers = {}, timeoutMs = 180_000) {
   const start = Date.now();
   process.stdout.write(`aguardando ${label}`);
@@ -163,7 +169,8 @@ const [command = "up", ...rest] = process.argv.slice(2);
 if (command === "up") {
   await ensureDocker();
   const env = ensureInfraEnv();
-  compose(["up", "-d", "--build", "--remove-orphans"]);
+  const up = compose(["up", "-d", "--build", "--remove-orphans"], { allowFail: true });
+  if (up.status !== 0) showMigrateLogsAndFail();
   await waitFor(`http://localhost:${env.KONG_PORT || 8000}/auth/v1/health`, "Auth", {
     apikey: env.ANON_KEY,
   });
@@ -173,7 +180,8 @@ if (command === "up") {
 } else if (command === "dev") {
   await ensureDocker();
   const env = ensureInfraEnv();
-  compose(["up", "-d", "--build", ...BACKEND]);
+  const up = compose(["up", "-d", "--build", ...BACKEND], { allowFail: true });
+  if (up.status !== 0) showMigrateLogsAndFail();
   await waitFor(`http://localhost:${env.KONG_PORT || 8000}/auth/v1/health`, "Auth", {
     apikey: env.ANON_KEY,
   });

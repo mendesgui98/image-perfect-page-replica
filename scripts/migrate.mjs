@@ -31,6 +31,7 @@ async function waitFor(check, label) {
   throw new Error(`Tempo esgotado aguardando ${label}`);
 }
 
+let current = "";
 try {
   await waitFor("select true as ok", "banco");
   if (process.env.WAIT_FOR_SERVICES === "1") {
@@ -53,6 +54,7 @@ try {
     if (applied.has(version)) continue;
     const name = file.slice(15, -4);
     const body = await readFile(join(dir, file), "utf8");
+    current = file;
     await sql.begin(async (tx) => {
       await tx.unsafe(body);
       await tx`insert into supabase_migrations.schema_migrations (version, statements, name)
@@ -63,7 +65,12 @@ try {
   }
   console.log(count ? `${count} migração(ões) aplicada(s).` : "Banco já está atualizado.");
 } catch (error) {
-  console.error("Falha na migração:", error.message);
+  console.error(`Falha na migração${current ? ` ${current}` : ""}:`);
+  console.error(`  ${error.message}`);
+  for (const k of ["code", "detail", "hint", "where", "position"]) {
+    if (error[k]) console.error(`  ${k}: ${error[k]}`);
+  }
+  console.error(`  conectado como: ${new URL(url).username}`);
   process.exitCode = 1;
 } finally {
   await sql.end();
