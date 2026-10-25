@@ -3,7 +3,7 @@
  *  - Páginas: sempre da rede (dados e sessão nunca ficam em cache); sem rede, mostra offline.html.
  *  - Arquivos estáticos com hash (/assets/), ícones e imagens: cache-first.
  *  - Nunca intercepta API (auth/rest/storage), outros domínios nem métodos diferentes de GET.
- * A fila offline de diário/fotos virá numa etapa seguinte, em IndexedDB.
+ * Registros criados sem internet ficam na fila do IndexedDB (src/lib/offline-records.ts).
  */
 const VERSION = "v1";
 const STATIC_CACHE = `jmg-static-${VERSION}`;

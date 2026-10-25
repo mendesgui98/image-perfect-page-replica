@@ -27,6 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { GlobalSearch } from "@/components/management/global-search";
 import { Button } from "@/components/ui/button";
+import { OfflineStatus } from "@/components/pwa/offline-status";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -170,6 +171,7 @@ function Shell() {
         </div>
       )}
       <main className="min-w-0 flex-1 p-4 md:p-8">
+        <OfflineStatus />
         <Outlet />
       </main>
     </div>

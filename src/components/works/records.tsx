@@ -8,6 +8,10 @@ import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/u
 import { Field, Memo, Attachment, selectClass } from "./fields";
 import { text } from "@/lib/form-values";
 import { uploadDocument } from "@/lib/work-data";
+import { compressImage } from "@/lib/image-compress";
+import { isNetworkError } from "@/lib/offline-queue";
+import { enqueueRecord, type PendingRecord } from "@/lib/offline-records";
+import { usePendingRecords } from "@/hooks/use-pending-records";
 import { fmtDate } from "@/lib/format";
 import { Plus, Pencil } from "lucide-react";
 type RecordRow = Database["public"]["Tables"]["work_records"]["Row"];
@@ -33,38 +37,69 @@ export function Records({
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RecordRow | null>(null);
   const [busy, setBusy] = useState(false);
+  const pending = usePendingRecords(workId).filter((p) => p.data.payload.kind === kind);
+
+  function closeDialog() {
+    setOpen(false);
+    setEditing(null);
+  }
+
+  /** Guarda o registro no aparelho para envio automático quando a conexão voltar. */
+  async function saveOffline(payload: PendingRecord["payload"], file: File | null) {
+    const compressed = file ? await compressImage(file) : null;
+    await enqueueRecord({
+      payload,
+      file: compressed ?? undefined,
+      fileName: compressed?.name,
+    });
+    closeDialog();
+    toast.info("Sem internet: registro guardado no aparelho e será enviado automaticamente.");
+  }
+
   async function save(d: FormData) {
     setBusy(true);
+    const f = d.get("file");
+    const file = f instanceof File && f.size ? f : null;
+    const fields = {
+      work_id: workId,
+      kind,
+      title: text(d, "title"),
+      record_date: text(d, "date"),
+      body: text(d, "body"),
+      team: text(d, "team"),
+      next_steps: text(d, "next"),
+      responsible: text(d, "responsible"),
+      due_date: text(d, "due") || null,
+      status: text(d, "status"),
+      caption: text(d, "caption"),
+    };
+    // Id gerado no aparelho: permite reenviar sem duplicar.
+    const newId = crypto.randomUUID();
+    if (!editing && !navigator.onLine) {
+      await saveOffline({ ...fields, id: newId, file_path: null }, file);
+      setBusy(false);
+      return;
+    }
+    let uploaded: string | null = null;
     try {
-      const f = d.get("file");
-      const path =
-        f instanceof File && f.size
-          ? await uploadDocument(f, `records/${workId}`)
-          : (editing?.file_path ?? null);
-      const payload = {
-        work_id: workId,
-        kind,
-        title: text(d, "title"),
-        record_date: text(d, "date"),
-        body: text(d, "body"),
-        team: text(d, "team"),
-        next_steps: text(d, "next"),
-        responsible: text(d, "responsible"),
-        due_date: text(d, "due") || null,
-        status: text(d, "status"),
-        file_path: path,
-        caption: text(d, "caption"),
-      };
+      if (file) uploaded = await uploadDocument(file, `records/${workId}`);
+      const payload = { ...fields, file_path: uploaded ?? editing?.file_path ?? null };
       const r = editing
         ? await supabase.from("work_records").update(payload).eq("id", editing.id)
-        : await supabase.from("work_records").insert(payload);
+        : await supabase.from("work_records").insert({ ...payload, id: newId });
       if (r.error) throw r.error;
-      setOpen(false);
-      setEditing(null);
+      closeDialog();
       onChange();
       toast.success("Registro salvo.");
     } catch (e) {
-      toast.error((e as Error).message);
+      if (!editing && isNetworkError(e)) {
+        // Se o anexo já subiu, a fila envia só o registro.
+        await saveOffline({ ...fields, id: newId, file_path: uploaded }, uploaded ? null : file);
+      } else if (editing && isNetworkError(e)) {
+        toast.error("Sem internet: a edição de registros existentes precisa de conexão.");
+      } else {
+        toast.error((e as Error).message);
+      }
     } finally {
       setBusy(false);
     }
@@ -84,6 +119,23 @@ export function Records({
         </Button>
       </div>
       <div className="divide-y">
+        {pending.map((p) => (
+          <article key={p.id} className="py-4 opacity-80">
+            <h3 className="font-semibold">{p.data.payload.title}</h3>
+            <p className="text-xs text-muted-foreground">
+              {fmtDate(p.data.payload.record_date)} ·{" "}
+              <span className={p.lastError ? "text-destructive" : "text-amber-700"}>
+                {p.lastError
+                  ? `Erro no envio: ${p.lastError}`
+                  : "Guardado no aparelho, aguardando envio"}
+              </span>
+              {p.data.file || p.data.payload.file_path ? " · com anexo" : ""}
+            </p>
+            {p.data.payload.body && (
+              <p className="mt-2 whitespace-pre-wrap text-sm">{p.data.payload.body}</p>
+            )}
+          </article>
+        ))}
         {records
           .filter((r) => r.kind === kind)
           .map((r) => (
@@ -120,7 +172,7 @@ export function Records({
               {r.caption && <p className="text-xs text-muted-foreground">{r.caption}</p>}
             </article>
           ))}
-        {!records.some((r) => r.kind === kind) && (
+        {!records.some((r) => r.kind === kind) && pending.length === 0 && (
           <p className="py-6 text-sm text-muted-foreground">Nenhum registro.</p>
         )}
       </div>
