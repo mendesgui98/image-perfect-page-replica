@@ -40,10 +40,10 @@ export const Route = createFileRoute("/_authenticated")({
 
 const NAV = [
   { to: "/painel", label: "Painel", icon: LayoutDashboard },
-  { to: "/contratos", label: "Contratos", icon: FileText, costs: true },
   { to: "/orcamentos", label: "Orçamentos", icon: FileText, costs: true },
+  { to: "/contratos", label: "Contratos", icon: FileText, costs: true },
+  { to: "/cronogramas", label: "Cronograma", icon: CalendarDays },
   { to: "/obras", label: "Obras", icon: HardHat },
-  { to: "/cronogramas", label: "Cronogramas", icon: CalendarDays },
   { to: "/financeiro", label: "Financeiro", icon: Wallet, costs: true },
   { to: "/cadastros", label: "Cadastros", icon: Users },
   { to: "/servicos", label: "Serviços", icon: Wrench, costs: true },
