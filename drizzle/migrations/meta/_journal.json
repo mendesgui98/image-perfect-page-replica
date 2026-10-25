@@ -43,6 +43,13 @@
       "when": 1792890715929,
       "tag": "0005_nullable_finance_parties_and_group_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792890767848,
+      "tag": "0006_normalize_company_finance_scope",
+      "breakpoints": true
     }
   ]
 }
