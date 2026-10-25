@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -12,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_authenticated/etapas")({
-  head: () => ({ meta: [{ title: "Etapas e categorias — JMG Reformas" }] }),
+  head: () => pageMeta("Etapas e categorias", "Organização de serviços e categorias das obras JMG."),
   component: Etapas,
 });
 

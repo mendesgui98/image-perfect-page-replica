@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, FileText, Plus } from "lucide-react";
@@ -10,7 +11,7 @@ import { fmtDate } from "@/lib/format";
 import { STATUS_LABEL } from "@/lib/budget-status";
 
 export const Route = createFileRoute("/_authenticated/painel")({
-  head: () => ({ meta: [{ title: "Painel — JMG Reformas" }] }),
+  head: () => pageMeta("Painel", "Acompanhamento de obras, propostas e alertas da JMG."),
   component: Painel,
 });
 

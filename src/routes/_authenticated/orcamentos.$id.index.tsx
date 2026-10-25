@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
@@ -21,7 +22,7 @@ import { Approval } from "@/components/works/approval";
 import { Attachment } from "@/components/works/fields";
 
 export const Route = createFileRoute("/_authenticated/orcamentos/$id/")({
-  head: () => ({ meta: [{ title: "Orçamento — JMG Reformas" }] }),
+  head: () => pageMeta("Orçamento", "Serviços, condições e aprovação da proposta JMG."),
   component: Editor,
 });
 
