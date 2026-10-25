@@ -4,6 +4,7 @@
 Mostrar quanto cada obra vale, quanto recebeu e pagou, seus valores pendentes, caixa e resultado econômico, além da situação consolidada da JMG. Evoluir o que já funciona, sem reconstruir a plataforma.
 
 ## 1. Base financeira confiável e parcelamento
+- Começar identificando a obra piloto e verificando os fluxos existentes; reutilizá-la na validação de cada módulo, mantendo-a fora dos indicadores reais.
 - Reaproveitar orçamento aprovado, cliente, endereço, etapas, descontos e condições de pagamento na obra, mantendo a conversão única.
 - Permitir conferir os vencimentos das condições de pagamento antes de gerar as contas a receber; não inventar datas ausentes.
 - Criar compras e despesas parceladas com valores e vencimentos individuais, mantendo uma única origem da despesa e impedindo geração duplicada.
