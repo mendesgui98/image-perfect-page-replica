@@ -99,6 +99,13 @@
       "when": 1792937344946,
       "tag": "0013_linked_stage_safe_removal",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792937561685,
+      "tag": "0014_schedule_integrity_guards",
+      "breakpoints": true
     }
   ]
 }
