@@ -19,7 +19,7 @@ type Person = Database["public"]["Tables"]["people"]["Row"];
 type Kind = Database["public"]["Enums"]["person_kind"];
 
 export const Route = createFileRoute("/_authenticated/cadastros")({
-  validateSearch:(s:Record<string,unknown>)=>({kind:typeof s['kind']==='string'?s['kind']:'cliente',edit:typeof s['edit']==='string'?s['edit']:''}),
+  validateSearch:(s:Record<string,unknown>):{kind?:string;edit?:string}=>({kind:typeof s['kind']==='string'?s['kind']:'cliente',edit:typeof s['edit']==='string'?s['edit']:''}),
   head: () => pageMeta("Cadastros", "Clientes, arquitetos, fornecedores e prestadores da JMG."),
   component: Cadastros,
 });
