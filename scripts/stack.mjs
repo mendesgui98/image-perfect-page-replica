@@ -7,8 +7,9 @@
 //   bun run stack:admin <email>  dá perfil de administrador a um usuário já cadastrado
 //   bun run stack:reset      apaga containers E dados locais (pede confirmação)
 //   bun run stack:test-user  cria a conta de teste local (admin) definida em infra/.env
+//   bun run stack:seed <arquivo.sql>  aplica uma carga de dados (ex.: supabase/seed/materiais-eletrica.sql)
 import { spawn, spawnSync } from "node:child_process";
-import { copyFileSync, existsSync } from "node:fs";
+import { copyFileSync, existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { createInterface } from "node:readline/promises";
@@ -314,6 +315,24 @@ if (command === "up") {
   console.log(
     `${c.g("✔")} Conta de teste pronta: ${email} (senha em infra/.env, UI_TEST_PASSWORD)`,
   );
+} else if (command === "seed") {
+  // Executa um arquivo SQL de carga (ex.: supabase/seed/*.sql) no banco local.
+  const file = rest[0];
+  if (!file || (!existsSync(join(root, file)) && !existsSync(file))) {
+    fail("Informe o arquivo: bun run stack:seed supabase/seed/materiais-eletrica.sql");
+  }
+  await ensureDocker();
+  const path = existsSync(file) ? file : join(root, file);
+  const r = compose(["exec", "-T", "db", "psql", "-U", "postgres", "-v", "ON_ERROR_STOP=1", "-q"], {
+    input: readFileSync(path),
+    stdio: ["pipe", "inherit", "inherit"],
+    allowFail: true,
+  });
+  if (r.status !== 0)
+    fail(
+      "A carga falhou (veja a mensagem acima). Se o erro citar uma coluna inexistente, reinicie bun run dev:all (ou stack:up) para aplicar as migrações novas e rode de novo.",
+    );
+  console.log(`${c.g("✔")} Carga aplicada: ${file}`);
 } else if (command === "reset") {
   await ensureDocker();
   const rl = createInterface({ input: process.stdin, output: process.stdout });

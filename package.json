@@ -26,7 +26,8 @@
     "stack:logs": "node scripts/stack.mjs logs",
     "stack:admin": "node scripts/stack.mjs admin",
     "stack:reset": "node scripts/stack.mjs reset",
-    "stack:test-user": "node scripts/stack.mjs test-user"
+    "stack:test-user": "node scripts/stack.mjs test-user",
+    "stack:seed": "node scripts/stack.mjs seed"
   },
   "overrides": {
     "rolldown": "1.2.1"
