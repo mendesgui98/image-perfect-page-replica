@@ -12,6 +12,7 @@ import { NoAccess, PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { SubmitForm } from "@/components/enter-submit";
 import {
@@ -70,6 +71,8 @@ function Materiais() {
         rendimento_embalagem:
           Number(m.rendimento_embalagem) > 0 ? Number(m.rendimento_embalagem) : null,
         unidade_rendimento: m.unidade_rendimento?.trim() || null,
+        reference: m.reference?.trim() || null,
+        specs: m.specs?.trim() || null,
         price: Number(m.price) || 0,
         price_updated_at:
           !prev || prev.price !== Number(m.price) ? businessDate() : m.price_updated_at,
@@ -88,7 +91,10 @@ function Materiais() {
   });
 
   if (me && !me.canSeeCosts) return <NoAccess />;
-  const list = data.filter((m) => m.name.toLowerCase().includes(q.toLowerCase()));
+  const term = q.toLowerCase();
+  const list = data.filter((m) =>
+    [m.name, m.reference, m.specs].some((v) => v?.toLowerCase().includes(term)),
+  );
 
   return (
     <div>
@@ -103,7 +109,7 @@ function Materiais() {
       />
       <Input
         className="mb-4 max-w-sm"
-        placeholder="Buscar"
+        placeholder="Buscar por nome, referência ou especificação"
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />
@@ -126,7 +132,12 @@ function Materiais() {
                 onClick={() => setEdit(m)}
                 className={`cursor-pointer border-t hover:bg-muted/50 ${m.active ? "" : "opacity-50"}`}
               >
-                <td className="p-3 font-medium">{m.name}</td>
+                <td className="p-3">
+                  <span className="font-medium">{m.name}</span>
+                  {m.reference && (
+                    <span className="block text-xs text-muted-foreground">{m.reference}</span>
+                  )}
+                </td>
                 <td className="p-3">
                   {m.purchase_unit}
                   {m.rendimento_embalagem ? (
@@ -170,6 +181,23 @@ function Materiais() {
                   <Input
                     value={edit.name ?? ""}
                     onChange={(e) => setEdit({ ...edit, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label>Referência / fabricante</Label>
+                  <Input
+                    placeholder="ex.: Clamper Front 175V 45kA (cód. 014294)"
+                    value={edit.reference ?? ""}
+                    onChange={(e) => setEdit({ ...edit, reference: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label>Especificação técnica</Label>
+                  <Textarea
+                    rows={4}
+                    placeholder="Corrente, tensão, seção de cabo, material, normas…"
+                    value={edit.specs ?? ""}
+                    onChange={(e) => setEdit({ ...edit, specs: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">

@@ -886,7 +886,9 @@ export type Database = {
           price: number;
           price_updated_at: string;
           purchase_unit: string;
+          reference: string | null;
           rendimento_embalagem: number | null;
+          specs: string | null;
           supplier_id: string | null;
           unidade_rendimento: string | null;
           updated_at: string;
@@ -903,7 +905,9 @@ export type Database = {
           price?: number;
           price_updated_at?: string;
           purchase_unit: string;
+          reference?: string | null;
           rendimento_embalagem?: number | null;
+          specs?: string | null;
           supplier_id?: string | null;
           unidade_rendimento?: string | null;
           updated_at?: string;
@@ -920,7 +924,9 @@ export type Database = {
           price?: number;
           price_updated_at?: string;
           purchase_unit?: string;
+          reference?: string | null;
           rendimento_embalagem?: number | null;
+          specs?: string | null;
           supplier_id?: string | null;
           unidade_rendimento?: string | null;
           updated_at?: string;
