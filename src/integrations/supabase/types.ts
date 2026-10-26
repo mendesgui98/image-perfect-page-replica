@@ -2068,6 +2068,7 @@ export type Database = {
         Returns: number;
       };
       convert_budget: { Args: { _budget_id: string }; Returns: string };
+      delete_material: { Args: { _id: string }; Returns: undefined };
       copy_budget: {
         Args: { _as_revision: boolean; _budget_id: string };
         Returns: string;

@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { SubmitForm } from "@/components/enter-submit";
+import { ConfirmRecordAction } from "@/components/management/confirm-record-action";
 import {
   Dialog,
   DialogContent,
@@ -320,6 +321,22 @@ function Materiais() {
               </Button>
             </DialogFooter>
           </SubmitForm>
+          {edit?.id && (
+            // Fora do formulário: o envio da confirmação não pode disparar o Salvar.
+            <div className="border-t pt-3">
+              <ConfirmRecordAction
+                name={edit.name ?? "material"}
+                description="O material sai do catálogo. Orçamentos e compras já lançados guardam uma cópia e não mudam. Se ele fizer parte da composição de algum serviço, a exclusão será bloqueada."
+                onConfirm={async () => {
+                  const { error } = await supabase.rpc("delete_material", { _id: edit.id! });
+                  if (error) throw new Error(error.message);
+                  toast.success("Material excluído.");
+                  setEdit(null);
+                  await qc.invalidateQueries({ queryKey: ["materials"] });
+                }}
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
