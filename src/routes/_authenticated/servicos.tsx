@@ -19,10 +19,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { fmtBRL, UNIT_LABEL } from "@/lib/format";
+import { fmtBRL, fmtNum, UNIT_LABEL } from "@/lib/format";
+import { materialPackages, materialQty, materialUnitCost, type ItemMaterial } from "@/lib/pricing";
 
 type Svc = Database["public"]["Tables"]["services"]["Row"];
+type Mat = Database["public"]["Tables"]["materials"]["Row"];
 type Comp = { id?: string; material_id: string; consumption: number; loss_pct: number };
+
+const asItemMaterial = (m: Mat, c: Pick<Comp, "consumption" | "loss_pct">): ItemMaterial => ({
+  material_id: m.id,
+  name: m.name,
+  consumption_unit: m.consumption_unit,
+  purchase_unit: m.purchase_unit,
+  conversion: m.conversion,
+  consumption: Number(c.consumption) || 0,
+  loss_pct: Number(c.loss_pct) || 0,
+  price: m.price,
+  supplied_by: "jmg",
+  package_yield: m.rendimento_embalagem,
+  yield_unit: m.unidade_rendimento,
+});
 
 export const Route = createFileRoute("/_authenticated/servicos")({
   head: () => pageMeta("Serviços", "Serviços, custos e composições de materiais da JMG."),
@@ -91,9 +107,9 @@ function Servicos() {
   const matCost = (s: (typeof data)[number]) =>
     s.service_materials.reduce((acc, c) => {
       const m = materials.find((x) => x.id === c.material_id);
-      return m
-        ? acc + c.consumption * (1 + c.loss_pct / 100) * (m.price / (m.conversion || 1))
-        : acc;
+      if (!m) return acc;
+      const im = asItemMaterial(m, c);
+      return acc + materialQty(im, 1) * materialUnitCost(im);
     }, 0);
 
   return (
@@ -239,7 +255,7 @@ function Servicos() {
                     onClick={() =>
                       setEdit({
                         ...edit,
-                        comp: [...edit.comp, { material_id: "", consumption: 0, loss_pct: 0 }],
+                        comp: [...edit.comp, { material_id: "", consumption: 1, loss_pct: 0 }],
                       })
                     }
                   >
@@ -308,6 +324,14 @@ function Servicos() {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
+                        {m?.rendimento_embalagem ? (
+                          <p className="col-span-12 text-xs text-muted-foreground">
+                            Embalagem de {fmtNum(m.rendimento_embalagem, 4)}{" "}
+                            {m.unidade_rendimento || m.consumption_unit}. Ex.: 100{" "}
+                            {UNIT_LABEL[edit.unit ?? "un"]} →{" "}
+                            {materialPackages(asItemMaterial(m, c), 100)} {m.purchase_unit}
+                          </p>
+                        ) : null}
                       </div>
                     );
                   })}

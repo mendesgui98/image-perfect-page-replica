@@ -1,5 +1,5 @@
 import type { ItemMaterial } from "./pricing";
-import { materialQty } from "./pricing";
+import { materialPurchaseQty } from "./pricing";
 export function materialKey(m: ItemMaterial) {
   return `${m.material_id || m.name}|${m.purchase_unit}|${m.supplied_by}`;
 }
@@ -19,7 +19,7 @@ export function consolidateMaterials(items: { quantity: number; materials: ItemM
         needed: 0,
         price: m.price,
       };
-      row.needed += materialQty(m, item.quantity) / (m.conversion > 0 ? m.conversion : 1);
+      row.needed += materialPurchaseQty(m, item.quantity);
       map.set(key, row);
     }
   return [...map.values()];

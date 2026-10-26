@@ -5,6 +5,8 @@
  *  - Custo MO do item       = quantidade × custo unitário do terceiro
  *  - Qtde material (consumo) = quantidade × consumo por unidade × (1 + perda)
  *  - Custo material         = qtde consumo × (preço de compra ÷ conversão)   [só materiais fornecidos pela JMG]
+ *    -> com rendimento de embalagem: embalagens = ⌈qtde consumo ÷ rendimento⌉ (por serviço),
+ *       custo = embalagens × preço da embalagem
  *  - Preço MO (lista)       = custo MO × (1 + acréscimo MO) × (1 + reserva de negociação)
  *  - Preço Mat (lista)      = custo Mat × (1 + acréscimo Mat) × (1 + reserva de negociação)
  *    -> "acréscimo" é sempre sobre CUSTO. "Margem" é sempre sobre VENDA.
@@ -57,6 +59,8 @@ export interface ItemMaterial {
   loss_pct: number;
   price: number; // por unidade de compra (snapshot)
   supplied_by: "jmg" | "cliente";
+  package_yield?: number | null; // rendimento de 1 embalagem; nulo = compra fracionada
+  yield_unit?: string | null;
 }
 
 export interface PricingItem {
@@ -112,12 +116,31 @@ const pct = (n: number | null | undefined) => (Number(n) || 0) / 100;
 export function materialQty(m: ItemMaterial, serviceQty: number) {
   return serviceQty * (Number(m.consumption) || 0) * (1 + pct(m.loss_pct));
 }
+/** Custo por unidade de consumo (estimativa unitária, sem arredondar embalagens). */
 export function materialUnitCost(m: ItemMaterial) {
-  const conv = Number(m.conversion) > 0 ? Number(m.conversion) : 1;
+  const conv =
+    Number(m.package_yield) > 0
+      ? Number(m.package_yield)
+      : Number(m.conversion) > 0
+        ? Number(m.conversion)
+        : 1;
   return (Number(m.price) || 0) / conv;
+}
+/** Embalagens inteiras para um serviço (arredonda por serviço); null sem rendimento. */
+export function materialPackages(m: ItemMaterial, serviceQty: number) {
+  const packageYield = Number(m.package_yield);
+  if (!(packageYield > 0)) return null;
+  return Math.max(0, Math.ceil(materialQty(m, serviceQty) / packageYield - 1e-9));
+}
+/** Quantidade em unidades de compra: embalagens inteiras ou fração pela conversão. */
+export function materialPurchaseQty(m: ItemMaterial, serviceQty: number) {
+  const conv = Number(m.conversion) > 0 ? Number(m.conversion) : 1;
+  return materialPackages(m, serviceQty) ?? materialQty(m, serviceQty) / conv;
 }
 export function materialCost(m: ItemMaterial, serviceQty: number) {
   if (m.supplied_by === "cliente") return 0;
+  const packages = materialPackages(m, serviceQty);
+  if (packages !== null) return packages * (Number(m.price) || 0);
   return materialQty(m, serviceQty) * materialUnitCost(m);
 }
 

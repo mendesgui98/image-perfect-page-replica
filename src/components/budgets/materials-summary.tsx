@@ -1,12 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { type Item } from "@/lib/budget-data";
-import { materialQty } from "@/lib/pricing";
+import { materialPurchaseQty, materialQty } from "@/lib/pricing";
 import { fmtNum } from "@/lib/format";
 
 export function MaterialsSummary({ items }: { items: Item[] }) {
   const map = new Map<
     string,
-    { name: string; unit: string; purchase: string; conv: number; qty: number; who: string }
+    { name: string; unit: string; purchase: string; buy: number; qty: number; who: string }
   >();
   for (const it of items)
     for (const m of it.materials) {
@@ -15,11 +15,12 @@ export function MaterialsSummary({ items }: { items: Item[] }) {
         name: m.name,
         unit: m.consumption_unit,
         purchase: m.purchase_unit,
-        conv: m.conversion || 1,
+        buy: 0,
         qty: 0,
         who: m.supplied_by,
       };
       cur.qty += materialQty(m, it.quantity);
+      cur.buy += materialPurchaseQty(m, it.quantity);
       map.set(key, cur);
     }
   const rows = [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
@@ -43,7 +44,7 @@ export function MaterialsSummary({ items }: { items: Item[] }) {
                   {fmtNum(r.qty)} {r.unit}
                 </td>
                 <td className="p-3 text-right num">
-                  {Math.ceil(r.qty / r.conv - 1e-9)} {r.purchase}
+                  {Math.ceil(r.buy - 1e-9)} {r.purchase}
                 </td>
                 <td className="p-3">{r.who === "jmg" ? "JMG" : "Cliente"}</td>
               </tr>

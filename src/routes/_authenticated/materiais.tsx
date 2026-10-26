@@ -59,6 +59,9 @@ function Materiais() {
       const payload = {
         ...m,
         conversion: Number(m.conversion) || 1,
+        rendimento_embalagem:
+          Number(m.rendimento_embalagem) > 0 ? Number(m.rendimento_embalagem) : null,
+        unidade_rendimento: m.unidade_rendimento?.trim() || null,
         price: Number(m.price) || 0,
         price_updated_at:
           !prev || prev.price !== Number(m.price) ? businessDate() : m.price_updated_at,
@@ -116,7 +119,16 @@ function Materiais() {
                 className={`cursor-pointer border-t hover:bg-muted/50 ${m.active ? "" : "opacity-50"}`}
               >
                 <td className="p-3 font-medium">{m.name}</td>
-                <td className="p-3">{m.purchase_unit}</td>
+                <td className="p-3">
+                  {m.purchase_unit}
+                  {m.rendimento_embalagem ? (
+                    <span className="text-muted-foreground">
+                      {" "}
+                      (rende {fmtNum(m.rendimento_embalagem, 4)}{" "}
+                      {m.unidade_rendimento || m.consumption_unit})
+                    </span>
+                  ) : null}
+                </td>
                 <td className="p-3">
                   {m.consumption_unit}{" "}
                   <span className="text-muted-foreground">(×{fmtNum(m.conversion, 4)})</span>
@@ -187,6 +199,35 @@ function Materiais() {
                   onChange={(e) => setEdit({ ...edit, price: e.target.value as unknown as number })}
                 />
               </div>
+              <div className="space-y-1">
+                <Label>Rendimento da embalagem</Label>
+                <Input
+                  type="number"
+                  step="any"
+                  min="0"
+                  placeholder="ex.: 25 (rolo de 25 m²)"
+                  value={edit.rendimento_embalagem ?? ""}
+                  onChange={(e) =>
+                    setEdit({
+                      ...edit,
+                      rendimento_embalagem:
+                        e.target.value === "" ? null : (e.target.value as unknown as number),
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Unidade do rendimento</Label>
+                <Input
+                  placeholder={edit.consumption_unit || "m²"}
+                  value={edit.unidade_rendimento ?? ""}
+                  onChange={(e) => setEdit({ ...edit, unidade_rendimento: e.target.value })}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground sm:col-span-2">
+                Com rendimento, o orçamento compra embalagens inteiras por serviço (ex.: 30 m² com
+                rolo de 25 m² = 2 rolos). Em branco, o custo é fracionado pela conversão.
+              </p>
               <div className="space-y-1 sm:col-span-2">
                 <Label>Fornecedor</Label>
                 <select

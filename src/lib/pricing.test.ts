@@ -3,6 +3,9 @@ import {
   computeBudget,
   computeWorkResult,
   emptyParams,
+  materialCost,
+  materialPackages,
+  materialPurchaseQty,
   splitPayments,
   type PricingItem,
 } from "./pricing";
@@ -145,4 +148,61 @@ it("resultado acumulado considera custo incorrido e não pagamentos de caixa", (
   const r = computeWorkResult(base, [], 100000, 20000, null);
   expect(r.accumulatedResult).toBe(200000);
   expect(r.result).toBe(100000);
+});
+
+describe("rendimento de embalagem (arredonda por serviço)", () => {
+  // Salva-piso: rolo de 25 m² a R$ 80, consumo 1 m² por m² de proteção.
+  const salvaPiso = (over = {}) =>
+    mat({
+      name: "Salva-piso",
+      consumption_unit: "m²",
+      purchase_unit: "rolo",
+      conversion: 1,
+      consumption: 1,
+      loss_pct: 0,
+      price: 80,
+      package_yield: 25,
+      yield_unit: "m²",
+      ...over,
+    });
+
+  it("100 m² → 4 rolos", () => {
+    expect(materialPackages(salvaPiso(), 100)).toBe(4);
+    expect(materialCost(salvaPiso(), 100)).toBe(320);
+  });
+
+  it("30 m² → 2 rolos (embalagem inteira)", () => {
+    expect(materialPackages(salvaPiso(), 30)).toBe(2);
+    expect(materialCost(salvaPiso(), 30)).toBe(160);
+  });
+
+  it("100 m² com 10% de perda → 5 rolos", () => {
+    expect(materialPackages(salvaPiso({ loss_pct: 10 }), 100)).toBe(5);
+    expect(materialCost(salvaPiso({ loss_pct: 10 }), 100)).toBe(400);
+  });
+
+  it("arredonda cada serviço separadamente no orçamento", () => {
+    const r = computeBudget(
+      [
+        { quantity: 30, labor_cost_unit: 0, materials: [salvaPiso()] },
+        { quantity: 30, labor_cost_unit: 0, materials: [salvaPiso()] },
+      ],
+      emptyParams,
+    );
+    // 2 + 2 rolos, não ⌈60 ÷ 25⌉ = 3
+    expect(r.materialsCost).toBe(320);
+  });
+
+  it("sem rendimento mantém o cálculo fracionado atual", () => {
+    const m = salvaPiso({ package_yield: null });
+    expect(materialPackages(m, 100)).toBeNull();
+    expect(materialCost(m, 100)).toBe(8000);
+    expect(materialPurchaseQty(m, 100)).toBe(100);
+    // snapshots antigos sem o campo seguem iguais
+    expect(materialCost(mat(), 10)).toBeCloseTo(110, 10);
+  });
+
+  it("material fornecido pelo cliente não tem custo", () => {
+    expect(materialCost(salvaPiso({ supplied_by: "cliente" }), 100)).toBe(0);
+  });
 });

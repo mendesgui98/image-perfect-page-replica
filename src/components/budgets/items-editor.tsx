@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { type Item, type Section } from "@/lib/budget-data";
 import {
+  materialPackages,
   materialQty,
   type BudgetResult,
   type ItemMaterial,
@@ -79,6 +80,8 @@ export function ItemsEditor({
         consumption_unit: c.materials?.consumption_unit ?? "",
         purchase_unit: c.materials?.purchase_unit ?? "",
         conversion: c.materials?.conversion ?? 1,
+        package_yield: c.materials?.rendimento_embalagem ?? null,
+        yield_unit: c.materials?.unidade_rendimento ?? null,
         consumption: c.consumption,
         loss_pct: c.loss_pct,
         price: c.materials?.price ?? 0,
@@ -424,8 +427,7 @@ function ItemRow({
               <div className="col-span-12 text-sm font-medium sm:col-span-4">
                 {m.name}
                 <div className="text-xs text-muted-foreground">
-                  {fmtNum(materialQty(m, item.quantity))} {m.consumption_unit} ≈{" "}
-                  {fmtNum(materialQty(m, item.quantity) / (m.conversion || 1))} {m.purchase_unit}
+                  <MaterialConsumption material={m} quantity={item.quantity} />
                 </div>
               </div>
               <div className="col-span-4 sm:col-span-2">
@@ -488,3 +490,29 @@ function ItemRow({
 }
 
 /* ---------------- Dados ---------------- */
+
+function MaterialConsumption({
+  material: m,
+  quantity,
+}: {
+  material: ItemMaterial;
+  quantity: number;
+}) {
+  const needed = materialQty(m, quantity);
+  const packages = materialPackages(m, quantity);
+  if (packages === null)
+    return (
+      <>
+        {fmtNum(needed)} {m.consumption_unit} ≈ {fmtNum(needed / (m.conversion || 1))}{" "}
+        {m.purchase_unit}
+      </>
+    );
+  return (
+    <>
+      {fmtNum(needed)} {m.yield_unit || m.consumption_unit} → {packages} {m.purchase_unit}{" "}
+      <span className="whitespace-nowrap">
+        (embalagem de {fmtNum(m.package_yield)} {m.yield_unit || m.consumption_unit})
+      </span>
+    </>
+  );
+}
