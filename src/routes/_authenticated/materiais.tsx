@@ -62,8 +62,15 @@ function Materiais() {
   });
   const save = useMutation({
     mutationFn: async (m: Partial<Mat>) => {
-      if (!m.name || !m.purchase_unit || !m.consumption_unit)
-        throw new Error("Preencha nome e unidades.");
+      const missing = [
+        !m.name?.trim() && "nome",
+        !m.purchase_unit?.trim() && "unidade de compra",
+        !m.consumption_unit?.trim() && "unidade de consumo",
+      ].filter(Boolean);
+      if (missing.length)
+        throw new Error(
+          `Preencha ${missing.join(", ").replace(/, ([^,]*)$/, " e $1")} para salvar.`,
+        );
       const prev = data.find((x) => x.id === m.id);
       const payload = {
         ...m,
