@@ -53,6 +53,7 @@ export function Memo({
 export function Attachment({ path }: { path?: string | null | undefined }) {
   return path ? (
     <Button
+      type="button"
       size="sm"
       variant="ghost"
       onClick={() => openDocument(path).catch((e) => toast.error(e.message))}

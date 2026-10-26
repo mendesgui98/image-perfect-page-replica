@@ -55,7 +55,9 @@ function Reset() {
             required
           />
         </div>
-        <Button className="h-10 w-full">Salvar e entrar</Button>
+        <Button type="submit" className="h-10 w-full">
+          Salvar e entrar
+        </Button>
       </form>
     </AuthLayout>
   );

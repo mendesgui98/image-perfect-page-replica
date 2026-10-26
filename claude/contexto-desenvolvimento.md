@@ -4,6 +4,19 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-26 — Enter salva formulários (branch `feat/fundacao-tecnica`)
+
+**Problema:** vários diálogos (material, serviço, cadastros, novo orçamento, configurações) tinham `Input`s soltos e o botão Salvar com `onClick`, sem `<form>`; o Enter não fazia nada.
+
+**Decisões:**
+
+- Ouvinte global `EnterToSubmit` (montado em `__root.tsx`) decide o Enter em qualquer `<form>`, pela regra pura `enterIntent` em `src/lib/enter-submit.ts`: salva em texto/número/data/select; textarea só com Ctrl/Cmd+Enter; bloqueia quando o campo tem `aria-expanded="true"` (combobox aberto); ignora Enter já tratado (`defaultPrevented`), repetição da tecla e conteúdo em portal. Usa o primeiro botão `type="submit"`; botão desabilitado ou `aria-busy` não salvam. `data-enter-submit="off"` desliga num formulário.
+- Diálogos sem `<form>` passaram a usar `SubmitForm` (`src/components/enter-submit.tsx`), com `pending` para não enviar duas vezes. Todo botão que não salva virou `type="button"` (+ Material, lixeira, Cancelar…).
+- Campos de edição em linha que salvam no `onBlur` (itens do orçamento, etapas, avanço do cronograma) usam `commitOnEnter`: Enter só confirma o campo (blur), não submete nada.
+- Formulários que já existiam (`DraftForm`, obras, cronogramas, compras etc.) não mudaram de estrutura; só ganharam `type="submit"` explícito. A movimentação de material e o "Adicionar serviço" do orçamento ganharam trava de ocupado contra duplo envio.
+
+**Onde está:** `src/lib/enter-submit.ts` (+ `.test.ts`), `src/components/enter-submit.tsx` (+ `.test.tsx`). Testado no navegador: login, material (Enter no nome e no select), cadastros (Enter na textarea quebra linha; Cmd+Enter salva) e serviços (Enter não aciona "+ Material").
+
 ### 2026-10-25 — Rendimento de embalagem dos materiais (branch `feat/fundacao-tecnica`)
 
 **Problema:** material vendido em embalagem (ex.: salva-piso em rolo de 25 m²) era cobrado 1 unidade de compra por unidade de serviço quando a conversão ficava no padrão 1 — 100 m² de proteção viravam 100 rolos.

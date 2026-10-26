@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { SubmitForm } from "@/components/enter-submit";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -198,63 +199,65 @@ function Cadastros() {
 
       <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{edit?.id ? "Editar cadastro" : "Novo cadastro"}</DialogTitle>
-          </DialogHeader>
-          {edit && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1 sm:col-span-2">
-                <Label>Tipo</Label>
-                <select
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  value={edit.kind ?? kind}
-                  onChange={(e) => setEdit({ ...edit, kind: e.target.value as Kind })}
-                >
-                  {KINDS.map((k) => (
-                    <option key={k.k} value={k.k}>
-                      {k.label.slice(0, -1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {FIELDS.map(([f, l]) => (
-                <div
-                  key={f}
-                  className={
-                    f === "name" || f === "endereco" ? "space-y-1 sm:col-span-2" : "space-y-1"
-                  }
-                >
-                  <Label>{l}</Label>
-                  <Input
-                    value={(edit[f] as string) ?? ""}
-                    onChange={(e) => setEdit({ ...edit, [f]: e.target.value })}
+          <SubmitForm onSubmit={() => edit && save.mutate(edit)} pending={save.isPending}>
+            <DialogHeader>
+              <DialogTitle>{edit?.id ? "Editar cadastro" : "Novo cadastro"}</DialogTitle>
+            </DialogHeader>
+            {edit && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1 sm:col-span-2">
+                  <Label>Tipo</Label>
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={edit.kind ?? kind}
+                    onChange={(e) => setEdit({ ...edit, kind: e.target.value as Kind })}
+                  >
+                    {KINDS.map((k) => (
+                      <option key={k.k} value={k.k}>
+                        {k.label.slice(0, -1)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {FIELDS.map(([f, l]) => (
+                  <div
+                    key={f}
+                    className={
+                      f === "name" || f === "endereco" ? "space-y-1 sm:col-span-2" : "space-y-1"
+                    }
+                  >
+                    <Label>{l}</Label>
+                    <Input
+                      value={(edit[f] as string) ?? ""}
+                      onChange={(e) => setEdit({ ...edit, [f]: e.target.value })}
+                    />
+                  </div>
+                ))}
+                <div className="space-y-1 sm:col-span-2">
+                  <Label>Observações</Label>
+                  <Textarea
+                    value={edit.notes ?? ""}
+                    onChange={(e) => setEdit({ ...edit, notes: e.target.value })}
                   />
                 </div>
-              ))}
-              <div className="space-y-1 sm:col-span-2">
-                <Label>Observações</Label>
-                <Textarea
-                  value={edit.notes ?? ""}
-                  onChange={(e) => setEdit({ ...edit, notes: e.target.value })}
-                />
+                <label className="flex items-center gap-2 text-sm">
+                  <Switch
+                    checked={edit.active ?? true}
+                    onCheckedChange={(v) => setEdit({ ...edit, active: v })}
+                  />{" "}
+                  Ativo
+                </label>
               </div>
-              <label className="flex items-center gap-2 text-sm">
-                <Switch
-                  checked={edit.active ?? true}
-                  onCheckedChange={(v) => setEdit({ ...edit, active: v })}
-                />{" "}
-                Ativo
-              </label>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEdit(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => edit && save.mutate(edit)} disabled={save.isPending}>
-              Salvar
-            </Button>
-          </DialogFooter>
+            )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEdit(null)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={save.isPending}>
+                Salvar
+              </Button>
+            </DialogFooter>
+          </SubmitForm>
         </DialogContent>
       </Dialog>
     </div>

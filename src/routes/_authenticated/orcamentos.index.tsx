@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { NoAccess, PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { SubmitForm } from "@/components/enter-submit";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -250,61 +251,63 @@ function Lista() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Novo orçamento</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <Label>Cliente</Label>
-              <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-              >
-                <option value="">Selecione</option>
-                {people
-                  .filter((p) => p.kind === "cliente")
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-              </select>
+          <SubmitForm onSubmit={() => create.mutate()} pending={create.isPending}>
+            <DialogHeader>
+              <DialogTitle>Novo orçamento</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label>Cliente</Label>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                >
+                  <option value="">Selecione</option>
+                  {people
+                    .filter((p) => p.kind === "cliente")
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Não encontrou?{" "}
+                  <Link to="/cadastros" className="text-primary underline">
+                    Cadastre o cliente
+                  </Link>
+                  .
+                </p>
+              </div>
+              <div className="space-y-1">
+                <Label>Arquiteto(a) (opcional)</Label>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={architectId}
+                  onChange={(e) => setArchitectId(e.target.value)}
+                >
+                  <option value="">—</option>
+                  {people
+                    .filter((p) => p.kind === "arquiteto")
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Não encontrou?{" "}
-                <Link to="/cadastros" className="text-primary underline">
-                  Cadastre o cliente
-                </Link>
-                .
+                Os percentuais de precificação atuais são copiados para este orçamento e podem ser
+                ajustados nele.
               </p>
             </div>
-            <div className="space-y-1">
-              <Label>Arquiteto(a) (opcional)</Label>
-              <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={architectId}
-                onChange={(e) => setArchitectId(e.target.value)}
-              >
-                <option value="">—</option>
-                {people
-                  .filter((p) => p.kind === "arquiteto")
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Os percentuais de precificação atuais são copiados para este orçamento e podem ser
-              ajustados nele.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button onClick={() => create.mutate()} disabled={create.isPending}>
-              Criar rascunho
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="submit" disabled={create.isPending}>
+                Criar rascunho
+              </Button>
+            </DialogFooter>
+          </SubmitForm>
         </DialogContent>
       </Dialog>
     </div>

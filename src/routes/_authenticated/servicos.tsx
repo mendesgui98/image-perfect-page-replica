@@ -9,6 +9,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { useMe } from "@/hooks/use-me";
 import { NoAccess, PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { SubmitForm } from "@/components/enter-submit";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -183,170 +184,176 @@ function Servicos() {
 
       <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{edit?.id ? "Editar serviço" : "Novo serviço"}</DialogTitle>
-          </DialogHeader>
-          {edit && (
-            <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1 sm:col-span-2">
-                  <Label>Descrição (aparece no orçamento)</Label>
-                  <Input
-                    value={edit.description ?? ""}
-                    onChange={(e) => setEdit({ ...edit, description: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label>Etapa</Label>
-                  <select
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                    value={edit.stage_id ?? ""}
-                    onChange={(e) => setEdit({ ...edit, stage_id: e.target.value })}
-                  >
-                    <option value="">—</option>
-                    {stages
-                      .filter((s) => s.active || s.id === edit.stage_id)
-                      .map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
+          <SubmitForm onSubmit={() => edit && save.mutate(edit)} pending={save.isPending}>
+            <DialogHeader>
+              <DialogTitle>{edit?.id ? "Editar serviço" : "Novo serviço"}</DialogTitle>
+            </DialogHeader>
+            {edit && (
+              <div className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label>Descrição (aparece no orçamento)</Label>
+                    <Input
+                      value={edit.description ?? ""}
+                      onChange={(e) => setEdit({ ...edit, description: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Etapa</Label>
+                    <select
+                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      value={edit.stage_id ?? ""}
+                      onChange={(e) => setEdit({ ...edit, stage_id: e.target.value })}
+                    >
+                      <option value="">—</option>
+                      {stages
+                        .filter((s) => s.active || s.id === edit.stage_id)
+                        .map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Cobrança por</Label>
+                    <select
+                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      value={edit.unit ?? "un"}
+                      onChange={(e) => setEdit({ ...edit, unit: e.target.value as Svc["unit"] })}
+                    >
+                      {Object.entries(UNIT_LABEL).map(([k, v]) => (
+                        <option key={k} value={k}>
+                          {v}
                         </option>
                       ))}
-                  </select>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Custo do terceiro por unidade (R$)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={edit.labor_cost ?? ""}
+                      onChange={(e) =>
+                        setEdit({ ...edit, labor_cost: e.target.value as unknown as number })
+                      }
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 self-end pb-2 text-sm">
+                    <Switch
+                      checked={edit.active ?? true}
+                      onCheckedChange={(v) => setEdit({ ...edit, active: v })}
+                    />{" "}
+                    Ativo
+                  </label>
                 </div>
-                <div className="space-y-1">
-                  <Label>Cobrança por</Label>
-                  <select
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                    value={edit.unit ?? "un"}
-                    onChange={(e) => setEdit({ ...edit, unit: e.target.value as Svc["unit"] })}
-                  >
-                    {Object.entries(UNIT_LABEL).map(([k, v]) => (
-                      <option key={k} value={k}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <Label>Custo do terceiro por unidade (R$)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={edit.labor_cost ?? ""}
-                    onChange={(e) =>
-                      setEdit({ ...edit, labor_cost: e.target.value as unknown as number })
-                    }
-                  />
-                </div>
-                <label className="flex items-center gap-2 self-end pb-2 text-sm">
-                  <Switch
-                    checked={edit.active ?? true}
-                    onCheckedChange={(v) => setEdit({ ...edit, active: v })}
-                  />{" "}
-                  Ativo
-                </label>
-              </div>
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-semibold">Composição por unidade do serviço</h3>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      setEdit({
-                        ...edit,
-                        comp: [...edit.comp, { material_id: "", consumption: 1, loss_pct: 0 }],
-                      })
-                    }
-                  >
-                    <Plus className="h-4 w-4" /> Material
-                  </Button>
-                </div>
-                {edit.comp.length === 0 && (
-                  <p className="text-sm text-muted-foreground">Sem materiais.</p>
-                )}
-                <div className="space-y-2">
-                  {edit.comp.map((c, i) => {
-                    const m = materials.find((x) => x.id === c.material_id);
-                    const set = (p: Partial<Comp>) =>
-                      setEdit({
-                        ...edit,
-                        comp: edit.comp.map((x, j) => (j === i ? { ...x, ...p } : x)),
-                      });
-                    return (
-                      <div key={i} className="grid grid-cols-12 items-end gap-2">
-                        <div className="col-span-12 sm:col-span-6">
-                          <select
-                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                            value={c.material_id}
-                            onChange={(e) => set({ material_id: e.target.value })}
-                          >
-                            <option value="">Selecione</option>
-                            {materials
-                              .filter((x) => x.active || x.id === c.material_id)
-                              .map((x) => (
-                                <option key={x.id} value={x.id}>
-                                  {x.name} ({x.consumption_unit})
-                                </option>
-                              ))}
-                          </select>
-                        </div>
-                        <div className="col-span-5 sm:col-span-3">
-                          <Label className="text-xs">
-                            Consumo {m ? `(${m.consumption_unit})` : ""}
-                          </Label>
-                          <Input
-                            type="number"
-                            step="any"
-                            value={c.consumption}
-                            onChange={(e) =>
-                              set({ consumption: e.target.value as unknown as number })
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="font-semibold">Composição por unidade do serviço</h3>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        setEdit({
+                          ...edit,
+                          comp: [...edit.comp, { material_id: "", consumption: 1, loss_pct: 0 }],
+                        })
+                      }
+                    >
+                      <Plus className="h-4 w-4" /> Material
+                    </Button>
+                  </div>
+                  {edit.comp.length === 0 && (
+                    <p className="text-sm text-muted-foreground">Sem materiais.</p>
+                  )}
+                  <div className="space-y-2">
+                    {edit.comp.map((c, i) => {
+                      const m = materials.find((x) => x.id === c.material_id);
+                      const set = (p: Partial<Comp>) =>
+                        setEdit({
+                          ...edit,
+                          comp: edit.comp.map((x, j) => (j === i ? { ...x, ...p } : x)),
+                        });
+                      return (
+                        <div key={i} className="grid grid-cols-12 items-end gap-2">
+                          <div className="col-span-12 sm:col-span-6">
+                            <select
+                              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                              value={c.material_id}
+                              onChange={(e) => set({ material_id: e.target.value })}
+                            >
+                              <option value="">Selecione</option>
+                              {materials
+                                .filter((x) => x.active || x.id === c.material_id)
+                                .map((x) => (
+                                  <option key={x.id} value={x.id}>
+                                    {x.name} ({x.consumption_unit})
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+                          <div className="col-span-5 sm:col-span-3">
+                            <Label className="text-xs">
+                              Consumo {m ? `(${m.consumption_unit})` : ""}
+                            </Label>
+                            <Input
+                              type="number"
+                              step="any"
+                              value={c.consumption}
+                              onChange={(e) =>
+                                set({ consumption: e.target.value as unknown as number })
+                              }
+                            />
+                          </div>
+                          <div className="col-span-5 sm:col-span-2">
+                            <Label className="text-xs">Perda %</Label>
+                            <Input
+                              type="number"
+                              step="any"
+                              value={c.loss_pct}
+                              onChange={(e) =>
+                                set({ loss_pct: e.target.value as unknown as number })
+                              }
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="col-span-2 sm:col-span-1"
+                            aria-label="Remover"
+                            onClick={() =>
+                              setEdit({ ...edit, comp: edit.comp.filter((_, j) => j !== i) })
                             }
-                          />
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          {m?.rendimento_embalagem ? (
+                            <p className="col-span-12 text-xs text-muted-foreground">
+                              Embalagem de {fmtNum(m.rendimento_embalagem, 4)}{" "}
+                              {m.unidade_rendimento || m.consumption_unit}. Ex.: 100{" "}
+                              {UNIT_LABEL[edit.unit ?? "un"]} →{" "}
+                              {materialPackages(asItemMaterial(m, c), 100)} {m.purchase_unit}
+                            </p>
+                          ) : null}
                         </div>
-                        <div className="col-span-5 sm:col-span-2">
-                          <Label className="text-xs">Perda %</Label>
-                          <Input
-                            type="number"
-                            step="any"
-                            value={c.loss_pct}
-                            onChange={(e) => set({ loss_pct: e.target.value as unknown as number })}
-                          />
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="col-span-2 sm:col-span-1"
-                          aria-label="Remover"
-                          onClick={() =>
-                            setEdit({ ...edit, comp: edit.comp.filter((_, j) => j !== i) })
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        {m?.rendimento_embalagem ? (
-                          <p className="col-span-12 text-xs text-muted-foreground">
-                            Embalagem de {fmtNum(m.rendimento_embalagem, 4)}{" "}
-                            {m.unidade_rendimento || m.consumption_unit}. Ex.: 100{" "}
-                            {UNIT_LABEL[edit.unit ?? "un"]} →{" "}
-                            {materialPackages(asItemMaterial(m, c), 100)} {m.purchase_unit}
-                          </p>
-                        ) : null}
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEdit(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => edit && save.mutate(edit)} disabled={save.isPending}>
-              Salvar
-            </Button>
-          </DialogFooter>
+            )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEdit(null)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={save.isPending}>
+                Salvar
+              </Button>
+            </DialogFooter>
+          </SubmitForm>
         </DialogContent>
       </Dialog>
     </div>

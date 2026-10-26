@@ -273,7 +273,7 @@ export function StandaloneEditor({
         {me?.canSeeCosts && !saved && (
           <>
             {base && <Memo name="reason" label="Motivo da alteração" />}
-            <Button variant="outline" disabled={busy}>
+            <Button type="submit" variant="outline" disabled={busy}>
               Salvar observações
             </Button>
           </>
@@ -395,7 +395,9 @@ export function StandaloneEditor({
             <Memo name="scope_services" label="Serviços" value={editing?.scope_services} />
             <Memo name="observations" label="Observações" value={editing?.observations} />
             {base && <Memo name="reason" label="Motivo da reprogramação" />}
-            <Button disabled={busy}>Salvar etapa</Button>
+            <Button type="submit" disabled={busy}>
+              Salvar etapa
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
@@ -434,7 +436,9 @@ export function StandaloneEditor({
                   : "Confirmar alteração deste planejamento?"}
               </p>
             )}
-            <Button disabled={busy}>Confirmar</Button>
+            <Button type="submit" disabled={busy}>
+              Confirmar
+            </Button>
           </form>
         </DialogContent>
       </Dialog>

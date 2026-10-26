@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
+import { commitOnEnter } from "@/lib/enter-submit";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
 import { Field, Memo, selectClass } from "./fields";
 import { text, number } from "@/lib/form-values";
@@ -272,9 +273,7 @@ export function Schedule({
                   step="1"
                   defaultValue={s.progress}
                   onBlur={(e) => quick(s, e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") e.currentTarget.blur();
-                  }}
+                  onKeyDown={commitOnEnter}
                   className="h-10 w-20 rounded-md border bg-background px-2 text-right num"
                 />
                 %

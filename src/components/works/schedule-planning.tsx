@@ -182,7 +182,7 @@ export function SchedulePlanning({
         {me?.canSeeCosts && selected === "current" && (
           <>
             {base && <Memo name="reason" label="Motivo da alteração" />}
-            <Button variant="outline" disabled={busy}>
+            <Button type="submit" variant="outline" disabled={busy}>
               Salvar observações
             </Button>
           </>

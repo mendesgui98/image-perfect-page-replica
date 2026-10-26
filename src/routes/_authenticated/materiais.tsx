@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { SubmitForm } from "@/components/enter-submit";
 import {
   Dialog,
   DialogContent,
@@ -151,113 +152,119 @@ function Materiais() {
 
       <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{edit?.id ? "Editar material" : "Novo material"}</DialogTitle>
-          </DialogHeader>
-          {edit && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1 sm:col-span-2">
-                <Label>Nome</Label>
-                <Input
-                  value={edit.name ?? ""}
-                  onChange={(e) => setEdit({ ...edit, name: e.target.value })}
-                />
+          <SubmitForm onSubmit={() => edit && save.mutate(edit)} pending={save.isPending}>
+            <DialogHeader>
+              <DialogTitle>{edit?.id ? "Editar material" : "Novo material"}</DialogTitle>
+            </DialogHeader>
+            {edit && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1 sm:col-span-2">
+                  <Label>Nome</Label>
+                  <Input
+                    value={edit.name ?? ""}
+                    onChange={(e) => setEdit({ ...edit, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Unidade de compra</Label>
+                  <Input
+                    placeholder="saco 20kg"
+                    value={edit.purchase_unit ?? ""}
+                    onChange={(e) => setEdit({ ...edit, purchase_unit: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Unidade de consumo</Label>
+                  <Input
+                    placeholder="kg"
+                    value={edit.consumption_unit ?? ""}
+                    onChange={(e) => setEdit({ ...edit, consumption_unit: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Conversão (consumo por 1 compra)</Label>
+                  <Input
+                    type="number"
+                    step="any"
+                    value={edit.conversion ?? ""}
+                    onChange={(e) =>
+                      setEdit({ ...edit, conversion: e.target.value as unknown as number })
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Preço por unidade de compra (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={edit.price ?? ""}
+                    onChange={(e) =>
+                      setEdit({ ...edit, price: e.target.value as unknown as number })
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Rendimento da embalagem</Label>
+                  <Input
+                    type="number"
+                    step="any"
+                    min="0"
+                    placeholder="ex.: 25 (rolo de 25 m²)"
+                    value={edit.rendimento_embalagem ?? ""}
+                    onChange={(e) =>
+                      setEdit({
+                        ...edit,
+                        rendimento_embalagem:
+                          e.target.value === "" ? null : (e.target.value as unknown as number),
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Unidade do rendimento</Label>
+                  <Input
+                    placeholder={edit.consumption_unit || "m²"}
+                    value={edit.unidade_rendimento ?? ""}
+                    onChange={(e) => setEdit({ ...edit, unidade_rendimento: e.target.value })}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground sm:col-span-2">
+                  Com rendimento, o orçamento compra embalagens inteiras por serviço (ex.: 30 m² com
+                  rolo de 25 m² = 2 rolos). Em branco, o custo é fracionado pela conversão.
+                </p>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label>Fornecedor</Label>
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={edit.supplier_id ?? ""}
+                    onChange={(e) => setEdit({ ...edit, supplier_id: e.target.value || null })}
+                  >
+                    <option value="">—</option>
+                    {suppliers.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <Switch
+                    checked={edit.active ?? true}
+                    onCheckedChange={(v) => setEdit({ ...edit, active: v })}
+                  />{" "}
+                  Ativo
+                </label>
               </div>
-              <div className="space-y-1">
-                <Label>Unidade de compra</Label>
-                <Input
-                  placeholder="saco 20kg"
-                  value={edit.purchase_unit ?? ""}
-                  onChange={(e) => setEdit({ ...edit, purchase_unit: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Unidade de consumo</Label>
-                <Input
-                  placeholder="kg"
-                  value={edit.consumption_unit ?? ""}
-                  onChange={(e) => setEdit({ ...edit, consumption_unit: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Conversão (consumo por 1 compra)</Label>
-                <Input
-                  type="number"
-                  step="any"
-                  value={edit.conversion ?? ""}
-                  onChange={(e) =>
-                    setEdit({ ...edit, conversion: e.target.value as unknown as number })
-                  }
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Preço por unidade de compra (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={edit.price ?? ""}
-                  onChange={(e) => setEdit({ ...edit, price: e.target.value as unknown as number })}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Rendimento da embalagem</Label>
-                <Input
-                  type="number"
-                  step="any"
-                  min="0"
-                  placeholder="ex.: 25 (rolo de 25 m²)"
-                  value={edit.rendimento_embalagem ?? ""}
-                  onChange={(e) =>
-                    setEdit({
-                      ...edit,
-                      rendimento_embalagem:
-                        e.target.value === "" ? null : (e.target.value as unknown as number),
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Unidade do rendimento</Label>
-                <Input
-                  placeholder={edit.consumption_unit || "m²"}
-                  value={edit.unidade_rendimento ?? ""}
-                  onChange={(e) => setEdit({ ...edit, unidade_rendimento: e.target.value })}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground sm:col-span-2">
-                Com rendimento, o orçamento compra embalagens inteiras por serviço (ex.: 30 m² com
-                rolo de 25 m² = 2 rolos). Em branco, o custo é fracionado pela conversão.
-              </p>
-              <div className="space-y-1 sm:col-span-2">
-                <Label>Fornecedor</Label>
-                <select
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  value={edit.supplier_id ?? ""}
-                  onChange={(e) => setEdit({ ...edit, supplier_id: e.target.value || null })}
-                >
-                  <option value="">—</option>
-                  {suppliers.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <label className="flex items-center gap-2 text-sm">
-                <Switch
-                  checked={edit.active ?? true}
-                  onCheckedChange={(v) => setEdit({ ...edit, active: v })}
-                />{" "}
-                Ativo
-              </label>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEdit(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => edit && save.mutate(edit)}>Salvar</Button>
-          </DialogFooter>
+            )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEdit(null)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={save.isPending}>
+                Salvar
+              </Button>
+            </DialogFooter>
+          </SubmitForm>
         </DialogContent>
       </Dialog>
     </div>

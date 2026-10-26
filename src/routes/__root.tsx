@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { THEME_BOOT_SCRIPT, applyTheme, readPreference } from "@/lib/theme";
 import { ServiceWorkerRegistration } from "@/components/pwa/service-worker";
+import { EnterToSubmit } from "@/components/enter-submit";
 
 function NotFoundComponent() {
   return (
@@ -158,6 +159,7 @@ function RootComponent() {
       <Outlet />
       <Toaster richColors position="top-center" />
       <ServiceWorkerRegistration />
+      <EnterToSubmit />
     </QueryClientProvider>
   );
 }

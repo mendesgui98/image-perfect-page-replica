@@ -220,7 +220,9 @@ function ScheduleDetail() {
                 {linkError}
               </p>
             )}
-            <Button disabled={busy}>Confirmar vínculo</Button>
+            <Button type="submit" disabled={busy}>
+              Confirmar vínculo
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
@@ -253,7 +255,9 @@ function ScheduleDetail() {
               value={h.planned_end}
             />
             <Memo label="Descrição" name="description" value={h.description} />
-            <Button disabled={busy}>Salvar dados</Button>
+            <Button type="submit" disabled={busy}>
+              Salvar dados
+            </Button>
           </form>
         </DialogContent>
       </Dialog>

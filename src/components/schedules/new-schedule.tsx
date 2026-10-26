@@ -153,7 +153,7 @@ export function NewSchedule({ copyId }: { copyId?: string }) {
                 </label>
               )}
               <div className="flex flex-wrap gap-2 sm:col-span-2">
-                <Button disabled={busy}>
+                <Button type="submit" disabled={busy}>
                   {busy ? "Criando…" : mode === "obra" ? "Abrir cronograma" : "Criar cronograma"}
                 </Button>
                 {!copyId && (

@@ -4,6 +4,8 @@ import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { activeServicesOptions, budgetApi, stagesOptions } from "@/lib/budget-api";
 import { Button } from "@/components/ui/button";
+import { SubmitForm } from "@/components/enter-submit";
+import { commitOnEnter } from "@/lib/enter-submit";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,6 +50,7 @@ export function ItemsEditor({
   const [stageId, setStageId] = useState("");
   const [picker, setPicker] = useState<Section | null>(null);
   const [svcId, setSvcId] = useState("");
+  const [adding, setAdding] = useState(false);
 
   const run = async (p: Promise<unknown>) => {
     try {
@@ -87,6 +90,7 @@ export function ItemsEditor({
         price: c.materials?.price ?? 0,
         supplied_by: "jmg",
       })) ?? [];
+    setAdding(true);
     await run(
       budgetApi.addItem({
         budget_id: budgetId,
@@ -100,6 +104,7 @@ export function ItemsEditor({
         sort: items.filter((i) => i.section_id === section.id).length + 1,
       }),
     );
+    setAdding(false);
     setPicker(null);
     setSvcId("");
   }
@@ -148,26 +153,34 @@ export function ItemsEditor({
 
       <Dialog open={!!picker} onOpenChange={(o) => !o && setPicker(null)}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Adicionar serviço</DialogTitle>
-          </DialogHeader>
-          <select className={selectClass} value={svcId} onChange={(e) => setSvcId(e.target.value)}>
-            <option value="">Item manual (sem catálogo)</option>
-            {services
-              .filter((s) => !picker?.stage_id || s.stage_id === picker.stage_id)
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.description} — {UNIT_LABEL[s.unit]}
-                </option>
-              ))}
-          </select>
-          <p className="text-xs text-muted-foreground">
-            Os custos e a composição são copiados para o orçamento. Mudanças futuras no catálogo não
-            alteram este item.
-          </p>
-          <DialogFooter>
-            <Button onClick={() => picker && addItem(picker, svcId)}>Adicionar</Button>
-          </DialogFooter>
+          <SubmitForm onSubmit={() => picker && addItem(picker, svcId)} pending={adding}>
+            <DialogHeader>
+              <DialogTitle>Adicionar serviço</DialogTitle>
+            </DialogHeader>
+            <select
+              className={selectClass}
+              value={svcId}
+              onChange={(e) => setSvcId(e.target.value)}
+            >
+              <option value="">Item manual (sem catálogo)</option>
+              {services
+                .filter((s) => !picker?.stage_id || s.stage_id === picker.stage_id)
+                .map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.description} — {UNIT_LABEL[s.unit]}
+                  </option>
+                ))}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Os custos e a composição são copiados para o orçamento. Mudanças futuras no catálogo
+              não alteram este item.
+            </p>
+            <DialogFooter>
+              <Button type="submit" disabled={adding}>
+                Adicionar
+              </Button>
+            </DialogFooter>
+          </SubmitForm>
         </DialogContent>
       </Dialog>
     </div>
@@ -216,6 +229,7 @@ function SectionCard({
       <CardHeader className="flex-row items-center gap-2 space-y-0 pb-3">
         <span className="font-display font-bold text-primary">{idx}.</span>
         <Input
+          onKeyDown={commitOnEnter}
           className="font-display font-bold uppercase"
           defaultValue={section.title}
           disabled={locked}
@@ -313,6 +327,7 @@ function ItemRow({
         />
         <div className="col-span-4 md:col-span-2">
           <Input
+            onKeyDown={commitOnEnter}
             type="number"
             step="any"
             defaultValue={item.quantity}
@@ -325,6 +340,7 @@ function ItemRow({
         </div>
         <div className="col-span-4 md:col-span-2">
           <Input
+            onKeyDown={commitOnEnter}
             type="number"
             step="0.01"
             defaultValue={item.labor_cost_unit}
@@ -387,6 +403,7 @@ function ItemRow({
                 Acréscimo MO % (padrão {fmtNum(params.labor_markup)})
               </Label>
               <Input
+                onKeyDown={commitOnEnter}
                 type="number"
                 step="any"
                 placeholder="padrão"
@@ -400,6 +417,7 @@ function ItemRow({
                 Acréscimo mat. % (padrão {fmtNum(params.materials_markup)})
               </Label>
               <Input
+                onKeyDown={commitOnEnter}
                 type="number"
                 step="any"
                 placeholder="padrão"
@@ -411,6 +429,7 @@ function ItemRow({
             <div>
               <Label className="text-xs">Desconto neste item (R$)</Label>
               <Input
+                onKeyDown={commitOnEnter}
                 type="number"
                 step="0.01"
                 defaultValue={item.item_discount}
@@ -433,6 +452,7 @@ function ItemRow({
               <div className="col-span-4 sm:col-span-2">
                 <Label className="text-xs">Consumo/un</Label>
                 <Input
+                  onKeyDown={commitOnEnter}
                   type="number"
                   step="any"
                   defaultValue={m.consumption}
@@ -446,6 +466,7 @@ function ItemRow({
               <div className="col-span-4 sm:col-span-2">
                 <Label className="text-xs">Perda %</Label>
                 <Input
+                  onKeyDown={commitOnEnter}
                   type="number"
                   step="any"
                   defaultValue={m.loss_pct}
@@ -459,6 +480,7 @@ function ItemRow({
               <div className="col-span-4 sm:col-span-2">
                 <Label className="text-xs">Preço compra</Label>
                 <Input
+                  onKeyDown={commitOnEnter}
                   type="number"
                   step="0.01"
                   defaultValue={m.price}

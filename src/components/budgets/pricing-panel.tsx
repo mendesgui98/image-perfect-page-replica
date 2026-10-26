@@ -3,6 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { budgetApi } from "@/lib/budget-api";
 import { Button } from "@/components/ui/button";
+import { SubmitForm } from "@/components/enter-submit";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -123,41 +124,43 @@ export function PricingPanel({
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Percentuais deste orçamento</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {PARAM_FIELDS.map(([k, l]) => (
-            <div key={k} className="flex items-center justify-between gap-2">
-              <Label className="text-xs">{l}</Label>
+        <SubmitForm onSubmit={() => setConfirming(true)} className="">
+          <CardContent className="space-y-2">
+            {PARAM_FIELDS.map(([k, l]) => (
+              <div key={k} className="flex items-center justify-between gap-2">
+                <Label className="text-xs">{l}</Label>
+                <Input
+                  className="h-8 w-24 text-right num"
+                  type="number"
+                  step="any"
+                  disabled={locked}
+                  value={draft[k] as number}
+                  onChange={(e) => setDraft({ ...draft, [k]: Number(e.target.value) })}
+                />
+              </div>
+            ))}
+            <div className="flex items-center justify-between gap-2 border-t pt-2">
+              <Label className="text-xs">Desconto geral (R$)</Label>
               <Input
-                className="h-8 w-24 text-right num"
+                className="h-8 w-28 text-right num"
                 type="number"
-                step="any"
+                step="0.01"
                 disabled={locked}
-                value={draft[k] as number}
-                onChange={(e) => setDraft({ ...draft, [k]: Number(e.target.value) })}
+                value={disc}
+                onChange={(e) => setDisc(Number(e.target.value) || 0)}
               />
             </div>
-          ))}
-          <div className="flex items-center justify-between gap-2 border-t pt-2">
-            <Label className="text-xs">Desconto geral (R$)</Label>
-            <Input
-              className="h-8 w-28 text-right num"
-              type="number"
-              step="0.01"
-              disabled={locked}
-              value={disc}
-              onChange={(e) => setDisc(Number(e.target.value) || 0)}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            O desconto geral é distribuído proporcionalmente entre mão de obra e materiais. Custos
-            originais não mudam.
-          </p>
-          {dirty && !locked && (
-            <Button className="w-full" onClick={() => setConfirming(true)}>
-              Revisar alteração
-            </Button>
-          )}
-        </CardContent>
+            <p className="text-xs text-muted-foreground">
+              O desconto geral é distribuído proporcionalmente entre mão de obra e materiais. Custos
+              originais não mudam.
+            </p>
+            {dirty && !locked && (
+              <Button type="submit" className="w-full">
+                Revisar alteração
+              </Button>
+            )}
+          </CardContent>
+        </SubmitForm>
       </Card>
 
       <Dialog open={confirming} onOpenChange={setConfirming}>

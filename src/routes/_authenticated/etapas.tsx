@@ -9,6 +9,7 @@ import { useMe } from "@/hooks/use-me";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { commitOnEnter } from "@/lib/enter-submit";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -73,6 +74,7 @@ function EditableList({ table, title }: { table: "stages" | "cost_categories"; t
         {data.map((s) => (
           <div key={s.id} className="flex items-center gap-2">
             <Input
+              onKeyDown={commitOnEnter}
               className="w-16 num"
               type="number"
               defaultValue={s.sort}
@@ -83,6 +85,7 @@ function EditableList({ table, title }: { table: "stages" | "cost_categories"; t
               }
             />
             <Input
+              onKeyDown={commitOnEnter}
               defaultValue={s.name}
               disabled={ro}
               className={s.active ? "" : "opacity-50"}

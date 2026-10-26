@@ -9,6 +9,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { useMe, type Role } from "@/hooks/use-me";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { SubmitForm } from "@/components/enter-submit";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -109,46 +110,50 @@ function Empresa({ ro }: { ro: boolean }) {
   });
   return (
     <Card className="mt-4 shadow-card">
-      <CardContent className="grid gap-3 p-6 sm:grid-cols-2 lg:grid-cols-4">
-        {COMPANY_FIELDS.map(([k, l]) => (
-          <div
-            key={k}
-            className={
-              k === "endereco" || k === "razao_social" ? "space-y-1 sm:col-span-2" : "space-y-1"
-            }
-          >
-            <Label>{l}</Label>
-            <Input
+      <SubmitForm onSubmit={() => save.mutate()} pending={save.isPending} className="">
+        <CardContent className="grid gap-3 p-6 sm:grid-cols-2 lg:grid-cols-4">
+          {COMPANY_FIELDS.map(([k, l]) => (
+            <div
+              key={k}
+              className={
+                k === "endereco" || k === "razao_social" ? "space-y-1 sm:col-span-2" : "space-y-1"
+              }
+            >
+              <Label>{l}</Label>
+              <Input
+                disabled={ro}
+                value={(f[k] as string) ?? ""}
+                onChange={(e) => setF({ ...f, [k]: e.target.value })}
+              />
+            </div>
+          ))}
+          <div className="space-y-1 sm:col-span-2 lg:col-span-4">
+            <Label>Quem somos (página 2 do orçamento)</Label>
+            <Textarea
+              rows={6}
               disabled={ro}
-              value={(f[k] as string) ?? ""}
-              onChange={(e) => setF({ ...f, [k]: e.target.value })}
+              value={f.sobre ?? ""}
+              onChange={(e) => setF({ ...f, sobre: e.target.value })}
             />
           </div>
-        ))}
-        <div className="space-y-1 sm:col-span-2 lg:col-span-4">
-          <Label>Quem somos (página 2 do orçamento)</Label>
-          <Textarea
-            rows={6}
-            disabled={ro}
-            value={f.sobre ?? ""}
-            onChange={(e) => setF({ ...f, sobre: e.target.value })}
-          />
-        </div>
-        <div className="space-y-1 sm:col-span-2 lg:col-span-4">
-          <Label>Texto de fechamento padrão do orçamento</Label>
-          <Textarea
-            rows={4}
-            disabled={ro}
-            value={f.texto_fechamento ?? ""}
-            onChange={(e) => setF({ ...f, texto_fechamento: e.target.value })}
-          />
-        </div>
-        {!ro && (
-          <div className="sm:col-span-2 lg:col-span-4">
-            <Button onClick={() => save.mutate()}>Salvar dados da empresa</Button>
+          <div className="space-y-1 sm:col-span-2 lg:col-span-4">
+            <Label>Texto de fechamento padrão do orçamento</Label>
+            <Textarea
+              rows={4}
+              disabled={ro}
+              value={f.texto_fechamento ?? ""}
+              onChange={(e) => setF({ ...f, texto_fechamento: e.target.value })}
+            />
           </div>
-        )}
-      </CardContent>
+          {!ro && (
+            <div className="sm:col-span-2 lg:col-span-4">
+              <Button type="submit" disabled={save.isPending}>
+                Salvar dados da empresa
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </SubmitForm>
     </Card>
   );
 }
@@ -217,7 +222,11 @@ function Precos({ ro }: { ro: boolean }) {
     onError: (e) => toast.error((e as Error).message),
   });
   return (
-    <div className="mt-4 grid gap-6 lg:grid-cols-2">
+    <SubmitForm
+      onSubmit={() => save.mutate()}
+      pending={save.isPending}
+      className="mt-4 grid gap-6 lg:grid-cols-2"
+    >
       <Card className="shadow-card">
         <CardHeader>
           <CardTitle className="text-lg">Percentuais padrão da JMG</CardTitle>
@@ -291,6 +300,7 @@ function Precos({ ro }: { ro: boolean }) {
               </select>
               {!ro && (
                 <Button
+                  type="button"
                   variant="ghost"
                   size="icon"
                   className="col-span-1"
@@ -304,6 +314,7 @@ function Precos({ ro }: { ro: boolean }) {
           ))}
           {!ro && (
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={() => setTaxes([...taxes, { name: "", rate: 0, base: "venda" }])}
@@ -315,10 +326,12 @@ function Precos({ ro }: { ro: boolean }) {
       </Card>
       {!ro && (
         <div className="lg:col-span-2">
-          <Button onClick={() => save.mutate()}>Salvar regras de precificação</Button>
+          <Button type="submit" disabled={save.isPending}>
+            Salvar regras de precificação
+          </Button>
         </div>
       )}
-    </div>
+    </SubmitForm>
   );
 }
 

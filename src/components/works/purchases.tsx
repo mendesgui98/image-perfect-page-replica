@@ -108,16 +108,21 @@ export function Purchases({ workId, budgetId }: { workId: string; budgetId: stri
     }
   }
   async function movement(d: FormData) {
-    const r = await supabase.from("material_movements").insert({
-      work_id: workId,
-      material_key: text(d, "material"),
-      kind: text(d, "kind"),
-      quantity: number(d, "quantity"),
-    });
-    if (r.error) toast.error(r.error.message);
-    else {
-      refresh();
-      toast.success("Movimentação registrada.");
+    setBusy(true);
+    try {
+      const r = await supabase.from("material_movements").insert({
+        work_id: workId,
+        material_key: text(d, "material"),
+        kind: text(d, "kind"),
+        quantity: number(d, "quantity"),
+      });
+      if (r.error) toast.error(r.error.message);
+      else {
+        refresh();
+        toast.success("Movimentação registrada.");
+      }
+    } finally {
+      setBusy(false);
     }
   }
   if (error) return <p className="text-destructive">{error.message}</p>;
@@ -219,7 +224,7 @@ export function Purchases({ workId, budgetId }: { workId: string; budgetId: stri
           </select>
         </label>
         <Field name="quantity" label="Quantidade" type="number" required />
-        <Button type="submit" variant="outline">
+        <Button type="submit" variant="outline" disabled={busy}>
           Registrar
         </Button>
       </form>
