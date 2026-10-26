@@ -128,7 +128,6 @@ function Materiais() {
               <th className="p-3">Compra</th>
               <th className="p-3">Consumo</th>
               <th className="p-3 text-right">Preço compra</th>
-              <th className="p-3 text-right">Preço / consumo</th>
               <th className="p-3">Atualizado</th>
             </tr>
           </thead>
@@ -160,13 +159,12 @@ function Materiais() {
                   <span className="text-muted-foreground">(×{fmtNum(m.conversion, 4)})</span>
                 </td>
                 <td className="p-3 text-right num">{fmtBRL(m.price)}</td>
-                <td className="p-3 text-right num">{fmtBRL(m.price / (m.conversion || 1))}</td>
                 <td className="p-3">{fmtDate(m.price_updated_at)}</td>
               </tr>
             ))}
             {list.length === 0 && (
               <tr>
-                <td colSpan={6} className="p-6 text-center text-muted-foreground">
+                <td colSpan={5} className="p-6 text-center text-muted-foreground">
                   Nenhum material cadastrado.
                 </td>
               </tr>
