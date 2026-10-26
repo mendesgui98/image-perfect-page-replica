@@ -1,6 +1,7 @@
 # Gateway da API (Kong em modo declarativo).
-# $SUPABASE_ANON_KEY e $SUPABASE_SERVICE_KEY são substituídos na subida do container.
-_format_version: "2.1"
+# $SUPABASE_ANON_KEY e $SUPABASE_SERVICE_KEY são substituídos na subida do container
+# (eval + echo entre aspas duplas): NÃO use aspas duplas neste arquivo, só simples.
+_format_version: '2.1'
 _transform: true
 
 consumers:

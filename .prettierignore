@@ -13,3 +13,4 @@ routeTree.gen.ts
 supabase/migrations
 work
 work/
+infra/kong/kong.yml

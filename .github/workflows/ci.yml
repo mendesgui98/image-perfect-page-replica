@@ -63,6 +63,10 @@ jobs:
           context: .
           target: migrator
           push: false
+      - name: Validar config do Kong (renderizada como no container)
+        run: |
+          SUPABASE_ANON_KEY=a SUPABASE_SERVICE_KEY=b bash -c 'eval "echo \"$(cat infra/kong/kong.yml)\""' > /tmp/kong.yml
+          python3 -c "import yaml,sys; d=yaml.safe_load(open('/tmp/kong.yml')); sys.exit(0 if isinstance(d['_format_version'], str) else 'kong.yml: _format_version virou número (aspas duplas?)')"
       - name: Validar docker-compose
         working-directory: infra
         run: cp .env.example .env && docker compose config --quiet
