@@ -6,6 +6,7 @@
 //   bun run stack:logs [svc] acompanha os logs
 //   bun run stack:admin <email>  dá perfil de administrador a um usuário já cadastrado
 //   bun run stack:reset      apaga containers E dados locais (pede confirmação)
+//   bun run stack:test-user  cria a conta de teste local (admin) definida em infra/.env
 import { spawn, spawnSync } from "node:child_process";
 import { copyFileSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
@@ -271,6 +272,48 @@ if (command === "up") {
       `Nenhum usuário novo promovido. Confira se ${email} já criou a conta em /auth (ou se já é admin).`,
     );
   console.log(`${c.g("✔")} ${email} agora é administrador. Saia e entre de novo no app.`);
+} else if (command === "test-user") {
+  // Conta de teste local (admin) para revisão e testes automatizados. Só para a stack local.
+  await ensureDocker();
+  const env = ensureInfraEnv();
+  if (!env.UI_TEST_EMAIL || !env.UI_TEST_PASSWORD) {
+    upsertEnv(infraEnv, {
+      UI_TEST_EMAIL: "revisao.ui@jmg.local",
+      UI_TEST_PASSWORD: generateSecrets().POSTGRES_PASSWORD.slice(0, 16),
+    });
+  }
+  const { UI_TEST_EMAIL: email, UI_TEST_PASSWORD: password } = readEnv(infraEnv);
+  const base = `http://localhost:${env.KONG_PORT || 8000}/auth/v1`;
+  const headers = {
+    apikey: env.SERVICE_ROLE_KEY,
+    authorization: `Bearer ${env.SERVICE_ROLE_KEY}`,
+    "content-type": "application/json",
+  };
+  const res = await fetch(`${base}/admin/users`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: "Conta de teste" },
+    }),
+  }).catch((e) => fail(`Auth fora do ar (${e.message}). Rode bun run stack:up ou dev:all.`));
+  if (!res.ok && res.status !== 422) {
+    const body = await res.text();
+    if (!/already/i.test(body)) fail(`Não consegui criar a conta de teste: ${res.status} ${body}`);
+  }
+  const sql = `insert into public.user_roles(user_id, role)
+    select id, 'admin' from auth.users where lower(email) = lower('${email}')
+    on conflict do nothing;`;
+  const r = compose(["exec", "-T", "db", "psql", "-U", "postgres", "-tAc", sql], {
+    stdio: ["ignore", "pipe", "inherit"],
+    allowFail: true,
+  });
+  if (r.status !== 0) fail("Conta criada, mas não consegui dar o perfil de admin.");
+  console.log(
+    `${c.g("✔")} Conta de teste pronta: ${email} (senha em infra/.env, UI_TEST_PASSWORD)`,
+  );
 } else if (command === "reset") {
   await ensureDocker();
   const rl = createInterface({ input: process.stdin, output: process.stdout });
