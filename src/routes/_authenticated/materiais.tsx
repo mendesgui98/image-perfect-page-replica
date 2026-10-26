@@ -128,6 +128,7 @@ function Materiais() {
               <th className="p-3">Material</th>
               <th className="p-3">Compra</th>
               <th className="p-3">Consumo</th>
+              <th className="p-3">Rendimento</th>
               <th className="p-3 text-right">Preço compra</th>
               <th className="p-3">Atualizado</th>
             </tr>
@@ -149,13 +150,13 @@ function Materiais() {
                 <td className="p-3">
                   {m.consumption_unit}{" "}
                   <span className="text-muted-foreground">(×{fmtNum(m.conversion, 4)})</span>
+                </td>
+                <td className="p-3">
                   {m.rendimento_embalagem ? (
-                    <span className="text-muted-foreground">
-                      {" "}
-                      (rende {fmtNum(m.rendimento_embalagem, 4)}{" "}
-                      {m.unidade_rendimento || m.consumption_unit})
-                    </span>
-                  ) : null}
+                    `${fmtNum(m.rendimento_embalagem, 4)} ${m.unidade_rendimento || m.consumption_unit}`
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </td>
                 <td className="p-3 text-right num">{fmtBRL(m.price)}</td>
                 <td className="p-3">{fmtDate(m.price_updated_at)}</td>
@@ -163,7 +164,7 @@ function Materiais() {
             ))}
             {list.length === 0 && (
               <tr>
-                <td colSpan={5} className="p-6 text-center text-muted-foreground">
+                <td colSpan={6} className="p-6 text-center text-muted-foreground">
                   Nenhum material cadastrado.
                 </td>
               </tr>
