@@ -1,3 +1,4 @@
+import { CalendarDays } from "lucide-react";
 import { RecordDeleteButton, RecordTrash } from "@/components/management/record-deletion";
 import { businessDate } from "@/lib/dashboard-math";
 import { useState } from "react";
@@ -8,6 +9,7 @@ import { physicalProgress } from "@/lib/work-progress";
 import { fmtDate, fmtNum } from "@/lib/format";
 import { Input } from "@/components/ui/input";
 import { selectClass } from "@/components/works/fields";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 const labels: Record<string, string> = {
   ativo: "Ativo",
   concluido: "Concluído",
@@ -218,7 +220,11 @@ export function ScheduleList() {
           </tbody>
         </table>
         {!rows.length && (
-          <p className="py-12 text-center text-muted-foreground">Nenhum cronograma encontrado.</p>
+          <EmptyState
+            icon={CalendarDays}
+            title="Nenhum cronograma encontrado"
+            description="Crie um cronograma avulso ou vinculado a uma obra."
+          />
         )}
       </div>
     </section>

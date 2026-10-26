@@ -1,3 +1,4 @@
+import { HardHat } from "lucide-react";
 import { businessDate } from "@/lib/dashboard-math";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -7,6 +8,7 @@ import { weightedProgress, financeTotals } from "@/lib/operations";
 import { worksOptions } from "@/lib/work-data";
 import { financeOptions } from "@/lib/finance-data";
 import { fmtBRL, fmtDate, fmtNum } from "@/lib/format";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 export function WorkOverview() {
   const { data: me } = useMe();
   const { data: works = [] } = useQuery(worksOptions);
@@ -95,7 +97,7 @@ export function WorkOverview() {
               </Link>
             );
           })}
-        {!works.length && <p className="py-4 text-sm text-muted-foreground">Nenhuma obra ativa.</p>}
+        {!works.length && <EmptyState compact icon={HardHat} title="Nenhuma obra ativa" />}
       </div>
       {(overdue.length > 0 ||
         records.some(

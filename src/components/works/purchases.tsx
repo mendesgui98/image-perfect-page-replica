@@ -2,7 +2,7 @@ import { useRecordFocus } from "@/hooks/use-record-focus";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { PackageCheck, Plus } from "lucide-react";
+import { PackageCheck, Plus, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { loadWorkBudget, workBase } from "@/lib/work-budget";
 import { consolidateMaterials, materialBalance } from "@/lib/operations";
@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/u
 import { Installments } from "./installments";
 import { Field, selectClass, Attachment } from "./fields";
 import { text, number } from "@/lib/form-values";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 export function Purchases({ workId, budgetId }: { workId: string; budgetId: string | null }) {
   const qc = useQueryClient();
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
@@ -189,7 +190,7 @@ export function Purchases({ workId, budgetId }: { workId: string; budgetId: stri
           </tbody>
         </table>
         {!data?.materials.length && (
-          <p className="py-6 text-sm text-muted-foreground">Nenhum material cadastrado.</p>
+          <EmptyState compact icon={Package} title="Nenhum material cadastrado" />
         )}
       </div>
       <form

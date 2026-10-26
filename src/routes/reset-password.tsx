@@ -3,8 +3,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AuthLayout, PasswordInput } from "@/components/auth/auth-layout";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -24,9 +24,9 @@ function Reset() {
   const [pw, setPw] = useState("");
   const navigate = useNavigate();
   return (
-    <div className="flex min-h-screen items-center justify-center p-6">
+    <AuthLayout>
       <form
-        className="w-full max-w-sm space-y-4"
+        className="space-y-5"
         onSubmit={async (e) => {
           e.preventDefault();
           const { error } = await supabase.auth.updateUser({ password: pw });
@@ -38,19 +38,25 @@ function Reset() {
           navigate({ to: "/painel" });
         }}
       >
-        <h1 className="text-xl font-bold">Definir nova senha</h1>
+        <div className="space-y-1.5">
+          <h1 className="text-2xl font-semibold tracking-tight">Definir nova senha</h1>
+          <p className="text-sm text-muted-foreground">
+            Escolha uma senha com pelo menos 8 caracteres.
+          </p>
+        </div>
         <div className="space-y-2">
-          <Label>Nova senha</Label>
-          <Input
-            type="password"
+          <Label htmlFor="new-password">Nova senha</Label>
+          <PasswordInput
+            id="new-password"
+            autoComplete="new-password"
             minLength={8}
             value={pw}
             onChange={(e) => setPw(e.target.value)}
             required
           />
         </div>
-        <Button className="w-full">Salvar</Button>
+        <Button className="h-10 w-full">Salvar e entrar</Button>
       </form>
-    </div>
+    </AuthLayout>
   );
 }

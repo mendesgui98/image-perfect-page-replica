@@ -1,7 +1,9 @@
+import { Image as ImageIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { fmtDate } from "@/lib/format";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 type RecordRow = Database["public"]["Tables"]["work_records"]["Row"];
 export function WorkPhoto({ path, caption }: { path: string; caption: string | null }) {
   const [url, setUrl] = useState("");
@@ -67,7 +69,7 @@ export function StagePhotos({
           </article>
         ))}
       </div>
-      {!photos.length && <p className="text-sm text-muted-foreground">Nenhuma foto registrada.</p>}
+      {!photos.length && <EmptyState compact icon={ImageIcon} title="Nenhuma foto registrada" />}
     </section>
   );
 }

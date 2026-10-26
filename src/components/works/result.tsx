@@ -13,6 +13,7 @@ import { text, number } from "@/lib/form-values";
 import { uploadDocument } from "@/lib/work-data";
 import { dashboardOptions } from "@/lib/dashboard-data";
 import { financeOptions } from "@/lib/finance-data";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 export function WorkResult({ workId, budgetId }: { workId: string; budgetId: string | null }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -75,7 +76,7 @@ export function WorkResult({ workId, budgetId }: { workId: string; budgetId: str
     }
   }
   if (error) return <p className="text-destructive">{error.message}</p>;
-  if (!data || !f) return <p className="text-muted-foreground">Carregando resultado…</p>;
+  if (!data || !f) return <PageSkeleton cards={3} />;
   const b = workBase(data.budget);
   const entries = f.entries.filter(
     (e) =>

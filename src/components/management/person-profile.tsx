@@ -1,3 +1,4 @@
+import { HardHat } from "lucide-react";
 import { RecordDeleteButton, DeletedRecordNotice } from "@/components/management/record-deletion";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Attachment } from "@/components/works/fields";
 import { fmtBRL, fmtDate } from "@/lib/format";
 import { entryState } from "@/lib/dashboard-math";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 export function PersonProfile({ id }: { id: string }) {
   const { data: me } = useMe();
   const { data, error } = useQuery(relationshipOptions(!!me?.canSeeCosts));
@@ -22,7 +24,7 @@ export function PersonProfile({ id }: { id: string }) {
       </p>
     );
   const person = data?.people.find((p) => p.id === id);
-  if (!data) return <p>Carregando cadastro…</p>;
+  if (!data) return <PageSkeleton cards={3} />;
   if (!person) return <p>Cadastro não encontrado.</p>;
   if (person.deleted_at) return <DeletedRecordNotice entity="people" id={id} name={person.name} />;
   const budgets = data.budgets.filter(
@@ -155,9 +157,7 @@ export function PersonProfile({ id }: { id: string }) {
               </span>
             </Link>
           ))}
-          {!works.length && (
-            <p className="py-3 text-sm text-muted-foreground">Nenhuma obra vinculada.</p>
-          )}
+          {!works.length && <EmptyState compact icon={HardHat} title="Nenhuma obra vinculada" />}
         </div>
       </section>
       {me?.canSeeCosts && (

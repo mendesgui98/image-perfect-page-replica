@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
+import { AuthLayout, PasswordInput } from "@/components/auth/auth-layout";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -67,97 +69,101 @@ function AuthPage() {
     }
   }
 
+  const title = mode === "in" ? "Entrar" : mode === "up" ? "Criar conta" : "Recuperar senha";
+  const subtitle =
+    mode === "in"
+      ? "Acesse a gestão de obras da JMG."
+      : mode === "up"
+        ? "Depois do cadastro, o administrador libera seu acesso."
+        : "Enviaremos um link para você definir uma nova senha.";
+
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="relative hidden lg:block">
-        <img
-          src="/proposta-capa.jpg"
-          alt="Ambiente reformado pela JMG"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-y-0 left-0 w-10 bg-primary" />
-      </div>
-      <div className="flex items-center justify-center p-6">
-        <form onSubmit={submit} className="w-full max-w-sm space-y-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary p-2">
-              <img src="/jmg-logo-white.png" alt="JMG" className="h-full w-full object-contain" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-extrabold text-primary">JMG Reformas</h1>
-              <p className="text-sm text-muted-foreground">Gestão de obras</p>
-            </div>
-          </div>
-          <h2 className="text-lg font-semibold">
-            {mode === "in" ? "Entrar" : mode === "up" ? "Criar conta" : "Recuperar senha"}
-          </h2>
-          {mode === "up" && (
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-            </div>
-          )}
+    <AuthLayout>
+      <form onSubmit={submit} className="space-y-5">
+        <div className="space-y-1.5">
+          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
+        </div>
+        {mode === "up" && (
           <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
+            <Label htmlFor="name">Nome</Label>
             <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="name"
+              autoComplete="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
             />
           </div>
-          {mode !== "reset" && (
-            <div className="space-y-2">
+        )}
+        <div className="space-y-2">
+          <Label htmlFor="email">E-mail</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="voce@jmgreformas.com.br"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        {mode !== "reset" && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
               <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                minLength={8}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-          )}
-          <Button type="submit" className="w-full" size="lg" disabled={busy}>
-            {mode === "in" ? "Entrar" : mode === "up" ? "Criar conta" : "Enviar link"}
-          </Button>
-          <div className="flex justify-between text-sm">
-            {signupEnabled ? (
-              <button
-                type="button"
-                className="text-primary hover:underline"
-                onClick={() => setMode(mode === "up" ? "in" : "up")}
-              >
-                {mode === "up" ? "Já tenho conta" : "Criar conta"}
-              </button>
-            ) : (
-              mode === "reset" && (
+              {mode === "in" && (
                 <button
                   type="button"
-                  className="text-primary hover:underline"
-                  onClick={() => setMode("in")}
+                  className="text-xs font-medium text-primary hover:underline"
+                  onClick={() => setMode("reset")}
                 >
-                  Voltar ao login
+                  Esqueci a senha
                 </button>
-              )
+              )}
+            </div>
+            <PasswordInput
+              id="password"
+              autoComplete={mode === "up" ? "new-password" : "current-password"}
+              minLength={8}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            {mode === "up" && (
+              <p className="text-xs text-muted-foreground">Mínimo de 8 caracteres.</p>
             )}
+          </div>
+        )}
+        <Button type="submit" className="h-10 w-full" disabled={busy}>
+          {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+          {mode === "in" ? "Entrar" : mode === "up" ? "Criar conta" : "Enviar link"}
+        </Button>
+        <div className="text-center text-sm text-muted-foreground">
+          {mode === "in" && signupEnabled && (
+            <>
+              Ainda não tem acesso?{" "}
+              <button
+                type="button"
+                className="font-medium text-primary hover:underline"
+                onClick={() => setMode("up")}
+              >
+                Criar conta
+              </button>
+            </>
+          )}
+          {mode === "in" && !signupEnabled && "O acesso é feito por convite do administrador."}
+          {mode !== "in" && (
             <button
               type="button"
-              className="text-muted-foreground hover:underline"
-              onClick={() => setMode("reset")}
+              className="font-medium text-primary hover:underline"
+              onClick={() => setMode("in")}
             >
-              Esqueci a senha
+              Voltar para o login
             </button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {signupEnabled
-              ? "Novas contas precisam de liberação do administrador para acessar os dados da empresa."
-              : "O acesso é feito por convite do administrador da JMG."}
-          </p>
-        </form>
-      </div>
-    </div>
+          )}
+        </div>
+      </form>
+    </AuthLayout>
   );
 }

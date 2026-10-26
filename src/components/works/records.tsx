@@ -13,7 +13,8 @@ import { isNetworkError } from "@/lib/offline-queue";
 import { enqueueRecord, type PendingRecord } from "@/lib/offline-records";
 import { usePendingRecords } from "@/hooks/use-pending-records";
 import { fmtDate } from "@/lib/format";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, NotebookPen } from "lucide-react";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 type RecordRow = Database["public"]["Tables"]["work_records"]["Row"];
 const labels: Record<string, string> = {
   diario: "Diário de obra",
@@ -173,7 +174,12 @@ export function Records({
             </article>
           ))}
         {!records.some((r) => r.kind === kind) && pending.length === 0 && (
-          <p className="py-6 text-sm text-muted-foreground">Nenhum registro.</p>
+          <EmptyState
+            compact
+            icon={NotebookPen}
+            title="Nenhum registro ainda"
+            description="Use “Novo registro” para começar."
+          />
         )}
       </div>
       <Dialog open={open} onOpenChange={setOpen}>

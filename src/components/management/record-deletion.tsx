@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ConfirmRecordAction } from "./confirm-record-action";
 import { fmtDate } from "@/lib/format";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 
 export type DeletableEntity = "budgets" | "contracts" | "schedules" | "people";
 const names: Record<DeletableEntity, string> = {
@@ -160,7 +161,7 @@ export function RecordTrash({ entity }: { entity: DeletableEntity }) {
               {recordDeletionErrorMessage(error)}
             </p>
           )}
-          {isPending && !error && <p>Carregando lixeira…</p>}
+          {isPending && !error && <ListSkeleton rows={3} />}
           <div className="divide-y">
             {data?.map((row) => (
               <article

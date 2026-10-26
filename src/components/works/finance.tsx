@@ -19,6 +19,7 @@ import { useRecordFocus } from "@/hooks/use-record-focus";
 import { Link } from "@tanstack/react-router";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 type Entry = Database["public"]["Tables"]["financial_entries"]["Row"];
 export function Finance({ workId }: { workId?: string }) {
   const qc = useQueryClient();
@@ -413,7 +414,7 @@ export function Finance({ workId }: { workId?: string }) {
           );
         })}
         {!entries.length && (
-          <p className="py-6 text-muted-foreground">Nenhum lançamento neste período.</p>
+          <EmptyState compact icon={Wallet} title="Nenhum lançamento neste período" />
         )}
       </div>
       <div className="border-t pt-4 text-sm">

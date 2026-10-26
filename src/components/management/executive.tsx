@@ -27,6 +27,7 @@ import { fmtBRL, fmtDate, fmtNum } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { selectClass } from "@/components/works/fields";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 const indicators: { id: Indicator; label: string; icon: typeof HardHat }[] = [
   { id: "active", label: "Obras ativas", icon: HardHat },
   { id: "received", label: "Recebido", icon: Receipt },
@@ -297,7 +298,7 @@ export function ExecutivePanel() {
         {error.message}
       </p>
     );
-  if (!data) return <p className="py-10 text-muted-foreground">Carregando visão executiva…</p>;
+  if (!data) return <PageSkeleton />;
   const compositions = executiveComposition(data, search);
   const detail = indicators.find((x) => x.id === search.detail);
   const rows = detail ? compositions[detail.id] : [];
@@ -429,7 +430,7 @@ export function FinancialComposition() {
         {error.message}
       </p>
     );
-  if (!data) return <p>Carregando recebimentos e saldos…</p>;
+  if (!data) return <PageSkeleton cards={3} />;
   const rows = executiveComposition(data, search)[indicator];
   const total = indicatorTotal(rows);
   return (

@@ -19,6 +19,7 @@ import { ItemsEditor } from "@/components/budgets/items-editor";
 import { DadosEditor } from "@/components/budgets/budget-details";
 import { MaterialsSummary } from "@/components/budgets/materials-summary";
 import { PricingPanel } from "@/components/budgets/pricing-panel";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 
 export const Route = createFileRoute("/_authenticated/orcamentos/$id/")({
   head: () => pageMeta("Orçamento", "Serviços, condições e aprovação da proposta JMG."),
@@ -59,7 +60,7 @@ function Editor() {
   });
 
   if (me && !me.canSeeCosts) return <NoAccess />;
-  if (!data || !result) return <p className="text-muted-foreground">Carregando…</p>;
+  if (!data || !result) return <PageSkeleton cards={3} />;
   const { budget } = data;
   if (budget.deleted_at)
     return <DeletedRecordNotice entity="budgets" id={id} name={`Orçamento nº ${budget.number}`} />;
@@ -82,7 +83,7 @@ function Editor() {
           <Link to="/orcamentos" className="text-sm text-muted-foreground hover:underline">
             ← Orçamentos
           </Link>
-          <h1 className="text-2xl font-extrabold md:text-3xl">
+          <h1 className="text-2xl font-semibold tracking-tight md:text-[28px]">
             Orçamento nº {budget.number}
             {budget.revision ? ` · Rev. ${budget.revision}` : ""}
           </h1>

@@ -3,7 +3,7 @@ import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 
 type Person = Database["public"]["Tables"]["people"]["Row"];
 type Kind = Database["public"]["Enums"]["person_kind"];
@@ -185,7 +186,14 @@ function Cadastros() {
             ))}
           </tbody>
         </table>
-        {!list.length && <p className="py-8 text-center text-muted-foreground">Nenhum registro.</p>}
+        {!list.length && (
+          <EmptyState
+            compact
+            icon={Users}
+            title="Nenhum cadastro encontrado"
+            description="Ajuste a busca ou cadastre uma nova pessoa."
+          />
+        )}
       </div>
 
       <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>

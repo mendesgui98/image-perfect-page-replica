@@ -1,3 +1,4 @@
+import { HardHat } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import {
@@ -20,6 +21,7 @@ import { accountBalances } from "@/lib/operations";
 import { Metrics } from "./summary";
 import { selectClass } from "./fields";
 import { Button } from "@/components/ui/button";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 const chartColors = {
   received: "var(--chart-2)",
   spent: "var(--chart-4)",
@@ -118,7 +120,7 @@ export function FinancialDashboard() {
         {error.message}
       </p>
     );
-  if (!data) return <p>Carregando indicadores…</p>;
+  if (!data) return <PageSkeleton />;
   const works = data.works.filter(
     (s) =>
       (search.pilot || !s.work.is_pilot) &&
@@ -517,7 +519,12 @@ export function FinancialDashboard() {
           ))}
         </div>
         {!works.length && (
-          <p className="py-6 text-sm text-muted-foreground">Nenhuma obra neste filtro.</p>
+          <EmptyState
+            compact
+            icon={HardHat}
+            title="Nenhuma obra neste filtro"
+            description="Ajuste o período ou os filtros acima."
+          />
         )}
       </section>
     </section>

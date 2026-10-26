@@ -15,6 +15,7 @@ import { progressAttention } from "@/lib/work-progress";
 import { WorkSituation } from "./situation";
 import { workOptions } from "@/lib/work-data";
 import { ArrowUpRight } from "lucide-react";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 export function Metrics({ rows }: { rows: [string, number | null][] }) {
   return (
     <dl className="grid grid-cols-2 gap-x-5 gap-y-5 border-y py-5 xl:grid-cols-4">
@@ -121,7 +122,7 @@ export function WorkSummaryPanel({ workId }: { workId: string }) {
         {error.message}
       </p>
     );
-  if (!s || !data) return <p>Carregando visão geral…</p>;
+  if (!s || !data) return <PageSkeleton />;
   const planned = splitPayments(s.balance.receivable, s.budget.terms).rows.map((r) => ({
     amount: r.value,
     due_date: "",

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 
 type AdminUser = {
   id: string;
@@ -129,7 +130,7 @@ export function UsersAdmin() {
 
       <Card className="shadow-card">
         <CardContent className="divide-y p-0">
-          {users.isLoading && <p className="p-4 text-sm text-muted-foreground">Carregando…</p>}
+          {users.isLoading && <ListSkeleton rows={3} className="rounded-none border-0" />}
           {users.error && (
             <p className="p-4 text-sm text-destructive">{(users.error as Error).message}</p>
           )}

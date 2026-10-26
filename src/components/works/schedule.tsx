@@ -18,9 +18,10 @@ import { uploadDocument } from "@/lib/work-data";
 import { useMe } from "@/hooks/use-me";
 import { useRecordFocus } from "@/hooks/use-record-focus";
 import { fmtDate, fmtNum } from "@/lib/format";
-import { Plus, Pencil, Camera, ArrowUp, ArrowDown, Copy, Trash2 } from "lucide-react";
+import { Plus, Pencil, Camera, ArrowUp, ArrowDown, Copy, Trash2, Layers } from "lucide-react";
 import { StagePhotos } from "./photos";
 import { stageLabels } from "@/lib/stage-labels";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 type Stage = Database["public"]["Tables"]["work_stages"]["Row"];
 type RecordRow = Database["public"]["Tables"]["work_records"]["Row"];
 export function Schedule({
@@ -338,7 +339,14 @@ export function Schedule({
           </article>
         ))}
       </div>
-      {!stages.length && <p className="text-sm text-muted-foreground">Nenhuma etapa cadastrada.</p>}
+      {!stages.length && (
+        <EmptyState
+          compact
+          icon={Layers}
+          title="Nenhuma etapa cadastrada"
+          description="Cadastre as etapas para acompanhar o avanço físico."
+        />
+      )}
       <Dialog
         open={!!editing || creating}
         onOpenChange={(v) => {
