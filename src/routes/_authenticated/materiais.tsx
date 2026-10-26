@@ -25,6 +25,13 @@ import { fmtBRL, fmtDate, fmtNum } from "@/lib/format";
 
 type Mat = Database["public"]["Tables"]["materials"]["Row"];
 
+// Unidade gravada como símbolo: aparece direto em "100 m² → 4 rolos".
+const YIELD_UNITS = [
+  { value: "m²", label: "m² (metro quadrado)" },
+  { value: "m", label: "m (metro linear)" },
+  { value: "un", label: "un (unidade)" },
+];
+
 export const Route = createFileRoute("/_authenticated/materiais")({
   head: () => pageMeta("Materiais", "Catálogo de materiais e composições da JMG."),
   component: Materiais,
@@ -222,11 +229,26 @@ function Materiais() {
                 </div>
                 <div className="space-y-1">
                   <Label>Unidade do rendimento</Label>
-                  <Input
-                    placeholder={edit.consumption_unit || "m²"}
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={edit.unidade_rendimento ?? ""}
-                    onChange={(e) => setEdit({ ...edit, unidade_rendimento: e.target.value })}
-                  />
+                    onChange={(e) =>
+                      setEdit({ ...edit, unidade_rendimento: e.target.value || null })
+                    }
+                  >
+                    <option value="">
+                      Mesma do consumo{edit.consumption_unit ? ` (${edit.consumption_unit})` : ""}
+                    </option>
+                    {YIELD_UNITS.map((u) => (
+                      <option key={u.value} value={u.value}>
+                        {u.label}
+                      </option>
+                    ))}
+                    {edit.unidade_rendimento &&
+                      !YIELD_UNITS.some((u) => u.value === edit.unidade_rendimento) && (
+                        <option value={edit.unidade_rendimento}>{edit.unidade_rendimento}</option>
+                      )}
+                  </select>
                 </div>
                 <p className="text-xs text-muted-foreground sm:col-span-2">
                   Com rendimento, o orçamento compra embalagens inteiras por serviço (ex.: 30 m² com
