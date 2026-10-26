@@ -4,7 +4,14 @@ import { toast } from "sonner";
 /** Registra o service worker em produção e avisa quando houver nova versão. */
 export function ServiceWorkerRegistration() {
   useEffect(() => {
-    if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
+    if (!("serviceWorker" in navigator)) return;
+    if (!import.meta.env.PROD) {
+      // Em desenvolvimento, remove service workers de builds anteriores (evitam páginas velhas).
+      void navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => regs.forEach((r) => void r.unregister()));
+      return;
+    }
 
     let reloading = false;
     const onControllerChange = () => {
