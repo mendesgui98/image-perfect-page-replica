@@ -39,7 +39,13 @@ function Config() {
             : "Somente o administrador pode alterar."
         }
       />
-      <Tabs defaultValue="empresa">
+      <Tabs
+        defaultValue={
+          typeof window !== "undefined" && window.location.hash
+            ? window.location.hash.slice(1)
+            : "empresa"
+        }
+      >
         <TabsList>
           <TabsTrigger value="empresa">Empresa</TabsTrigger>
           {me?.canSeeCosts && <TabsTrigger value="precos">Precificação</TabsTrigger>}

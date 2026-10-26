@@ -36,13 +36,17 @@ export function applyTheme(pref: ThemePreference) {
 /** Executado no <head> antes da pintura: evita o "piscar" do tema claro ao abrir no escuro. */
 export const THEME_BOOT_SCRIPT = `(function(){try{var p=localStorage.getItem("${KEY}");var d=location.pathname.slice(-4)!=="/pdf"&&(p==="dark"||(p!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches));if(d)document.documentElement.classList.add("dark")}catch(e){}})();`;
 
+// Estado compartilhado entre todos os componentes que usam o tema (menu, busca rápida...).
+const listeners = new Set<(p: ThemePreference) => void>();
+
 export function useTheme() {
   const [pref, setPref] = useState<ThemePreference>("system");
   useEffect(() => {
     setPref(readPreference());
+    listeners.add(setPref);
+    return () => void listeners.delete(setPref);
   }, []);
   useEffect(() => {
-    applyTheme(pref);
     if (pref !== "system") return;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = () => applyTheme("system");
@@ -56,7 +60,8 @@ export function useTheme() {
     } catch {
       // armazenamento indisponível: vale só nesta sessão
     }
-    setPref(next);
+    applyTheme(next);
+    listeners.forEach((l) => l(next));
   };
   return { preference: pref, setPreference: update };
 }
