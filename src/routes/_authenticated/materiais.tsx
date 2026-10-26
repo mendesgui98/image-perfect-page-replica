@@ -145,8 +145,10 @@ function Materiais() {
                     <span className="block text-xs text-muted-foreground">{m.reference}</span>
                   )}
                 </td>
+                <td className="p-3">{m.purchase_unit}</td>
                 <td className="p-3">
-                  {m.purchase_unit}
+                  {m.consumption_unit}{" "}
+                  <span className="text-muted-foreground">(×{fmtNum(m.conversion, 4)})</span>
                   {m.rendimento_embalagem ? (
                     <span className="text-muted-foreground">
                       {" "}
@@ -154,10 +156,6 @@ function Materiais() {
                       {m.unidade_rendimento || m.consumption_unit})
                     </span>
                   ) : null}
-                </td>
-                <td className="p-3">
-                  {m.consumption_unit}{" "}
-                  <span className="text-muted-foreground">(×{fmtNum(m.conversion, 4)})</span>
                 </td>
                 <td className="p-3 text-right num">{fmtBRL(m.price)}</td>
                 <td className="p-3">{fmtDate(m.price_updated_at)}</td>
