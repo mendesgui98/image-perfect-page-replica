@@ -57,7 +57,7 @@ export function OfflineStatus() {
   return (
     <div
       role="status"
-      className="mb-4 flex flex-wrap items-center gap-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+      className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-warning/40 bg-warning/15 px-3 py-2 text-sm text-warning-foreground"
     >
       <CloudOff className="h-4 w-4 shrink-0" />
       <span className="flex-1">

@@ -124,7 +124,7 @@ export function Records({
             <h3 className="font-semibold">{p.data.payload.title}</h3>
             <p className="text-xs text-muted-foreground">
               {fmtDate(p.data.payload.record_date)} ·{" "}
-              <span className={p.lastError ? "text-destructive" : "text-amber-700"}>
+              <span className={p.lastError ? "text-destructive" : "text-warning-foreground"}>
                 {p.lastError
                   ? `Erro no envio: ${p.lastError}`
                   : "Guardado no aparelho, aguardando envio"}
