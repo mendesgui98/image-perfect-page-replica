@@ -28,10 +28,10 @@ import { fmtBRL, fmtDate, fmtNum } from "@/lib/format";
 type Mat = Database["public"]["Tables"]["materials"]["Row"];
 
 // Unidade gravada como símbolo: aparece direto em "100 m² → 4 rolos".
-const YIELD_UNITS = [
+const UNITS = [
   { value: "m²", label: "m² (metro quadrado)" },
   { value: "m", label: "m (metro linear)" },
-  { value: "un", label: "un (unidade)" },
+  { value: "Unid", label: "Unid (unidade)" },
 ];
 
 export const Route = createFileRoute("/_authenticated/materiais")({
@@ -215,11 +215,14 @@ function Materiais() {
                 </div>
                 <div className="space-y-1">
                   <Label>Unidade de consumo</Label>
-                  <Input
-                    placeholder="kg"
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={edit.consumption_unit ?? ""}
                     onChange={(e) => setEdit({ ...edit, consumption_unit: e.target.value })}
-                  />
+                  >
+                    <option value="">Selecione</option>
+                    <UnitOptions current={edit.consumption_unit} />
+                  </select>
                 </div>
                 <div className="space-y-1">
                   <Label>Conversão (consumo por 1 compra)</Label>
@@ -272,15 +275,7 @@ function Materiais() {
                     <option value="">
                       Mesma do consumo{edit.consumption_unit ? ` (${edit.consumption_unit})` : ""}
                     </option>
-                    {YIELD_UNITS.map((u) => (
-                      <option key={u.value} value={u.value}>
-                        {u.label}
-                      </option>
-                    ))}
-                    {edit.unidade_rendimento &&
-                      !YIELD_UNITS.some((u) => u.value === edit.unidade_rendimento) && (
-                        <option value={edit.unidade_rendimento}>{edit.unidade_rendimento}</option>
-                      )}
+                    <UnitOptions current={edit.unidade_rendimento} />
                   </select>
                 </div>
                 <p className="text-xs text-muted-foreground sm:col-span-2">
@@ -339,5 +334,21 @@ function Materiais() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// Unidades selecionáveis; um valor antigo fora da lista continua como opção para não se perder.
+function UnitOptions({ current }: { current: string | null | undefined }) {
+  return (
+    <>
+      {UNITS.map((u) => (
+        <option key={u.value} value={u.value}>
+          {u.label}
+        </option>
+      ))}
+      {current && !UNITS.some((u) => u.value === current) && (
+        <option value={current}>{current}</option>
+      )}
+    </>
   );
 }
