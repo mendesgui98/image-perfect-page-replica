@@ -187,11 +187,12 @@ if (command === "up") {
   });
   // Front e API locais apontando para a stack local.
   upsertEnv(join(root, ".env.development.local"), {
-    VITE_SUPABASE_URL: `http://localhost:${env.KONG_PORT || 8000}`,
+    // Mesmo endereço do front: o Vite repassa /supabase e /jmg-api (ver vite.config.ts).
+    VITE_SUPABASE_URL: "http://localhost:3000/supabase",
     VITE_SUPABASE_PUBLISHABLE_KEY: env.ANON_KEY,
     SUPABASE_URL: `http://localhost:${env.KONG_PORT || 8000}`,
     SUPABASE_PUBLISHABLE_KEY: env.ANON_KEY,
-    VITE_API_URL: `http://localhost:${env.API_PORT || 4000}`,
+    VITE_API_URL: "http://localhost:3000/jmg-api",
   });
   upsertEnv(join(root, "api", ".env"), {
     PORT: env.API_PORT || "4000",
@@ -220,7 +221,12 @@ if (command === "up") {
       join(root, "api"),
     ],
   ].map(([name, color, cmd, args, cwd]) => {
-    const p = spawn(cmd, args, { cwd, env: { ...process.env, FORCE_COLOR: "1" } });
+    // O Bun carrega os .env no process.env ao rodar `bun run`, e valores antigos
+    // venceriam os arquivos lidos pelo Vite/API. Repassamos o ambiente sem eles.
+    const clean = Object.fromEntries(
+      Object.entries(process.env).filter(([k]) => !/^(VITE_|SUPABASE_|DEV_KONG|DEV_API)/.test(k)),
+    );
+    const p = spawn(cmd, args, { cwd, env: { ...clean, FORCE_COLOR: "1" } });
     const tag = `${color}${name}\x1b[0m │ `;
     const pipe = (stream, out) =>
       createInterface({ input: stream }).on("line", (line) => out.write(tag + line + "\n"));

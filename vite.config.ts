@@ -7,8 +7,22 @@ import { nitro } from "nitro/vite";
 // Configuração própria (sem o wrapper do Lovable).
 // O build gera um servidor Node em .output/ (preset node-server), usado pelo Dockerfile.
 // Para outro alvo, defina NITRO_PRESET no ambiente de build.
+// Em desenvolvimento o navegador fala só com a porta 3000: /supabase e /jmg-api são
+// repassados ao gateway (Kong) e à API. Evita CORS e bloqueios entre portas locais.
+const KONG = process.env["DEV_KONG_URL"] ?? "http://localhost:8000";
+const API = process.env["DEV_API_URL"] ?? "http://localhost:4000";
+const strip = (prefix: string) => (path: string) => path.slice(prefix.length) || "/";
+
 export default defineConfig(({ command }) => ({
-  server: { host: "0.0.0.0", port: 3000, open: process.env["VITE_OPEN"] === "1" },
+  server: {
+    host: "0.0.0.0",
+    port: 3000,
+    open: process.env["VITE_OPEN"] === "1",
+    proxy: {
+      "/supabase": { target: KONG, changeOrigin: true, ws: true, rewrite: strip("/supabase") },
+      "/jmg-api": { target: API, changeOrigin: true, rewrite: strip("/jmg-api") },
+    },
+  },
   resolve: {
     // Resolve o alias @/ do tsconfig nativamente (Vite 8).
     tsconfigPaths: true,
