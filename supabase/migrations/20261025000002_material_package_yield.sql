@@ -14,3 +14,6 @@ COMMENT ON COLUMN public.materials.unidade_rendimento IS
 -- O vínculo serviço–material já guarda consumo por unidade (consumption) e perda % (loss_pct).
 -- Novo vínculo sem consumo informado passa a valer 1 para 1.
 ALTER TABLE public.service_materials ALTER COLUMN consumption SET DEFAULT 1;
+
+-- Faz o PostgREST enxergar as colunas novas sem reiniciar.
+NOTIFY pgrst, 'reload schema';
