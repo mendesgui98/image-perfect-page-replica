@@ -103,3 +103,10 @@ test("contrato só sai de orçamento aprovado", async () => {
 test("orçamento inexistente devolve 404", async () => {
   assert.equal((await post("/v1/orcamentos/99999999-2222-3333-4444-555555555555/pdf")).status, 404);
 });
+
+test("data do banco não muda de dia no fuso de São Paulo", async () => {
+  const { isoDate } = await import("../src/repo.ts");
+  assert.equal(isoDate(new Date("2026-11-16")), "2026-11-16");
+  assert.equal(isoDate("2026-11-16"), "2026-11-16");
+  assert.equal(isoDate(null), null);
+});

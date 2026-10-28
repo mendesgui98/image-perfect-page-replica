@@ -168,12 +168,9 @@ export function createRepo(db: Db): Repo {
   };
 }
 
-/** Data do Postgres (Date ou texto) em aaaa-mm-dd, sem deslocar fuso. */
-function isoDate(v: unknown): string | null {
+/** Coluna date do Postgres em aaaa-mm-dd: o driver entrega meia-noite UTC, então lê em UTC. */
+export function isoDate(v: unknown): string | null {
   if (v === null || v === undefined) return null;
-  if (v instanceof Date) {
-    const p = (n: number) => String(n).padStart(2, "0");
-    return `${v.getFullYear()}-${p(v.getMonth() + 1)}-${p(v.getDate())}`;
-  }
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
   return String(v).slice(0, 10);
 }

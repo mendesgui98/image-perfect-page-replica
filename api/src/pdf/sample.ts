@@ -1,9 +1,10 @@
 // Gera um orçamento de exemplo (dados do modelo aprovado) para conferir o visual sem banco:
-//   node --experimental-strip-types api/src/pdf/sample.ts saida.pdf
+//   node --experimental-strip-types api/src/pdf/sample.ts saida.pdf [--contrato]
 import { writeFileSync } from "node:fs";
 import { buildProposal, DEFAULT_TERMS, SCHEDULE_DISCLAIMER } from "../../../src/lib/proposal.ts";
 import { emptyParams } from "../../../src/lib/pricing.ts";
 import { loadAssets } from "./assets.ts";
+import { contractHtml } from "./contract-html.ts";
 import { proposalHtml } from "./proposal-html.ts";
 import { closeBrowser, htmlToPdf } from "./render.ts";
 
@@ -75,12 +76,12 @@ const data = buildProposal({
   client: {
     name: "Mariana Albuquerque Ribeiro",
     document: "00000000000",
-    rg: null,
-    endereco: null,
-    bairro: null,
-    cidade: null,
-    uf: null,
-    cep: null,
+    rg: "000000000",
+    endereco: "Rua das Palmeiras, 482 – Apto 1203",
+    bairro: "Jardim Europa",
+    cidade: "São Paulo",
+    uf: "SP",
+    cep: "01449000",
   },
   sections,
   items,
@@ -112,12 +113,19 @@ const data = buildProposal({
 });
 const assets = loadAssets();
 const out = process.argv[2] ?? "orcamento-exemplo.pdf";
+const contract = process.argv.includes("--contrato");
+const footerLeft = "JMG Reformas LTDA · CNPJ 62.780.542/0001-81 · (11) 99893-7694 · @jmg.reformas";
 writeFileSync(
   out,
-  await htmlToPdf(proposalHtml(data, assets, SCHEDULE_DISCLAIMER), assets, {
-    headerRight: `${data.number} · ${data.client.name}`,
-    footerLeft: "JMG Reformas LTDA · CNPJ 62.780.542/0001-81 · (11) 99893-7694 · @jmg.reformas",
-  }),
+  contract
+    ? await htmlToPdf(contractHtml(data, assets, data.issueDate), assets, {
+        headerRight: `Contrato · ${data.number} · ${data.client.name}`,
+        footerLeft,
+      })
+    : await htmlToPdf(proposalHtml(data, assets, SCHEDULE_DISCLAIMER), assets, {
+        headerRight: `${data.number} · ${data.client.name}`,
+        footerLeft,
+      }),
 );
 await closeBrowser();
 console.log(out);

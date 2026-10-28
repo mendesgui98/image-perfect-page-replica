@@ -27,9 +27,9 @@ const css = `
 .party .lbl { font-size: 7.4pt; letter-spacing: .14em; color: ${BLUE}; font-weight: 700; text-transform: uppercase; }
 .party b { display: block; color: #16233F; font-size: 11pt; margin: 1.5mm 0 1mm; }
 .clause { margin-top: 8mm; }
-.clause h3 { margin: 0 0 3mm; font-size: 13pt; color: #16233F; display: flex; align-items: center; gap: 3mm; break-after: avoid; }
+.clause h3 { margin: 0 0 3mm; font-size: 13pt; color: #16233F; break-inside: avoid; break-after: avoid-page; }
 .clause h3 span { width: 8mm; height: 8mm; border-radius: 2mm; background: ${BLUE}; color: #fff; font-size: 9pt;
-  display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  display: inline-flex; align-items: center; justify-content: center; margin-right: 3mm; vertical-align: 1px; }
 .clause p { margin: 0 0 2.6mm; text-align: justify; line-height: 1.65; font-size: 10pt; color: #2F3848; }
 .clause p.sub { padding-left: 6mm; }
 .tbl { margin: 3mm 0 4mm; border: 1px solid #E3E6EA; border-radius: 2.5mm; overflow: hidden; }
@@ -54,7 +54,7 @@ function clause(n: number, title: string, body: string) {
 const p = (t: string, sub = false) => `<p${sub ? ` class="sub"` : ""}>${t}</p>`;
 
 export function contractHtml(d: ProposalData, assets: Assets, today: string) {
-  const orc = `<b>orçamento ${esc(d.number)} (Anexo 1)</b>`;
+  const orc = `<b>orçamento <span class="nb">${esc(d.number)}</span> (Anexo 1)</b>`;
   const weeks = d.weeks
     ? `${d.weeks} (${numeroPorExtenso(d.weeks)}) ${d.weeks === 1 ? "semana" : "semanas"}`
     : "a definir no cronograma definitivo";
