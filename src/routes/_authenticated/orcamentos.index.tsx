@@ -96,18 +96,19 @@ function Lista() {
         supabase.from("pricing_settings").select("*").maybeSingle(),
         supabase.from("company_settings").select("texto_fechamento").maybeSingle(),
       ]);
+      // Cópia dos padrões de Configurações > Precificação (modelo do custo direto).
       const params = pricing
         ? {
-            labor_markup: pricing.labor_markup,
-            materials_markup: pricing.materials_markup,
-            negotiation_reserve: pricing.negotiation_reserve,
+            model: "custo_direto",
+            structure_rate: pricing.structure_rate,
+            architect_commission: pricing.architect_commission,
+            apply_rt: !!architectId,
+            tax_rate: pricing.tax_rate,
             desired_margin: pricing.desired_margin,
             min_margin: pricing.min_margin,
-            architect_commission: pricing.architect_commission,
-            reinvestment_share: pricing.reinvestment_share,
-            taxes: pricing.taxes,
+            negotiated_price: null,
           }
-        : {};
+        : { model: "custo_direto" };
       const { data, error } = await supabase
         .from("budgets")
         .insert({
