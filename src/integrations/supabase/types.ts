@@ -624,6 +624,7 @@ export type Database = {
         Row: {
           amount: number;
           canceled: boolean;
+          cash_only: boolean;
           category: string;
           cost_center: string | null;
           created_at: string;
@@ -650,6 +651,7 @@ export type Database = {
         Insert: {
           amount: number;
           canceled?: boolean;
+          cash_only?: boolean;
           category?: string;
           cost_center?: string | null;
           created_at?: string;
@@ -676,6 +678,7 @@ export type Database = {
         Update: {
           amount?: number;
           canceled?: boolean;
+          cash_only?: boolean;
           category?: string;
           cost_center?: string | null;
           created_at?: string;
@@ -781,7 +784,7 @@ export type Database = {
       };
       financial_settlements: {
         Row: {
-          account_id: string;
+          account_id: string | null;
           amount: number;
           created_at: string;
           created_by: string | null;
@@ -793,7 +796,7 @@ export type Database = {
           payment_method: string | null;
         };
         Insert: {
-          account_id: string;
+          account_id: string | null;
           amount: number;
           created_at?: string;
           created_by?: string | null;
@@ -805,7 +808,7 @@ export type Database = {
           payment_method?: string | null;
         };
         Update: {
-          account_id?: string;
+          account_id?: string | null;
           amount?: number;
           created_at?: string;
           created_by?: string | null;
@@ -2074,6 +2077,24 @@ export type Database = {
         Returns: number;
       };
       convert_budget: { Args: { _budget_id: string }; Returns: string };
+      cancel_financial_entry: { Args: { _entry_id: string }; Returns: undefined };
+      register_cash_movement: {
+        Args: {
+          _account_id: string;
+          _amount: number;
+          _category: string;
+          _description: string;
+          _direction: string;
+          _movement_date: string;
+          _notes: string;
+          _payment_method: string;
+          _person_id: string;
+          _request_id: string;
+          _work_id: string;
+        };
+        Returns: string;
+      };
+      undo_settlement: { Args: { _settlement_id: string }; Returns: undefined };
       delete_material: { Args: { _id: string }; Returns: undefined };
       copy_budget: {
         Args: { _as_revision: boolean; _budget_id: string };

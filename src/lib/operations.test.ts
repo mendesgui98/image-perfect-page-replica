@@ -5,6 +5,10 @@ import {
   financeTotals,
   accountBalances,
   allocatedCost,
+  accountStatus,
+  cashMovements,
+  cashSummary,
+  type AccountEntry,
 } from "./operations";
 const entry = {
   id: "e",
@@ -84,4 +88,98 @@ it("excluir um lançamento exclui suas baixas do saldo sem inverter o sinal", ()
     accountBalances(accounts, [{ ...entry, id: "piloto", canceled: true }], settlements, [])[0]
       ?.balance,
   ).toBe(1000);
+});
+
+describe("caixa e contas a receber/pagar (critérios de aceite)", () => {
+  const today = "2026-10-28";
+  const base = {
+    work_id: "w1",
+    incurred: false,
+    canceled: false,
+    purchase_order_id: null,
+    category: "Contrato",
+  };
+  const entry = (over: Partial<AccountEntry>): AccountEntry => ({
+    id: "e",
+    direction: "entrada",
+    amount: 0,
+    description: "",
+    due_date: today,
+    ...base,
+    ...over,
+  });
+  const avista = entry({ id: "cash", amount: 100, cash_only: true });
+  const receber = entry({ id: "rec", amount: 200, due_date: "2026-11-10" });
+  const pagar = entry({ id: "pag", direction: "saida", amount: 80, due_date: "2026-11-10" });
+  const s = (entry_id: string, amount: number, id = entry_id + "-s") => ({
+    id,
+    entry_id,
+    amount,
+    account_id: null,
+    paid_date: today,
+  });
+
+  it("entrada de R$ 100 no caixa sobe o saldo atual", () => {
+    expect(cashSummary([avista], [s("cash", 100)], today).current).toBe(100);
+  });
+
+  it("conta a receber de R$ 200 não muda o saldo atual, só o previsto", () => {
+    const r = cashSummary([avista, receber], [s("cash", 100)], today);
+    expect(r.current).toBe(100);
+    expect(r.receivable).toBe(200);
+    expect(r.forecast).toBe(300);
+  });
+
+  it("Recebi: conta RECEBIDA, entrada no caixa, saldo sobe R$ 200", () => {
+    const settlements = [s("cash", 100), s("rec", 200)];
+    expect(accountStatus(receber, settlements, today).status).toBe("recebida");
+    expect(cashMovements([avista, receber], settlements).map((m) => m.origin)).toEqual([
+      "manual",
+      "baixa",
+    ]);
+    expect(cashSummary([avista, receber], settlements, today).current).toBe(300);
+  });
+
+  it("desfazer a baixa volta a conta para PENDENTE e o saldo", () => {
+    const settlements = [s("cash", 100)];
+    expect(accountStatus(receber, settlements, today).status).toBe("pendente");
+    expect(cashSummary([avista, receber], settlements, today).current).toBe(100);
+  });
+
+  it("contas a pagar: saída subtrai e pendente só afeta o previsto", () => {
+    expect(cashSummary([pagar], [], today)).toMatchObject({
+      current: 0,
+      payable: 80,
+      forecast: -80,
+    });
+    const paid = [s("pag", 80)];
+    expect(accountStatus(pagar, paid, today).status).toBe("paga");
+    expect(cashSummary([pagar], paid, today).current).toBe(-80);
+  });
+
+  it("pagamento parcial deixa a conta PARCIAL com o saldo restante", () => {
+    const st = accountStatus(receber, [s("rec", 50)], today);
+    expect(st).toMatchObject({ status: "parcial", pending: 150, paid: 50 });
+  });
+
+  it("vencida automática, vence em até 3 dias e cancelada fora dos cálculos", () => {
+    expect(accountStatus(entry({ amount: 10, due_date: "2026-10-27" }), [], today).status).toBe(
+      "vencida",
+    );
+    expect(accountStatus(entry({ amount: 10, due_date: "2026-10-31" }), [], today).dueSoon).toBe(
+      true,
+    );
+    expect(accountStatus(entry({ amount: 10, due_date: "2026-11-01" }), [], today).dueSoon).toBe(
+      false,
+    );
+    const canceled = entry({ id: "c", amount: 500, canceled: true });
+    expect(accountStatus(canceled, [], today).status).toBe("cancelada");
+    expect(cashSummary([canceled], [], today).forecast).toBe(0);
+  });
+
+  it("saldo inicial das contas entra no saldo atual e vencidos são separados", () => {
+    const overdue = entry({ id: "v", amount: 70, due_date: "2026-10-01" });
+    const r = cashSummary([overdue, receber], [], today, 1000);
+    expect(r).toMatchObject({ current: 1000, receivable: 270, receivableOverdue: 70 });
+  });
 });

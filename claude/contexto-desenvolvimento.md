@@ -4,6 +4,16 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Financeiro: caixa separado de contas a receber/pagar (branch `feat/fundacao-tecnica`)
+
+**Modelo (sem mover dados):** `financial_entries` são as contas (futuro) e `financial_settlements` são o caixa (realizado). Decisão do Guilherme: saldo atual inclui o saldo inicial das contas bancárias.
+
+- Migração `20261028000000_cash_and_settlement_undo.sql`: `financial_entries.cash_only` (à vista); `financial_settlements.account_id` opcional; `register_cash_movement` cria conta + baixa atômicas (idempotente); `undo_settlement` remove a baixa (e a conta, se à vista) e grava snapshot em `record_deletion_log`; `cancel_financial_entry` cancela o lançamento inteiro (todas as parcelas) só sem baixas, rateio ou compra. `check_financial_group_total` aceita grupo inteiro cancelado; `guard_installment_entry` só libera `canceled` com `jmg.finance_cancel`.
+- Cálculos puros em `operations.ts`: `accountStatus` (pendente, vencida, parcial, recebida/paga, cancelada, vence em até 3 dias), `cashMovements`, `cashSummary` (saldo atual, a receber/pagar e vencidos, previsto). Testes cobrem os critérios de aceite.
+- Tela `src/components/works/finance.tsx` (Financeiro geral e aba da obra): cards, abas Caixa / Contas a receber / Contas a pagar, filtros (período, categoria, status, tipo), Nova entrada/saída, Recebi/Paguei (pré-preenchido, parcial), Desfazer baixa, Cancelar.
+
+**Testado:** critérios de aceite no navegador (100 → 100/+200 previsto → 300 → 100; o mesmo para pagar e saída à vista) e cancelamento; dados de teste removidos. `test:db`, build e testes da API passam.
+
 ### 2026-10-28 — Excluir e editar obras (branch `feat/fundacao-tecnica`)
 
 **Decisão do Guilherme:** obra usa a lixeira com bloqueio, igual a orçamentos e cadastros.

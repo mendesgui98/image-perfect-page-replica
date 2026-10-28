@@ -29,7 +29,7 @@ function Page() {
       <PageHeader title="Financeiro" />
       <nav className="mb-6 flex flex-wrap gap-2">
         {[
-          ["lancamentos", "Lançamentos e contas"],
+          ["lancamentos", "Caixa e contas"],
           ["composicao", "Recebimentos e saldos"],
           ["analise", "Análises e resultados"],
         ].map(([view, label]) => (
