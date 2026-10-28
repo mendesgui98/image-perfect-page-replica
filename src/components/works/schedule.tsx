@@ -23,6 +23,8 @@ import { Plus, Pencil, Camera, ArrowUp, ArrowDown, Copy, Trash2, Layers } from "
 import { StagePhotos } from "./photos";
 import { StageServicesPanel } from "./stage-services";
 import { stageServicesOptions } from "@/lib/stage-services-data";
+import { stagesOptions } from "@/lib/budget-api";
+import { Input } from "@/components/ui/input";
 import { servicesProgress } from "@/lib/work-progress";
 import { stageLabels } from "@/lib/stage-labels";
 import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
@@ -140,7 +142,7 @@ export function Schedule({
       if (progress > 100 || weight > 100) throw Error("Percentuais devem estar entre 0 e 100%.");
       const payload = {
         work_id: workId,
-        name: text(d, "name"),
+        name: stageName(d),
         responsible: text(d, "responsible"),
         planned_start: text(d, "planned_start") || null,
         planned_end: text(d, "planned_end") || null,
@@ -389,7 +391,11 @@ export function Schedule({
               save(new FormData(e.currentTarget));
             }}
           >
-            <Field name="name" label="Nome da etapa" value={editing?.name} required />
+            <StageNameField
+              key={editing?.id ?? "nova"}
+              current={editing?.name ?? ""}
+              used={stages.filter((x) => x.id !== editing?.id).map((x) => x.name)}
+            />
             <Field name="responsible" label="Responsável" value={editing?.responsible} />
             <label className="text-sm">
               Status
@@ -632,5 +638,54 @@ export function Schedule({
         </DialogContent>
       </Dialog>
     </section>
+  );
+}
+
+const OTHER_STAGE = "__outra";
+/** Nome escolhido na lista de etapas cadastradas ou digitado em "Outra etapa". */
+function stageName(d: FormData) {
+  const choice = text(d, "name_choice");
+  const name = (choice === OTHER_STAGE ? text(d, "name_custom") : choice).trim();
+  if (!name) throw Error("Escolha a etapa ou digite o nome.");
+  return name;
+}
+
+function StageNameField({ current, used }: { current: string; used: string[] }) {
+  const { data: catalog = [] } = useQuery(stagesOptions);
+  const active = catalog.filter((c) => c.active || c.name === current);
+  const inCatalog = !current || active.some((c) => c.name === current);
+  const [choice, setChoice] = useState(inCatalog ? current : OTHER_STAGE);
+  return (
+    <div className="space-y-1 text-sm">
+      <label className="block">
+        Etapa
+        <select
+          name="name_choice"
+          required
+          value={choice}
+          onChange={(e) => setChoice(e.target.value)}
+          className={selectClass}
+        >
+          <option value="">Selecione a etapa</option>
+          {active.map((c) => (
+            <option key={c.id} value={c.name}>
+              {c.name}
+              {used.includes(c.name) ? " (já nesta obra)" : ""}
+            </option>
+          ))}
+          <option value={OTHER_STAGE}>Outra etapa (digitar)</option>
+        </select>
+      </label>
+      {choice === OTHER_STAGE && (
+        <Input
+          name="name_custom"
+          aria-label="Nome da etapa"
+          placeholder="Nome da etapa"
+          defaultValue={inCatalog ? "" : current}
+          required
+          autoFocus
+        />
+      )}
+    </div>
   );
 }
