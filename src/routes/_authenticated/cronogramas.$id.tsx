@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { FileDown, Link2, Settings } from "lucide-react";
+import { FileDown, FileSpreadsheet, HardHat, Link2, Settings } from "lucide-react";
 import { scheduleOptions } from "@/lib/schedule-data";
 import { worksOptions, workOptions } from "@/lib/work-data";
 import { pageMeta } from "@/lib/page-meta";
@@ -87,7 +87,10 @@ function ScheduleDetail() {
   if (h.deleted_at) return <DeletedRecordNotice entity="schedules" id={id} name={h.name} />;
   return (
     <div className="space-y-5">
-      <Link to="/cronogramas" className="text-sm text-muted-foreground">
+      <Link
+        to="/cronogramas"
+        className="inline-flex min-h-10 items-center text-sm text-muted-foreground hover:text-foreground"
+      >
         ← Cronogramas
       </Link>
       <PageHeader
@@ -107,12 +110,15 @@ function ScheduleDetail() {
         }
       />
       {h.description && (
-        <p className="whitespace-pre-wrap text-sm text-muted-foreground">{h.description}</p>
+        <p className="whitespace-pre-wrap rounded-xl bg-muted/50 p-4 text-sm text-muted-foreground">
+          {h.description}
+        </p>
       )}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         {h.work_id && (
           <Button asChild variant="outline">
             <Link to="/obras/$id" params={{ id: h.work_id }} search={{ tab: "cronograma" }}>
+              <HardHat className="h-4 w-4" />
               Abrir na obra
             </Link>
           </Button>
@@ -120,6 +126,7 @@ function ScheduleDetail() {
         {h.budget_id && me?.canSeeCosts && (
           <Button asChild variant="outline">
             <Link to="/orcamentos/$id" params={{ id: h.budget_id }}>
+              <FileSpreadsheet className="h-4 w-4" />
               Orçamento de origem
             </Link>
           </Button>
@@ -146,7 +153,7 @@ function ScheduleDetail() {
                 )}
               </>
             )}
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex h-10 cursor-pointer items-center gap-2 rounded-lg bg-muted px-3 text-sm">
               <input
                 type="checkbox"
                 checked={h.is_template}

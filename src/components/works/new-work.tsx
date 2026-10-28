@@ -5,6 +5,7 @@ import { Plus, FileCheck, HardHat } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { IconBubble } from "@/components/kpi";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, Memo, selectClass } from "./fields";
 import { text, number } from "@/lib/form-values";
@@ -136,12 +137,22 @@ export function NewWork() {
           </DialogHeader>
           {!mode ? (
             <div className="grid gap-3">
-              <Button variant="outline" onClick={() => setMode("budget")}>
-                <FileCheck className="h-4 w-4" />
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-h-14 justify-start gap-3 whitespace-normal rounded-xl p-3 text-left"
+                onClick={() => setMode("budget")}
+              >
+                <IconBubble icon={FileCheck} tone="positive" />
                 Criar a partir de orçamento aprovado
               </Button>
-              <Button onClick={() => setMode("direct")}>
-                <HardHat className="h-4 w-4" />
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-h-14 justify-start gap-3 whitespace-normal rounded-xl p-3 text-left"
+                onClick={() => setMode("direct")}
+              >
+                <IconBubble icon={HardHat} tone="brand" />
                 Cadastrar obra diretamente
               </Button>
             </div>

@@ -1,4 +1,4 @@
-import { HardHat } from "lucide-react";
+import { AlertTriangle, HardHat } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import {
@@ -22,9 +22,12 @@ import { Metrics } from "./summary";
 import { selectClass } from "./fields";
 import { Button } from "@/components/ui/button";
 import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
+import { Money } from "@/components/kpi";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 const chartColors = {
-  received: "var(--chart-2)",
-  spent: "var(--chart-4)",
+  received: "var(--positive)",
+  spent: "var(--negative)",
   cash: "var(--chart-1)",
   expected: "var(--chart-3)",
   balance: "var(--chart-1)",
@@ -44,8 +47,8 @@ function Graph({
   line?: boolean;
 }) {
   return (
-    <section className="min-w-0 border-t pt-5">
-      <h3 className="mb-3 text-sm font-semibold">{title}</h3>
+    <section className={cn(panelClass, "min-w-0 p-4 sm:p-5")}>
+      <h3 className="mb-4 text-base font-semibold">{title}</h3>
       {rows.length ? (
         <div className="h-64 w-full min-w-0 overflow-hidden">
           <ResponsiveContainer width="100%" height="100%">
@@ -86,7 +89,7 @@ function Graph({
                     dataKey={k.key}
                     name={k.name}
                     fill={chartColors[k.key]}
-                    radius={[3, 3, 0, 0]}
+                    radius={[6, 6, 0, 0]}
                   />
                 ))}
               </BarChart>
@@ -210,7 +213,7 @@ export function FinancialDashboard() {
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold">Dashboard financeiro JMG</h2>
+          <h2 className="text-lg font-semibold">Dashboard financeiro JMG</h2>
           <p className="text-xs text-muted-foreground">
             {works.filter((w) => w.work.status !== "concluida").length} obras ativas ·{" "}
             {works.length} no filtro
@@ -222,7 +225,12 @@ export function FinancialDashboard() {
           </Link>
         </Button>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div
+        className={cn(
+          panelClass,
+          "grid grid-cols-2 gap-3 p-4 xl:grid-cols-4 [&>label]:text-xs [&>label]:font-medium [&>label]:text-muted-foreground",
+        )}
+      >
         <label className="text-xs">
           Período
           <select
@@ -337,7 +345,7 @@ export function FinancialDashboard() {
             </label>
           </>
         )}
-        <label className="flex items-center gap-2 text-xs">
+        <label className="col-span-2 flex items-center gap-2 text-xs xl:col-span-1">
           <input
             type="checkbox"
             checked={search.pilot || false}
@@ -346,7 +354,7 @@ export function FinancialDashboard() {
           Incluir PILOTO — TESTE
         </label>
       </div>
-      <h3 className="text-sm font-semibold">Contratos e resultados · posição acumulada</h3>
+      <h3 className="pt-2 text-base font-semibold">Contratos e resultados · posição acumulada</h3>
       <Metrics
         rows={[
           [
@@ -370,7 +378,7 @@ export function FinancialDashboard() {
           ],
         ]}
       />
-      <h3 className="text-sm font-semibold">
+      <h3 className="pt-2 text-base font-semibold">
         Movimentos e vencimentos ·{" "}
         {search.period === "todos" ? "todo o período" : "período selecionado"}
         {search.category ? " · " + search.category : ""}
@@ -387,7 +395,7 @@ export function FinancialDashboard() {
           ["Custos gerais não rateados", generalResidual(true) + generalResidual(false)],
         ]}
       />
-      <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+      <div className="grid min-w-0 gap-4 lg:grid-cols-2">
         <Graph
           title="Entradas × saídas / caixa mensal"
           rows={monthly}
@@ -435,41 +443,43 @@ export function FinancialDashboard() {
           ]}
         />
       </div>
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {[
           ["Maiores resultados previstos", ranked.slice(0, 5), "result"],
           ["Maiores custos previstos", byCost.slice(0, 5), "cost"],
           ["Pagamentos atrasados", works.filter((w) => w.overdue > 0), "overdue"],
         ].map(([title, list, kind]) => (
-          <section key={String(title)} className="border-t pt-4">
-            <h3 className="mb-3 text-sm font-semibold">{String(title)}</h3>
+          <section key={String(title)} className={cn(panelClass, "p-4 sm:p-5")}>
+            <h3 className="mb-2 text-base font-semibold">{String(title)}</h3>
             {(list as typeof works).map((w) => (
               <Link
                 key={w.work.id}
                 to="/obras/$id"
                 params={{ id: w.work.id }}
-                className="flex justify-between gap-3 py-2 text-xs"
+                className="-mx-2 flex justify-between gap-3 rounded-lg px-2 py-2 text-sm hover:bg-muted"
               >
                 <span className="min-w-0 break-words">{w.work.name}</span>
-                <span className="shrink-0 num">
-                  {fmtBRL(
+                <Money
+                  className="shrink-0 font-semibold"
+                  value={
                     kind === "overdue"
                       ? w.overdue
                       : kind === "cost"
                         ? w.result.cost
-                        : w.result.result,
-                  )}
-                </span>
+                        : w.result.result
+                  }
+                  tone={kind === "result" ? "auto" : kind === "overdue" ? "alert" : "negative"}
+                />
               </Link>
             ))}
           </section>
         ))}
       </div>
-      <section className="border-t pt-5">
-        <h3 className="mb-4 font-bold">Todas as obras</h3>
+      <section className="pt-2">
+        <h3 className="mb-4 text-base font-semibold">Todas as obras</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           {works.map((s) => (
-            <article key={s.work.id} className="rounded-lg border bg-card p-4">
+            <article key={s.work.id} className={cn(panelClass, "p-4 sm:p-5")}>
               <Link
                 to="/obras/$id"
                 params={{ id: s.work.id }}
@@ -498,22 +508,38 @@ export function FinancialDashboard() {
                 ].map(([l, v]) => (
                   <div key={String(l)}>
                     <dt className="text-xs text-muted-foreground">{l}</dt>
-                    <dd className="text-sm font-semibold num">
+                    <dd className="text-sm font-semibold">
                       {l === "Resultado previsto" &&
                       s.work.origin === "direto" &&
-                      !s.result.estimateConfirmed
-                        ? "Não conferido"
-                        : fmtBRL(Number(v))}
+                      !s.result.estimateConfirmed ? (
+                        "Não conferido"
+                      ) : (
+                        <Money
+                          value={Number(v)}
+                          tone={
+                            l === "Recebido"
+                              ? "positive"
+                              : l === "Pago"
+                                ? "negative"
+                                : l === "Aditivos"
+                                  ? "extra"
+                                  : "auto"
+                          }
+                        />
+                      )}
                     </dd>
                   </div>
                 ))}
               </dl>
-              <div className="mt-4 flex justify-between border-t pt-3 text-xs">
+              <div className="mt-4 flex justify-between rounded-lg bg-muted/60 px-3 py-2 text-xs">
                 <span>Físico {fmtNum(s.progress)}%</span>
                 <span>Recebido {fmtNum(s.balance.financialProgress)}%</span>
               </div>
               {s.overdue > 0 && (
-                <p className="mt-2 text-xs text-destructive">Vencidos {fmtBRL(s.overdue)}</p>
+                <p className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-alert">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  Vencidos {fmtBRL(s.overdue)}
+                </p>
               )}
             </article>
           ))}

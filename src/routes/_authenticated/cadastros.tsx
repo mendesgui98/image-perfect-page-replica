@@ -5,7 +5,19 @@ import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Plus, Search, Users } from "lucide-react";
+import {
+  Contact,
+  Hammer,
+  Mail,
+  PencilRuler,
+  Phone,
+  Plus,
+  Search,
+  Truck,
+  User,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -15,7 +27,10 @@ import { SubmitForm } from "@/components/enter-submit";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { IconBubble, Segmented } from "@/components/kpi";
+import { panelClass, segmentClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +39,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { selectClass } from "@/components/works/fields";
 import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 
 type Person = Database["public"]["Tables"]["people"]["Row"];
@@ -45,6 +61,14 @@ const KINDS: { k: Kind; label: string }[] = [
   { k: "fornecedor", label: "Fornecedores" },
   { k: "prestador", label: "Prestadores" },
 ];
+
+const KIND_ICON: Record<Kind, LucideIcon> = {
+  cliente: User,
+  contato: Contact,
+  arquiteto: PencilRuler,
+  fornecedor: Truck,
+  prestador: Hammer,
+};
 
 const FIELDS: [keyof Person, string, string?][] = [
   ["name", "Nome / Razão social"],
@@ -153,18 +177,28 @@ function Cadastros() {
           </>
         }
       />
-      <Tabs value={kind} onValueChange={(v) => setKind(v as Kind)}>
-        <TabsList className="h-auto flex-wrap">
-          {KINDS.map((k) => (
-            <TabsTrigger key={k.k} value={k.k}>
-              {k.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-      <div className="my-4 flex flex-wrap items-center gap-4">
-        <div className="relative max-w-sm flex-1">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+      <Segmented className="mb-4">
+        {KINDS.map((k) => (
+          <button
+            key={k.k}
+            type="button"
+            role="tab"
+            aria-selected={kind === k.k}
+            onClick={() => setKind(k.k)}
+            className={segmentClass(kind === k.k)}
+          >
+            {k.label}
+          </button>
+        ))}
+      </Segmented>
+      <div
+        className={cn(
+          panelClass,
+          "mb-4 flex flex-wrap items-center gap-x-6 gap-y-3 p-3 shadow-none sm:p-4",
+        )}
+      >
+        <div className="relative w-full min-w-0 sm:w-auto sm:max-w-sm sm:flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             className="pl-9"
             placeholder="Buscar"
@@ -172,57 +206,66 @@ function Cadastros() {
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <Switch checked={showInactive} onCheckedChange={setShowInactive} /> Mostrar arquivados
         </label>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="border-y text-xs text-muted-foreground">
-            <tr>
-              <th className="p-3">Nome</th>
-              <th className="p-3">Telefone</th>
-              <th className="p-3">E-mail</th>
-              <th className="p-3">Especialidade</th>
-              <th className="p-3">Status</th>
-              <th className="p-3"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((p) => (
-              <tr key={p.id} className="border-b">
-                <td className="p-3">
+      {list.length ? (
+        <div className={cn(panelClass, "divide-y divide-border/60 overflow-hidden")}>
+          {list.map((p) => (
+            <article
+              key={p.id}
+              className={cn(
+                "flex flex-wrap items-start gap-x-3 gap-y-1 px-4 py-4 sm:flex-nowrap sm:px-5",
+                !p.active && "opacity-70",
+              )}
+            >
+              <IconBubble icon={KIND_ICON[p.kind] ?? Users} tone="neutral" />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <Link
                     to="/cadastros/$id"
                     params={{ id: p.id }}
-                    className="font-medium text-primary"
+                    className="min-w-0 break-words font-medium leading-snug text-foreground hover:text-primary"
                   >
                     {p.name}
                   </Link>
-                </td>
-                <td className="whitespace-nowrap p-3">{p.phone ? formatPhone(p.phone) : "—"}</td>
-                <td className="p-3">{p.email || "—"}</td>
-                <td className="p-3">{p.specialty || "—"}</td>
-                <td className="p-3 text-xs">{p.active ? "Ativo" : "Arquivado"}</td>
-                <td className="p-3">
-                  <Button size="sm" variant="ghost" onClick={() => setEdit(p)}>
-                    Editar
-                  </Button>
-                  <RecordDeleteButton entity="people" id={p.id} name={p.name} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!list.length && (
-          <EmptyState
-            compact
-            icon={Users}
-            title="Nenhum cadastro encontrado"
-            description="Ajuste a busca ou cadastre uma nova pessoa."
-          />
-        )}
-      </div>
+                  {!p.active && <Badge variant="neutral">Arquivado</Badge>}
+                </div>
+                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  {p.phone && (
+                    <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                      <Phone className="h-3.5 w-3.5" aria-hidden />
+                      {formatPhone(p.phone)}
+                    </span>
+                  )}
+                  {p.email && (
+                    <span className="inline-flex min-w-0 items-center gap-1 break-all">
+                      <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      {p.email}
+                    </span>
+                  )}
+                  {p.specialty && <span>{p.specialty}</span>}
+                  {!p.phone && !p.email && !p.specialty && <span>Sem contato informado</span>}
+                </div>
+              </div>
+              <div className="-mb-1 -ml-3 flex w-full shrink-0 items-center gap-1 pl-12 sm:m-0 sm:w-auto sm:p-0">
+                <Button size="sm" variant="ghost" onClick={() => setEdit(p)}>
+                  Editar
+                </Button>
+                <RecordDeleteButton entity="people" id={p.id} name={p.name} />
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          compact
+          icon={Users}
+          title="Nenhum cadastro encontrado"
+          description="Ajuste a busca ou cadastre uma nova pessoa."
+        />
+      )}
 
       <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
@@ -235,7 +278,7 @@ function Cadastros() {
                 <div className="space-y-1 sm:col-span-2">
                   <Label>Tipo</Label>
                   <select
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    className={selectClass}
                     value={edit.kind ?? kind}
                     onChange={(e) => setEdit({ ...edit, kind: e.target.value as Kind })}
                   >

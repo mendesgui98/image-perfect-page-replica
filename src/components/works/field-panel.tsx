@@ -1,12 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, CalendarCheck, ClipboardList, NotebookPen } from "lucide-react";
+import { AlertTriangle, CalendarCheck, ClipboardList, HardHat, NotebookPen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { businessDate } from "@/lib/dashboard-math";
 import { fieldAgenda } from "@/lib/field-agenda";
 import { fmtDate, fmtNum } from "@/lib/format";
 import { worksOptions } from "@/lib/work-data";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { IconBubble } from "@/components/kpi";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 
 const activeStagesOptions = {
   queryKey: ["field-stages"],
@@ -51,22 +55,25 @@ export function FieldPanel() {
         <h2 className="text-lg font-bold">Hoje na obra · {fmtDate(today)}</h2>
       </div>
       {!agenda.length && (
-        <p className="rounded-md border p-4 text-sm text-muted-foreground">
+        <p className={cn(panelClass, "p-4 text-sm text-muted-foreground sm:p-5")}>
           Nenhuma etapa programada para hoje e nenhuma pendência vencida.
         </p>
       )}
       {agenda.map(({ work, stages: list, dueRecords }) => (
-        <article key={work.id} className="rounded-lg border bg-card p-4 shadow-card">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <Link
-                to="/obras/$id"
-                params={{ id: work.id }}
-                className="font-semibold hover:underline"
-              >
-                {work.name}
-              </Link>
-              {work.address && <p className="text-xs text-muted-foreground">{work.address}</p>}
+        <article key={work.id} className={cn(panelClass, "p-4 sm:p-5")}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 items-start gap-3">
+              <IconBubble icon={HardHat} tone="brand" />
+              <div className="min-w-0">
+                <Link
+                  to="/obras/$id"
+                  params={{ id: work.id }}
+                  className="font-semibold hover:underline"
+                >
+                  {work.name}
+                </Link>
+                {work.address && <p className="text-xs text-muted-foreground">{work.address}</p>}
+              </div>
             </div>
             <Button asChild size="sm" variant="outline">
               <Link to="/obras/$id" params={{ id: work.id }} search={{ tab: "diario" }}>
@@ -76,7 +83,7 @@ export function FieldPanel() {
             </Button>
           </div>
           {list.length > 0 && (
-            <ul className="mt-3 divide-y text-sm">
+            <ul className="mt-3 divide-y divide-border/60 text-sm">
               {list.map((s) => (
                 <li key={s.id} className="flex items-center justify-between gap-3 py-2">
                   <Link
@@ -91,11 +98,13 @@ export function FieldPanel() {
                     </span>
                   </Link>
                   {s.situation === "atrasada" ? (
-                    <span className="flex items-center gap-1 text-xs font-semibold text-destructive">
+                    <Badge variant="negative" className="shrink-0 gap-1">
                       <AlertTriangle className="h-3.5 w-3.5" /> Atrasada
-                    </span>
+                    </Badge>
                   ) : (
-                    <span className="text-xs text-muted-foreground">Em execução</span>
+                    <Badge variant="info" className="shrink-0">
+                      Em execução
+                    </Badge>
                   )}
                   <span className="w-12 text-right font-semibold num">{fmtNum(s.progress)}%</span>
                 </li>
@@ -103,7 +112,7 @@ export function FieldPanel() {
             </ul>
           )}
           {dueRecords.length > 0 && (
-            <div className="mt-3 rounded-md bg-warning/10 p-3 text-sm">
+            <div className="mt-3 rounded-xl bg-alert-soft p-3 text-sm text-alert">
               <p className="mb-1 flex items-center gap-1 font-semibold">
                 <ClipboardList className="h-4 w-4" /> Pendências vencidas
               </p>

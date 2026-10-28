@@ -3,7 +3,7 @@ import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { FileSpreadsheet, HardHat, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
@@ -21,10 +21,16 @@ import {
 } from "@/components/ui/dialog";
 import { loadBudget } from "@/lib/budget-data";
 import { computeBudget } from "@/lib/pricing";
-import { fmtBRL } from "@/lib/format";
 import { Input } from "@/components/ui/input";
 import { fmtDate } from "@/lib/format";
 import { STATUS_LABEL } from "@/lib/budget-status";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { BUDGET_STATUS_VARIANT } from "@/lib/status-badges";
+import { EmptyState, ListSkeleton } from "@/components/feedback";
+import { IconBubble, Money } from "@/components/kpi";
+import { selectClass } from "@/components/works/fields";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/orcamentos/")({
   head: () => pageMeta("Orçamentos", "Propostas e revisões comerciais da JMG."),
@@ -50,7 +56,7 @@ function Lista() {
   const [status, setStatus] = useState("");
   const [archived, setArchived] = useState(false);
 
-  const { data = [] } = useQuery({
+  const { data = [], isLoading } = useQuery({
     queryKey: ["budgets", archived],
     enabled: !!me?.canSeeCosts,
     queryFn: async () => {
@@ -156,12 +162,9 @@ function Lista() {
           </>
         }
       />
-      <label className="mb-4 flex items-center gap-2 text-sm">
-        <Switch checked={archived} onCheckedChange={setArchived} /> Ver arquivados
-      </label>
-      <div className="mb-4 flex flex-wrap gap-3">
+      <div className={cn(panelClass, "mb-4 flex flex-wrap items-center gap-3 p-4")}>
         <Input
-          className="sm:max-w-sm"
+          className="min-w-0 flex-1 sm:max-w-sm"
           aria-label="Buscar orçamento"
           placeholder="Buscar número, cliente ou projeto"
           value={q}
@@ -169,7 +172,7 @@ function Lista() {
         />
         <select
           aria-label="Status do orçamento"
-          className="h-10 rounded-md border bg-background px-3 text-sm"
+          className={cn(selectClass, "w-full sm:w-auto")}
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         >
@@ -181,73 +184,75 @@ function Lista() {
           ))}
           <option value="convertido">Convertido em obra</option>
         </select>
+        <label className="flex min-h-10 items-center gap-2 text-sm text-muted-foreground sm:ml-auto">
+          <Switch checked={archived} onCheckedChange={setArchived} /> Ver arquivados
+        </label>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-muted text-left text-muted-foreground">
-            <tr>
-              <th className="p-3">Nº</th>
-              <th className="p-3">Cliente</th>
-              <th className="p-3">Obra / Projeto</th>
-              <th className="p-3">Valor</th>
-              <th className="p-3">Emissão</th>
-              <th className="p-3">Situação</th>
-              <th className="p-3">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data
-              .filter(
-                (b) =>
-                  (!status || (status === "convertido" ? !!b.work : b.status === status)) &&
-                  (String(b.number) + b.title + b.client_display)
-                    .toLowerCase()
-                    .includes(q.toLowerCase()),
-              )
-              .map((b) => (
-                <tr key={b.id} className="border-t hover:bg-muted/50">
-                  <td className="p-3 font-medium">
-                    <Link
-                      to="/orcamentos/$id"
-                      params={{ id: b.id }}
-                      className="text-primary hover:underline"
-                    >
-                      {b.number}
-                      {b.revision ? ` · Rev. ${b.revision}` : ""}
-                    </Link>
-                  </td>
-                  <td className="p-3">{b.client_display}</td>
-                  <td className="p-3">{b.title}</td>
-                  <td className="whitespace-nowrap p-3 num">{fmtBRL(b.value)}</td>
-                  <td className="p-3">{fmtDate(b.issue_date)}</td>
-                  <td className="p-3">
+      {data.length === 0 ? (
+        isLoading && me?.canSeeCosts ? (
+          <ListSkeleton />
+        ) : (
+          <EmptyState icon={FileSpreadsheet} title="Nenhum orçamento." />
+        )
+      ) : (
+        <div className={cn(panelClass, "divide-y divide-border/60 overflow-hidden")}>
+          {data
+            .filter(
+              (b) =>
+                (!status || (status === "convertido" ? !!b.work : b.status === status)) &&
+                (String(b.number) + b.title + b.client_display)
+                  .toLowerCase()
+                  .includes(q.toLowerCase()),
+            )
+            .map((b) => (
+              <article
+                key={b.id}
+                className="flex gap-3 px-4 py-4 transition-colors hover:bg-muted/40 sm:px-5"
+              >
+                <IconBubble icon={FileSpreadsheet} tone={b.work ? "brand" : "neutral"} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <Link
+                        to="/orcamentos/$id"
+                        params={{ id: b.id }}
+                        className="font-semibold text-primary hover:underline"
+                      >
+                        {b.number}
+                        {b.revision ? ` · Rev. ${b.revision}` : ""}
+                      </Link>
+                      <h3 className="truncate font-medium leading-snug">{b.client_display}</h3>
+                    </div>
+                    <Money value={b.value} className="shrink-0 text-base font-semibold" />
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {b.title ? `${b.title} · ` : ""}Emissão {fmtDate(b.issue_date)}
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     {b.work ? (
-                      <Link to="/obras/$id" params={{ id: b.work.id }} className="text-primary">
-                        Convertido em obra
+                      <Link to="/obras/$id" params={{ id: b.work.id }}>
+                        <Badge variant="positive" className="hover:opacity-80">
+                          <HardHat className="h-3 w-3" /> Convertido em obra
+                        </Badge>
                       </Link>
                     ) : (
-                      STATUS_LABEL[b.status]
+                      <Badge variant={BUDGET_STATUS_VARIANT[b.status] ?? "neutral"}>
+                        {STATUS_LABEL[b.status]}
+                      </Badge>
                     )}
-                  </td>
-                  <td className="p-3">
-                    <RecordDeleteButton
-                      entity="budgets"
-                      id={b.id}
-                      name={`Orçamento nº ${b.number}`}
-                    />
-                  </td>
-                </tr>
-              ))}
-            {data.length === 0 && (
-              <tr>
-                <td colSpan={7} className="p-6 text-center text-muted-foreground">
-                  Nenhum orçamento.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                    <span className="ml-auto">
+                      <RecordDeleteButton
+                        entity="budgets"
+                        id={b.id}
+                        name={`Orçamento nº ${b.number}`}
+                      />
+                    </span>
+                  </div>
+                </div>
+              </article>
+            ))}
+        </div>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
@@ -259,7 +264,7 @@ function Lista() {
               <div className="space-y-1">
                 <Label>Cliente</Label>
                 <select
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  className={selectClass}
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
                 >
@@ -283,7 +288,7 @@ function Lista() {
               <div className="space-y-1">
                 <Label>Arquiteto(a) (opcional)</Label>
                 <select
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  className={selectClass}
                   value={architectId}
                   onChange={(e) => setArchitectId(e.target.value)}
                 >

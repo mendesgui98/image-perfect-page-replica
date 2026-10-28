@@ -3,7 +3,7 @@ import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Package, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -23,7 +23,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { fmtBRL, fmtDate, fmtNum } from "@/lib/format";
+import { fmtDate, fmtNum } from "@/lib/format";
+import { Badge } from "@/components/ui/badge";
+import { IconBubble, Money } from "@/components/kpi";
+import { EmptyState } from "@/components/feedback";
+import { selectClass } from "@/components/works/fields";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 
 type Mat = Database["public"]["Tables"]["materials"]["Row"];
 
@@ -115,63 +121,68 @@ function Materiais() {
           </Button>
         }
       />
-      <Input
-        className="mb-4 max-w-sm"
-        placeholder="Buscar por nome, referência ou especificação"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-      />
-      <div className="overflow-x-auto rounded-lg border bg-card shadow-card">
-        <table className="w-full text-sm">
-          <thead className="bg-muted text-left text-muted-foreground">
-            <tr>
-              <th className="p-3">Material</th>
-              <th className="p-3">Compra</th>
-              <th className="p-3">Consumo</th>
-              <th className="p-3">Rendimento</th>
-              <th className="p-3 text-right">Preço compra</th>
-              <th className="p-3">Atualizado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((m) => (
-              <tr
-                key={m.id}
-                onClick={() => setEdit(m)}
-                className={`cursor-pointer border-t hover:bg-muted/50 ${m.active ? "" : "opacity-50"}`}
-              >
-                <td className="p-3">
-                  <span className="font-medium">{m.name}</span>
-                  {m.reference && (
-                    <span className="block text-xs text-muted-foreground">{m.reference}</span>
-                  )}
-                </td>
-                <td className="p-3">{m.purchase_unit}</td>
-                <td className="p-3">
-                  {m.consumption_unit}{" "}
-                  <span className="text-muted-foreground">(×{fmtNum(m.conversion, 4)})</span>
-                </td>
-                <td className="p-3">
-                  {m.rendimento_embalagem ? (
-                    `${fmtNum(m.rendimento_embalagem, 4)} ${m.unidade_rendimento || m.consumption_unit}`
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </td>
-                <td className="p-3 text-right num">{fmtBRL(m.price)}</td>
-                <td className="p-3">{fmtDate(m.price_updated_at)}</td>
-              </tr>
-            ))}
-            {list.length === 0 && (
-              <tr>
-                <td colSpan={6} className="p-6 text-center text-muted-foreground">
-                  Nenhum material cadastrado.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <div className={cn(panelClass, "mb-4 p-3 shadow-none sm:p-4")}>
+        <div className="relative sm:max-w-sm">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            placeholder="Buscar por nome, referência ou especificação"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
       </div>
+      {list.length === 0 ? (
+        <EmptyState compact icon={Package} title="Nenhum material cadastrado." />
+      ) : (
+        <div className={cn(panelClass, "divide-y divide-border/60 overflow-hidden")}>
+          {list.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setEdit(m)}
+              className={cn(
+                "flex w-full cursor-pointer items-start gap-3 px-4 py-4 text-left transition-colors hover:bg-muted/50 sm:px-5",
+                !m.active && "opacity-60",
+              )}
+            >
+              <IconBubble icon={Package} tone="neutral" />
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="font-medium leading-snug">{m.name}</span>
+                  {!m.active && <Badge variant="neutral">Inativo</Badge>}
+                </span>
+                {m.reference && (
+                  <span className="block text-xs text-muted-foreground">{m.reference}</span>
+                )}
+                <span className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span>
+                    Compra: <span className="text-foreground">{m.purchase_unit}</span>
+                  </span>
+                  <span>
+                    Consumo: <span className="text-foreground">{m.consumption_unit}</span> (×
+                    {fmtNum(m.conversion, 4)})
+                  </span>
+                  {m.rendimento_embalagem ? (
+                    <span>
+                      Rendimento:{" "}
+                      <span className="text-foreground">
+                        {`${fmtNum(m.rendimento_embalagem, 4)} ${m.unidade_rendimento || m.consumption_unit}`}
+                      </span>
+                    </span>
+                  ) : null}
+                </span>
+              </span>
+              <span className="shrink-0 text-right">
+                <Money value={m.price} className="font-semibold" />
+                <span className="block text-xs text-muted-foreground">
+                  {fmtDate(m.price_updated_at)}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
         <DialogContent className="sm:max-w-lg">
@@ -216,7 +227,7 @@ function Materiais() {
                 <div className="space-y-1">
                   <Label>Unidade de consumo</Label>
                   <select
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    className={selectClass}
                     value={edit.consumption_unit ?? ""}
                     onChange={(e) => setEdit({ ...edit, consumption_unit: e.target.value })}
                   >
@@ -266,7 +277,7 @@ function Materiais() {
                 <div className="space-y-1">
                   <Label>Unidade do rendimento</Label>
                   <select
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    className={selectClass}
                     value={edit.unidade_rendimento ?? ""}
                     onChange={(e) =>
                       setEdit({ ...edit, unidade_rendimento: e.target.value || null })
@@ -285,7 +296,7 @@ function Materiais() {
                 <div className="space-y-1 sm:col-span-2">
                   <Label>Fornecedor</Label>
                   <select
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    className={selectClass}
                     value={edit.supplier_id ?? ""}
                     onChange={(e) => setEdit({ ...edit, supplier_id: e.target.value || null })}
                   >
@@ -317,7 +328,7 @@ function Materiais() {
           </SubmitForm>
           {edit?.id && (
             // Fora do formulário: o envio da confirmação não pode disparar o Salvar.
-            <div className="border-t pt-3">
+            <div className="flex justify-start pt-1">
               <ConfirmRecordAction
                 name={edit.name ?? "material"}
                 description="O material sai do catálogo. Orçamentos e compras já lançados guardam uma cópia e não mudam. Se ele fizer parte da composição de algum serviço, a exclusão será bloqueada."

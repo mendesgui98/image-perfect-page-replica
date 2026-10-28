@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { CalendarDays, FileSpreadsheet, HardHat, Plus } from "lucide-react";
+import { IconBubble } from "@/components/kpi";
 import { supabase } from "@/integrations/supabase/client";
 import { worksOptions } from "@/lib/work-data";
 import { Button } from "@/components/ui/button";
@@ -93,15 +94,24 @@ export function NewSchedule({ copyId }: { copyId?: string }) {
           </DialogHeader>
           {!mode ? (
             <div className="grid gap-3">
-              <Button variant="outline" onClick={() => setMode("obra")}>
-                Criar a partir de uma obra existente
-              </Button>
-              <Button variant="outline" onClick={() => setMode("orcamento")}>
-                Criar a partir de um orçamento existente
-              </Button>
-              <Button variant="outline" onClick={() => setMode("avulso")}>
-                Criar cronograma avulso
-              </Button>
+              {(
+                [
+                  ["obra", HardHat, "Criar a partir de uma obra existente"],
+                  ["orcamento", FileSpreadsheet, "Criar a partir de um orçamento existente"],
+                  ["avulso", CalendarDays, "Criar cronograma avulso"],
+                ] as const
+              ).map(([value, Icon, label]) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant="outline"
+                  className="h-auto justify-start gap-3 whitespace-normal rounded-xl p-3 text-left"
+                  onClick={() => setMode(value)}
+                >
+                  <IconBubble icon={Icon} tone="brand" />
+                  {label}
+                </Button>
+              ))}
             </div>
           ) : (
             <form

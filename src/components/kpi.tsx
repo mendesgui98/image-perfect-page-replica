@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { ChevronRight } from "lucide-react";
-import { fmtBRL } from "@/lib/format";
+import { AlertTriangle, ChevronRight } from "lucide-react";
+import { fmtBRL, fmtNum } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /**
@@ -112,15 +112,15 @@ export function KpiCard({
 }: {
   label: string;
   value: ReactNode;
-  icon?: LucideIcon;
-  tone?: Tone;
-  hint?: ReactNode;
-  filled?: boolean;
-  hero?: boolean;
-  onClick?: () => void;
-  ariaLabel?: string;
-  className?: string;
-  children?: ReactNode;
+  icon?: LucideIcon | undefined;
+  tone?: Tone | undefined;
+  hint?: ReactNode | undefined;
+  filled?: boolean | undefined;
+  hero?: boolean | undefined;
+  onClick?: (() => void) | undefined;
+  ariaLabel?: string | undefined;
+  className?: string | undefined;
+  children?: ReactNode | undefined;
 }) {
   const body = (
     <>
@@ -219,5 +219,89 @@ export function Segmented({ children, className }: { children: ReactNode; classN
     >
       {children}
     </div>
+  );
+}
+
+const barTone: Record<Tone, string> = {
+  brand: "bg-primary",
+  positive: "bg-positive",
+  negative: "bg-negative",
+  alert: "bg-alert",
+  neutral: "bg-muted-foreground",
+  extra: "bg-extra",
+};
+
+/**
+ * Barra de avanço de um percentual já calculado (work-progress.ts, dashboard-data).
+ * `size="sm"` é a versão compacta de listas; `null` mostra "Não conferido" sem barra.
+ */
+export function Meter({
+  label,
+  value,
+  tone = "brand",
+  size = "md",
+}: {
+  label?: string | undefined;
+  value: number | null;
+  tone?: Tone | undefined;
+  size?: "sm" | "md" | undefined;
+}) {
+  const sm = size === "sm";
+  return (
+    <div className={cn("min-w-0", sm ? "space-y-1.5" : "space-y-2")}>
+      <div className="flex items-baseline justify-between gap-3">
+        {label && (
+          <span className={cn("text-muted-foreground", sm ? "text-xs" : "text-[13px] font-medium")}>
+            {label}
+          </span>
+        )}
+        {value === null ? (
+          <span
+            className={cn(
+              "shrink-0 whitespace-nowrap font-semibold text-muted-foreground",
+              sm ? "text-xs" : "text-sm",
+            )}
+          >
+            {sm ? "—" : "Não conferido"}
+          </span>
+        ) : (
+          <span className={cn("shrink-0 font-bold num", sm ? "text-xs font-semibold" : "text-lg")}>
+            {fmtNum(value)}%
+          </span>
+        )}
+      </div>
+      <div className={cn("overflow-hidden rounded-full bg-muted", sm ? "h-1.5" : "h-2")}>
+        {value !== null && (
+          <div
+            className={cn("h-full rounded-full", barTone[tone])}
+            style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Aviso suave com ícone: laranja para atenção, vermelho para algo vencido/negativo. */
+export function Notice({
+  tone = "alert",
+  children,
+  className,
+}: {
+  tone?: "alert" | "negative" | undefined;
+  children: ReactNode;
+  className?: string | undefined;
+}) {
+  return (
+    <p
+      className={cn(
+        "flex items-start gap-2 rounded-xl p-3 text-sm",
+        tone === "alert" ? "bg-alert-soft text-alert" : "bg-negative-soft text-negative",
+        className,
+      )}
+    >
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+      <span>{children}</span>
+    </p>
   );
 }

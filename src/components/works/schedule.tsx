@@ -19,7 +19,21 @@ import { uploadDocument } from "@/lib/work-data";
 import { useMe } from "@/hooks/use-me";
 import { useRecordFocus } from "@/hooks/use-record-focus";
 import { fmtDate, fmtNum } from "@/lib/format";
-import { Plus, Pencil, Camera, ArrowUp, ArrowDown, Copy, Trash2, Layers } from "lucide-react";
+import {
+  AlertTriangle,
+  Plus,
+  Pencil,
+  Camera,
+  ArrowUp,
+  ArrowDown,
+  Copy,
+  Trash2,
+  Layers,
+} from "lucide-react";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { STAGE_STATUS_VARIANT } from "@/lib/status-badges";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 import { StagePhotos } from "./photos";
 import { StageServicesPanel } from "./stage-services";
 import {
@@ -239,13 +253,13 @@ export function Schedule({
           }}
         />
       )}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-bold">
+          <h2 className="text-base font-semibold">
             {mode === "cronograma" ? "Cronograma" : "Etapas"} · Avanço físico{" "}
             {fmtNum(physicalProgress(stages, opening?.progress ?? 0))}%
           </h2>
-          <p className={`text-sm ${w.valid ? "text-muted-foreground" : "text-warning"}`}>
+          <p className={`text-sm ${w.valid ? "text-muted-foreground" : "text-alert"}`}>
             Avanço distribuído: {fmtNum(w.weightSum)}%
             {!w.valid ? " · a soma das etapas precisa dar 100%" : ""}
           </p>
@@ -262,130 +276,144 @@ export function Schedule({
         </div>
       </div>
       <div className="space-y-3">
-        {stages.map((s) => (
-          <article
-            key={s.id}
-            id={`record-${s.id}`}
-            className={`scroll-mt-6 rounded-lg border bg-card p-4 ${selected === s.id ? "border-primary bg-accent/40" : ""}`}
-          >
-            <div className="flex flex-wrap items-start gap-3">
-              <div className="min-w-0 flex-1">
-                <Button
-                  variant="link"
-                  className="h-auto whitespace-normal p-0 text-left"
-                  onClick={() => beginEdit(s)}
-                >
-                  {s.name}
-                </Button>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {s.responsible || "Sem responsável"} · Avanço: vale {fmtNum(s.weight)}% da obra
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {fmtDate(s.planned_start)} → {fmtDate(s.planned_end)} ·{" "}
-                  {calendarDays(s.planned_start, s.planned_end) ?? "—"} dias
-                </p>
-                {mode === "cronograma" && (
-                  <p className="text-xs text-muted-foreground">
-                    Real: {fmtDate(s.actual_start)} → {fmtDate(s.actual_end)}
-                    {s.dependency_id
-                      ? ` · Após ${stages.find((x) => x.id === s.dependency_id)?.name}`
-                      : ""}
+        {stages.map((s) => {
+          const state = stageStatus(s, today);
+          return (
+            <article
+              key={s.id}
+              id={`record-${s.id}`}
+              className={cn(
+                panelClass,
+                "scroll-mt-6 p-4 sm:p-5",
+                selected === s.id && "bg-accent/40 ring-2 ring-primary/50",
+              )}
+            >
+              <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
+                <div className="min-w-0 flex-1 basis-56">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="link"
+                      className="h-auto whitespace-normal p-0 text-left text-base font-semibold text-foreground hover:text-primary"
+                      onClick={() => beginEdit(s)}
+                    >
+                      {s.name}
+                    </Button>
+                    <Badge variant={STAGE_STATUS_VARIANT[state] ?? "neutral"}>
+                      {stageLabels[state]}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {s.responsible || "Sem responsável"} · Avanço: vale {fmtNum(s.weight)}% da obra
                   </p>
-                )}
+                  <p className="text-xs text-muted-foreground">
+                    {fmtDate(s.planned_start)} → {fmtDate(s.planned_end)} ·{" "}
+                    {calendarDays(s.planned_start, s.planned_end) ?? "—"} dias
+                  </p>
+                  {mode === "cronograma" && (
+                    <p className="text-xs text-muted-foreground">
+                      Real: {fmtDate(s.actual_start)} → {fmtDate(s.actual_end)}
+                      {s.dependency_id
+                        ? ` · Após ${stages.find((x) => x.id === s.dependency_id)?.name}`
+                        : ""}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  {computed(s.id) !== null ? (
+                    <span
+                      className="text-sm font-semibold num"
+                      title="Calculado pelos serviços da etapa"
+                      aria-label={`Avanço ${s.name}`}
+                    >
+                      {fmtNum(s.progress)}%
+                    </span>
+                  ) : (
+                    <label className="flex items-center gap-1 text-sm">
+                      <input
+                        key={`${s.id}-${s.progress}`}
+                        aria-label={`Avanço ${s.name}`}
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        defaultValue={s.progress}
+                        onBlur={(e) => quick(s, e.target.value)}
+                        onKeyDown={commitOnEnter}
+                        className="h-10 w-20 rounded-lg border border-input bg-background px-2 text-right num"
+                      />
+                      %
+                    </label>
+                  )}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label={`Editar ${s.name}`}
+                    title="Detalhar etapa"
+                    onClick={() => beginEdit(s)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  {me?.canSeeCosts && (
+                    <>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`Duplicar ${s.name}`}
+                        title="Duplicar etapa"
+                        onClick={() => {
+                          beginEdit({
+                            ...s,
+                            id: crypto.randomUUID(),
+                            name: s.name + " · cópia",
+                            progress: 0,
+                            status: "nao_iniciado",
+                            actual_start: null,
+                            actual_end: null,
+                          });
+                          setCreating(true);
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="danger"
+                        aria-label={`Excluir ${s.name}`}
+                        title="Excluir etapa"
+                        onClick={() => {
+                          setRemoving(s);
+                          setRemoveReason("");
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
-              <span
-                className={`text-xs ${stageStatus(s, today) === "atrasado" ? "text-destructive" : "text-muted-foreground"}`}
-              >
-                {stageLabels[stageStatus(s, today)]}
-              </span>
-              {computed(s.id) !== null ? (
-                <span
-                  className="text-sm font-semibold num"
-                  title="Calculado pelos serviços da etapa"
-                  aria-label={`Avanço ${s.name}`}
-                >
-                  {fmtNum(s.progress)}%
-                </span>
+              {mode === "etapas" && me?.canSeeCosts ? (
+                <StageServicesPanel workId={workId} stage={s} onChange={refresh} />
               ) : (
-                <label className="flex items-center gap-1 text-sm">
-                  <input
-                    key={`${s.id}-${s.progress}`}
-                    aria-label={`Avanço ${s.name}`}
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="1"
-                    defaultValue={s.progress}
-                    onBlur={(e) => quick(s, e.target.value)}
-                    onKeyDown={commitOnEnter}
-                    className="h-10 w-20 rounded-md border bg-background px-2 text-right num"
-                  />
-                  %
-                </label>
+                <progress
+                  max="100"
+                  value={s.progress}
+                  className="mt-3 h-1.5 w-full accent-primary"
+                />
               )}
-              <Button
-                size="icon"
-                variant="ghost"
-                aria-label={`Editar ${s.name}`}
-                title="Detalhar etapa"
-                onClick={() => beginEdit(s)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              {me?.canSeeCosts && (
-                <>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Duplicar ${s.name}`}
-                    title="Duplicar etapa"
-                    onClick={() => {
-                      beginEdit({
-                        ...s,
-                        id: crypto.randomUUID(),
-                        name: s.name + " · cópia",
-                        progress: 0,
-                        status: "nao_iniciado",
-                        actual_start: null,
-                        actual_end: null,
-                      });
-                      setCreating(true);
-                    }}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Excluir ${s.name}`}
-                    title="Excluir etapa"
-                    onClick={() => {
-                      setRemoving(s);
-                      setRemoveReason("");
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </>
+              {s.scope_services && (
+                <p className="mt-2 whitespace-pre-wrap text-xs text-muted-foreground">
+                  {s.scope_services}
+                </p>
               )}
-            </div>
-            {mode === "etapas" && me?.canSeeCosts ? (
-              <StageServicesPanel workId={workId} stage={s} onChange={refresh} />
-            ) : (
-              <progress max="100" value={s.progress} className="mt-3 h-2 w-full accent-primary" />
-            )}
-            {s.scope_services && (
-              <p className="mt-2 whitespace-pre-wrap text-xs text-muted-foreground">
-                {s.scope_services}
-              </p>
-            )}
-            {s.pending_services && (
-              <p className="mt-2 whitespace-pre-wrap text-sm text-warning">
-                Pendências: {s.pending_services}
-              </p>
-            )}
-          </article>
-        ))}
+              {s.pending_services && (
+                <p className="mt-3 flex gap-2 whitespace-pre-wrap rounded-xl bg-alert-soft px-3 py-2 text-sm text-alert">
+                  <AlertTriangle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span className="min-w-0">Pendências: {s.pending_services}</span>
+                </p>
+              )}
+            </article>
+          );
+        })}
       </div>
       {!stages.length && (
         <EmptyState

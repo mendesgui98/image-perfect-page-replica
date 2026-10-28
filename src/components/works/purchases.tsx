@@ -8,12 +8,22 @@ import { loadWorkBudget, workBase } from "@/lib/work-budget";
 import { consolidateMaterials, materialBalance } from "@/lib/operations";
 import { fmtBRL, fmtDate, fmtNum } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { IconBubble } from "@/components/kpi";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
 import { Installments } from "./installments";
 import { Field, selectClass, Attachment } from "./fields";
 import { text, number } from "@/lib/form-values";
 import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
+const ORDER_STATUS: Record<string, BadgeProps["variant"]> = {
+  pedido: "info",
+  parcial: "alert",
+  recebido: "positive",
+  cancelado: "neutral",
+};
 export function Purchases({ workId, budgetId }: { workId: string; budgetId: string | null }) {
   const qc = useQueryClient();
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
@@ -129,77 +139,82 @@ export function Purchases({ workId, budgetId }: { workId: string; budgetId: stri
   return (
     <section className="space-y-6">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-bold">Materiais e compras</h2>
+        <h2 className="text-base font-semibold">Materiais e compras</h2>
         <Button onClick={() => setOpen(true)}>
           <Plus className="h-4 w-4" />
           Pedido
         </Button>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b text-xs text-muted-foreground">
-              {[
-                "Material",
-                "Fornece",
-                "Necessário",
-                "Reservado",
-                "Pedido pendente",
-                "Recebido",
-                "Consumido",
-                "A comprar",
-              ].map((h) => (
-                <th key={h} className="whitespace-nowrap p-2">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data?.materials.map((m) => {
-              const lines = data.orders
-                .filter((o) => o.status !== "cancelado")
-                .flatMap((o) => o.purchase_lines)
-                .filter((l) => l.material_key === m.key);
-              const mov = data.movements.filter((x) => x.material_key === m.key);
-              const reserved = mov
-                  .filter((x) => x.kind === "reserva")
-                  .reduce((s, x) => s + x.quantity, 0),
-                received =
-                  lines.reduce((s, x) => s + x.received, 0) +
-                  mov
-                    .filter((x) => x.kind === "cliente_recebido")
+      <div className={cn(panelClass, "overflow-hidden")}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-muted/40">
+              <tr className="text-xs text-muted-foreground">
+                {[
+                  "Material",
+                  "Fornece",
+                  "Necessário",
+                  "Reservado",
+                  "Pedido pendente",
+                  "Recebido",
+                  "Consumido",
+                  "A comprar",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="whitespace-nowrap px-3 py-3 font-medium first:pl-4 sm:first:pl-5"
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              {data?.materials.map((m) => {
+                const lines = data.orders
+                  .filter((o) => o.status !== "cancelado")
+                  .flatMap((o) => o.purchase_lines)
+                  .filter((l) => l.material_key === m.key);
+                const mov = data.movements.filter((x) => x.material_key === m.key);
+                const reserved = mov
+                    .filter((x) => x.kind === "reserva")
                     .reduce((s, x) => s + x.quantity, 0),
-                ordered = lines.reduce((s, x) => s + x.quantity, 0),
-                consumed = mov
-                  .filter((x) => x.kind === "consumo")
-                  .reduce((s, x) => s + x.quantity, 0);
-              const balance = materialBalance(m.needed, reserved, ordered, received, consumed);
-              return (
-                <tr key={m.key} className="border-b">
-                  <td className="p-2 font-medium">
-                    {m.name}
-                    <span className="block text-xs text-muted-foreground">{m.unit}</span>
-                  </td>
-                  <td className="p-2">{m.side === "jmg" ? "JMG" : "Cliente"}</td>
-                  {[m.needed, reserved, balance.pending, received, consumed, balance.toBuy].map(
-                    (n, i) => (
-                      <td className="p-2 num" key={i}>
-                        {fmtNum(n)}
-                      </td>
-                    ),
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  received =
+                    lines.reduce((s, x) => s + x.received, 0) +
+                    mov
+                      .filter((x) => x.kind === "cliente_recebido")
+                      .reduce((s, x) => s + x.quantity, 0),
+                  ordered = lines.reduce((s, x) => s + x.quantity, 0),
+                  consumed = mov
+                    .filter((x) => x.kind === "consumo")
+                    .reduce((s, x) => s + x.quantity, 0);
+                const balance = materialBalance(m.needed, reserved, ordered, received, consumed);
+                return (
+                  <tr key={m.key}>
+                    <td className="py-3 pl-4 pr-3 font-medium sm:pl-5">
+                      {m.name}
+                      <span className="block text-xs text-muted-foreground">{m.unit}</span>
+                    </td>
+                    <td className="px-3 py-3">{m.side === "jmg" ? "JMG" : "Cliente"}</td>
+                    {[m.needed, reserved, balance.pending, received, consumed, balance.toBuy].map(
+                      (n, i) => (
+                        <td className={cn("px-3 py-3 num", i === 5 && "font-semibold")} key={i}>
+                          {fmtNum(n)}
+                        </td>
+                      ),
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
         {!data?.materials.length && (
           <EmptyState compact icon={Package} title="Nenhum material cadastrado" />
         )}
       </div>
       <form
-        className="flex flex-wrap items-end gap-3"
+        className={cn(panelClass, "flex flex-wrap items-end gap-3 p-4 sm:p-5")}
         onSubmit={(e) => {
           e.preventDefault();
           movement(new FormData(e.currentTarget));
@@ -228,44 +243,62 @@ export function Purchases({ workId, budgetId }: { workId: string; budgetId: stri
           Registrar
         </Button>
       </form>
-      <div className="divide-y">
-        {data?.orders.map((o) => (
-          <article
-            key={o.id}
-            id={`record-${o.id}`}
-            className={`scroll-mt-6 py-4 ${selectedRecord === o.id ? "border-l-4 border-primary bg-accent/40 pl-3" : ""}`}
-          >
-            <div className="flex justify-between gap-2">
-              <div>
-                <h3 className="font-semibold">{o.description}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {data.suppliers.find((p) => p.id === o.supplier_id)?.name ||
-                    "Fornecedor não informado"}{" "}
-                  · entrega {fmtDate(o.expected_date)} · {o.status}
-                </p>
+      {!!data?.orders.length && (
+        <div className={cn(panelClass, "divide-y divide-border/60 overflow-hidden")}>
+          {data.orders.map((o) => (
+            <article
+              key={o.id}
+              id={`record-${o.id}`}
+              className={cn(
+                "scroll-mt-6 px-4 py-4 sm:px-5",
+                selectedRecord === o.id &&
+                  "bg-accent/40 shadow-[inset_4px_0_0_var(--color-primary)]",
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <IconBubble icon={Package} tone="neutral" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-semibold leading-snug">{o.description}</h3>
+                    <Badge variant={ORDER_STATUS[o.status] ?? "neutral"} className="capitalize">
+                      {o.status}
+                    </Badge>
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {data.suppliers.find((p) => p.id === o.supplier_id)?.name ||
+                      "Fornecedor não informado"}{" "}
+                    · entrega {fmtDate(o.expected_date)}
+                  </p>
+                </div>
+                <Attachment path={o.file_path} />
               </div>
-              <Attachment path={o.file_path} />
-            </div>
-            {o.purchase_lines.map((l) => (
-              <div
-                key={l.id}
-                className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm"
-              >
-                <span>
-                  {l.name} · {fmtNum(l.received)} / {fmtNum(l.quantity)} {l.unit} ·{" "}
-                  {fmtBRL(l.quantity * l.unit_price)}
-                </span>
-                {l.received < l.quantity && (
-                  <Button size="sm" variant="outline" onClick={() => receive(l.id)}>
-                    <PackageCheck className="h-4 w-4" />
-                    Receber
-                  </Button>
-                )}
-              </div>
-            ))}
-          </article>
-        ))}
-      </div>
+              {o.purchase_lines.map((l) => (
+                <div
+                  key={l.id}
+                  className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-muted/40 px-3 py-2 text-sm sm:ml-12"
+                >
+                  <span className="min-w-0">
+                    {l.name} ·{" "}
+                    <span className="num">
+                      {fmtNum(l.received)} / {fmtNum(l.quantity)}
+                    </span>{" "}
+                    {l.unit} ·{" "}
+                    <span className="whitespace-nowrap num">
+                      {fmtBRL(l.quantity * l.unit_price)}
+                    </span>
+                  </span>
+                  {l.received < l.quantity && (
+                    <Button size="sm" variant="outline" onClick={() => receive(l.id)}>
+                      <PackageCheck className="h-4 w-4" />
+                      Receber
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </article>
+          ))}
+        </div>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>

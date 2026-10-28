@@ -20,8 +20,10 @@ import {
   type StageService,
 } from "@/lib/stage-services-data";
 import { fmtBRL, fmtNum } from "@/lib/format";
+import { Money } from "@/components/kpi";
 
 type Stage = Database["public"]["Tables"]["work_stages"]["Row"];
+const tile = "min-w-0 rounded-xl bg-muted/50 p-3";
 
 export function StageServicesPanel({
   workId,
@@ -101,19 +103,21 @@ export function StageServicesPanel({
   const split = (labor: number, material: number) =>
     `Etapa ${fmtBRL(labor)} · Mat. ${fmtBRL(material)}`;
   return (
-    <div className="mt-4 border-t pt-4 text-sm">
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-        <div>
+    <div className="mt-4 text-sm">
+      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className={tile}>
           <dt className="text-xs text-muted-foreground">Valor previsto</dt>
-          <dd className="font-semibold num">{fmtBRL(costs.planned)}</dd>
+          <dd className="font-semibold">
+            <Money value={costs.planned} />
+          </dd>
           <dd className="text-xs text-muted-foreground">
             {split(costs.laborPlanned, costs.materialPlanned)}
           </dd>
         </div>
-        <div>
+        <div className={tile}>
           <dt className="text-xs text-muted-foreground">Já pago</dt>
-          <dd className="font-semibold num">
-            {fmtBRL(costs.spent)}
+          <dd className="font-semibold">
+            <Money value={costs.spent} tone="negative" />
             {costs.planned > 0 && (
               <span className="ml-1 text-xs font-normal text-muted-foreground">
                 ({fmtNum(usedPct, 0)}%)
@@ -125,10 +129,10 @@ export function StageServicesPanel({
             {costs.otherSpent > 0 && ` · Outros ${fmtBRL(costs.otherSpent)}`}
           </dd>
         </div>
-        <div>
+        <div className={tile}>
           <dt className="text-xs text-muted-foreground">Restante a pagar</dt>
-          <dd className={`font-semibold num ${costs.balance < 0 ? "text-destructive" : ""}`}>
-            {fmtBRL(costs.balance)}
+          <dd className="font-semibold">
+            <Money value={costs.balance} tone="auto" />
           </dd>
           <dd className="text-xs text-muted-foreground">
             {costs.balance < 0
@@ -136,16 +140,18 @@ export function StageServicesPanel({
               : split(costs.laborBalance, costs.materialBalance)}
           </dd>
         </div>
-        <div>
+        <div className={tile}>
           <dt className="text-xs text-muted-foreground">Contas em aberto</dt>
-          <dd className="font-semibold num">{fmtBRL(costs.committed)}</dd>
+          <dd className="font-semibold">
+            <Money value={costs.committed} tone={costs.committed > 0 ? "alert" : "inherit"} />
+          </dd>
           <dd className="text-xs text-muted-foreground">Lançadas, ainda não pagas</dd>
         </div>
       </dl>
 
       <button
         type="button"
-        className="mt-3 flex items-center gap-1 text-xs font-medium text-primary"
+        className="mt-3 flex min-h-10 items-center gap-1 text-left text-xs font-medium text-primary"
         onClick={() => setOpen(!open)}
       >
         {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}

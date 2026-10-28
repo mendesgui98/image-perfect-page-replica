@@ -4,6 +4,22 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Novo visual levado a todos os módulos (branch `feat/fundacao-tecnica`)
+
+**Pedido:** o Guilherme aprovou o visual do Painel/Fluxo de Caixa e pediu para replicar. Só visual: nenhuma consulta, cálculo, permissão, `name=` ou aria-label mudou; PDFs e impressões do cliente (`*.pdf.tsx`, contrato impresso, Gantt) ficaram iguais.
+
+**Decisões:**
+
+- Peças compartilhadas novas: `Meter` (barra de avanço) e `Notice` (aviso suave) em `src/components/kpi.tsx`; tons das situações em `src/lib/status-badges.ts` (`BUDGET_STATUS_VARIANT`, `WORK_STATUS_VARIANT`, `STAGE_STATUS_VARIANT`, `CONTRACT_STATUS`). Os rótulos de status da obra continuam por tela, porque já eram diferentes antes ("Em planejamento"/"Finalizada" na lista, "Em contratação"/"Concluída" na obra).
+- `KpiCard` aceita props opcionais `undefined` (exactOptionalPropertyTypes). Excluir de registro (`ConfirmRecordAction`) usa a variante `danger`; aviso de registro excluído usa `panelClass`.
+- Orçamentos: lista em cards com Badge; página com valor de venda em destaque, custo, resultado e margem em KpiCards; editor de itens sem caixas aninhadas; precificação em grupos.
+- Obras: lista em cards até `xl` (tabela só em telas largas), resumo da obra em KpiCards com cores de significado (`Metrics` também alimenta Análises do Financeiro), barras de avanço, aditivos/compras/diário/fotos em painéis.
+- Contratos e Cronogramas: listas em cards com Badge, etapas em cards com situação, planejamento e versões em blocos suaves.
+- Cadastros, Serviços, Materiais, Etapas e Configurações: abas em pílula, listas com ícone por tipo, perfil da pessoa com resumo em KpiCards.
+- Financeiro: "Recebimentos e saldos" com abas em pílula e total colorido; "Análises e resultados" com filtros em painel, gráficos em cards (entradas verdes, saídas vermelhas) e rankings coloridos.
+
+**Conferência:** lint, formatação, typecheck e 169 testes passando. Navegador: obras (lista e página), cronogramas, cadastros, serviços e financeiro em desktop e 375px, claro e escuro. Sem dados locais para ver preenchidos: orçamentos, contratos, contas a receber/pagar, aditivos e compras. No painel do app oculto os gráficos do Recharts não animam (as barras aparecem com o navegador visível).
+
 ### 2026-10-28 — Novo visual: base do design system, Painel e Fluxo de Caixa (branch `feat/fundacao-tecnica`)
 
 **Pedido:** visual de dashboard profissional (cards mais arredondados, menos linhas, hierarquia clara e cores financeiras com significado), começando só pelo Painel e pelo Financeiro → Caixa e contas, para o Guilherme validar antes dos outros módulos. Só visual: nenhum cálculo, consulta, permissão ou regra mudou.

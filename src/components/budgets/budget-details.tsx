@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadBudget, type Term } from "@/lib/budget-data";
 import { splitPayments } from "@/lib/pricing";
-import { fmtBRL, fmtNum } from "@/lib/format";
+import { fmtNum } from "@/lib/format";
+import { Money } from "@/components/kpi";
 
 export function DadosEditor({
   budget,
@@ -89,7 +90,7 @@ export function DadosEditor({
   return (
     <Card className="shadow-card">
       <SubmitForm onSubmit={submit} className="">
-        <CardContent className="space-y-4 p-6">
+        <CardContent className="space-y-5 p-4 sm:p-6">
           <div className="grid gap-3 sm:grid-cols-2">
             {field("client_display", "Nome do cliente no documento", "text", "sm:col-span-2")}
             {field("endereco", "Endereço da obra", "text", "sm:col-span-2")}
@@ -125,20 +126,23 @@ export function DadosEditor({
               onChange={(e) => setF({ ...f, closing_text: e.target.value })}
             />
           </div>
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <h3 className="font-semibold">Condições de pagamento</h3>
+          <div className="border-t border-border/60 pt-5">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h3 className="text-base font-semibold">Condições de pagamento</h3>
               <span
-                className={`text-sm num ${Math.abs(pctSum - 100) > 1e-9 ? "font-semibold text-destructive" : "text-muted-foreground"}`}
+                className={`rounded-full px-2.5 py-0.5 text-xs font-medium num ${Math.abs(pctSum - 100) > 1e-9 ? "bg-negative-soft text-negative" : "bg-neutral-soft text-muted-foreground"}`}
               >
                 Soma: {fmtNum(pctSum)}%
               </span>
             </div>
             <div className="space-y-2">
               {t.map((row, i) => (
-                <div key={i} className="grid grid-cols-12 gap-2">
+                <div
+                  key={i}
+                  className="grid grid-cols-12 items-center gap-2 rounded-xl bg-muted/40 p-2 sm:bg-transparent sm:p-0"
+                >
                   <Input
-                    className="col-span-6"
+                    className="col-span-12 sm:col-span-6"
                     disabled={locked}
                     value={row.label}
                     onChange={(e) =>
@@ -146,7 +150,7 @@ export function DadosEditor({
                     }
                   />
                   <Input
-                    className="col-span-2"
+                    className="col-span-4 sm:col-span-2"
                     type="number"
                     step="any"
                     disabled={locked}
@@ -155,15 +159,15 @@ export function DadosEditor({
                       setT(t.map((x, j) => (j === i ? { ...x, pct: Number(e.target.value) } : x)))
                     }
                   />
-                  <div className="col-span-3 self-center text-right text-sm num">
-                    {fmtBRL(rows[i]?.value)}
+                  <div className="col-span-6 text-right text-sm font-medium sm:col-span-3">
+                    <Money value={rows[i]?.value ?? 0} />
                   </div>
                   {!locked && (
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="col-span-1"
+                      className="col-span-2 justify-self-end text-muted-foreground hover:text-negative sm:col-span-1"
                       aria-label="Remover"
                       onClick={() => setT(t.filter((_, j) => j !== i))}
                     >
@@ -184,9 +188,11 @@ export function DadosEditor({
               )}
             </div>
           </div>
-          <Button type="submit" disabled={locked}>
-            Salvar dados
-          </Button>
+          <div className="flex justify-end border-t border-border/60 pt-5">
+            <Button type="submit" disabled={locked} className="w-full sm:w-auto">
+              Salvar dados
+            </Button>
+          </div>
         </CardContent>
       </SubmitForm>
     </Card>

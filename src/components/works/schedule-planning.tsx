@@ -2,7 +2,10 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { CalendarPlus, FileDown, LockKeyhole, History } from "lucide-react";
+import { CalendarDays, CalendarPlus, FileDown, LockKeyhole, History } from "lucide-react";
+import { IconBubble } from "@/components/kpi";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Memo, selectClass } from "./fields";
@@ -62,20 +65,23 @@ export function SchedulePlanning({
     }
   }
   return (
-    <section className="space-y-4 border-b pb-6">
+    <section className={cn(panelClass, "space-y-4 p-4 sm:p-5")}>
       {error && (
         <p role="alert" className="text-destructive">
           {error.message}
         </p>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold">Planejamento da obra</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {base
-              ? `Original preservado em ${fmtDate(base.created_at.slice(0, 10))} · ${versions.length} versões`
-              : "Planejamento em elaboração · original ainda não aprovado"}
-          </p>
+        <div className="flex min-w-0 items-start gap-3">
+          <IconBubble icon={CalendarDays} tone="brand" />
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold">Planejamento da obra</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {base
+                ? `Original preservado em ${fmtDate(base.created_at.slice(0, 10))} · ${versions.length} versões`
+                : "Planejamento em elaboração · original ainda não aprovado"}
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           {me?.canSeeCosts && linkedBudgetId && (
@@ -125,31 +131,31 @@ export function SchedulePlanning({
         onSelect={selected === "current" ? onSelect : undefined}
       />
       {base && (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-xl border border-border/60">
           <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b">
-                <th className="p-2">Etapa</th>
-                <th className="p-2">Original</th>
-                <th className="p-2">Atual</th>
-                <th className="p-2">Duração atual</th>
+            <thead className="bg-muted/40 text-muted-foreground">
+              <tr>
+                <th className="whitespace-nowrap px-3 py-2 font-medium">Etapa</th>
+                <th className="whitespace-nowrap px-3 py-2 font-medium">Original</th>
+                <th className="whitespace-nowrap px-3 py-2 font-medium">Atual</th>
+                <th className="whitespace-nowrap px-3 py-2 font-medium">Duração atual</th>
               </tr>
             </thead>
             <tbody>
               {stages.map((s) => {
                 const o = original.find((x) => x.id === s.id);
                 return (
-                  <tr className="border-b" key={s.id}>
-                    <td className="p-2">{s.name}</td>
-                    <td className="whitespace-nowrap p-2">
+                  <tr className="border-t border-border/60" key={s.id}>
+                    <td className="px-3 py-2">{s.name}</td>
+                    <td className="whitespace-nowrap px-3 py-2">
                       {o
                         ? `${fmtDate(o.planned_start)} → ${fmtDate(o.planned_end)}`
                         : "Incluída depois do original"}
                     </td>
-                    <td className="whitespace-nowrap p-2">
+                    <td className="whitespace-nowrap px-3 py-2">
                       {fmtDate(s.planned_start)} → {fmtDate(s.planned_end)}
                     </td>
-                    <td className="p-2">
+                    <td className="px-3 py-2">
                       {calendarDays(s.planned_start, s.planned_end) ?? "—"} dias
                     </td>
                   </tr>
@@ -189,14 +195,14 @@ export function SchedulePlanning({
         )}
       </form>
       {versions.length > 1 && (
-        <details className="text-xs">
-          <summary className="flex cursor-pointer items-center gap-2">
+        <details className="rounded-xl bg-muted/40 px-4 py-3 text-xs">
+          <summary className="flex min-h-8 cursor-pointer items-center gap-2 font-medium">
             <History className="h-4 w-4" />
             Histórico de reprogramações
           </summary>
-          <ul className="mt-3 space-y-3">
+          <ul className="mt-2 divide-y divide-border/60">
             {versions.slice(1).map((x) => (
-              <li key={x.id}>
+              <li key={x.id} className="py-3">
                 <strong>
                   Versão {x.version} · {new Date(x.created_at).toLocaleString("pt-BR")}
                 </strong>

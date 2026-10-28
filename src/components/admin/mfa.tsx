@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { IconBubble } from "@/components/kpi";
 
 const codeProps = {
   inputMode: "numeric" as const,
@@ -42,7 +44,7 @@ export function MfaChallenge({ onSignOut }: { onSignOut: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
       <form onSubmit={verify} className="w-full max-w-sm space-y-4">
-        <ShieldCheck className="h-10 w-10 text-primary" />
+        <IconBubble icon={ShieldCheck} tone="brand" className="h-12 w-12 rounded-2xl" />
         <h1 className="text-xl font-bold">Verificação em duas etapas</h1>
         <p className="text-sm text-muted-foreground">
           Digite o código de 6 dígitos do seu aplicativo autenticador.
@@ -62,7 +64,7 @@ export function MfaChallenge({ onSignOut }: { onSignOut: () => void }) {
         </Button>
         <button
           type="button"
-          className="text-sm text-muted-foreground underline"
+          className="min-h-10 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           onClick={onSignOut}
         >
           Sair
@@ -133,18 +135,19 @@ export function MfaSettings({ required }: { required: boolean }) {
   }
 
   return (
-    <Card className="mt-4 shadow-card">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          {data?.enabled ? (
-            <ShieldCheck className="h-4 w-4 text-primary" />
-          ) : (
-            <ShieldAlert className="h-4 w-4 text-warning-foreground" />
-          )}
+    <Card className="mt-4">
+      <CardHeader className="flex-row items-center gap-3 space-y-0 p-4 sm:p-5">
+        {data?.enabled ? (
+          <IconBubble icon={ShieldCheck} tone="positive" />
+        ) : (
+          <IconBubble icon={ShieldAlert} tone="alert" />
+        )}
+        <CardTitle className="flex flex-wrap items-center gap-2">
           Verificação em duas etapas
+          {data?.enabled && <Badge variant="positive">Ativa</Badge>}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 text-sm">
+      <CardContent className="space-y-4 p-4 pt-0 text-sm sm:p-5 sm:pt-0">
         {error && <p className="text-destructive">{(error as Error).message}</p>}
         {data?.enabled ? (
           <>
@@ -153,9 +156,12 @@ export function MfaSettings({ required }: { required: boolean }) {
               Authenticator, Microsoft Authenticator, 1Password etc.).
             </p>
             {data.factors.map((f) => (
-              <div key={f.id} className="flex items-center justify-between rounded-md border p-3">
-                <span>{f.friendly_name || "Aplicativo autenticador"}</span>
-                <Button variant="outline" size="sm" onClick={() => remove(f.id)}>
+              <div
+                key={f.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-muted/50 px-3 py-2.5"
+              >
+                <span className="font-medium">{f.friendly_name || "Aplicativo autenticador"}</span>
+                <Button variant="danger" size="sm" onClick={() => remove(f.id)}>
                   Desativar
                 </Button>
               </div>
@@ -167,7 +173,7 @@ export function MfaSettings({ required }: { required: boolean }) {
             <img
               src={qrSource(enrolling.qr)}
               alt="QR code para o aplicativo autenticador"
-              className="h-44 w-44 rounded-md border bg-white p-2"
+              className="h-44 w-44 rounded-xl border border-border/70 bg-white p-2"
             />
             <p className="text-xs text-muted-foreground">
               Sem câmera? Digite a chave: <code className="break-all">{enrolling.secret}</code>

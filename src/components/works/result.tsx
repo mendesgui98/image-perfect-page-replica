@@ -6,6 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { loadWorkBudget, workBase } from "@/lib/work-budget";
 import { computeBudget, computeWorkResult } from "@/lib/pricing";
 import { fmtBRL, fmtPct, fmtDate } from "@/lib/format";
+import { AlertTriangle, FilePlus2, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { IconBubble, KpiCard, Money, type Tone } from "@/components/kpi";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
 import { Field, Memo, Attachment } from "./fields";
@@ -116,60 +121,75 @@ export function WorkResult({ workId, budgetId }: { workId: string; budgetId: str
   );
   const summary = dash?.works.find((s) => s.work.id === workId);
   const r = summary?.result ?? fallback;
+  const notChecked = (l: string) =>
+    !budgetId &&
+    ((!r.estimateConfirmed &&
+      ["Resultado projetado", "Custo total projetado", "Estimativa adicional"].includes(l)) ||
+      ["Resultado esperado", "Custo previsto original", "Negociação", "Proposta original"].includes(
+        l,
+      ));
+  const sign = (v: number): Tone => (v < 0 ? "negative" : "positive");
   return (
     <section className="space-y-6">
-      <div className="flex justify-between gap-3">
-        <h2 className="font-bold">Resultado e aditivos</h2>
-        <Button onClick={() => setOpen(true)}>Registrar extra</Button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-base font-semibold">Resultado e aditivos</h2>
+        <Button onClick={() => setOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Registrar extra
+        </Button>
       </div>
       {!r.estimateConfirmed && (
-        <p className="border-l-4 border-warning bg-warning/10 p-3 text-sm text-warning-foreground">
-          Estimativa para concluir ainda não conferida. O saldo do custo previsto original foi
-          preservado na projeção.
+        <p className="flex items-start gap-2 rounded-xl bg-alert-soft p-3 text-sm text-alert">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            Estimativa para concluir ainda não conferida. O saldo do custo previsto original foi
+            preservado na projeção.
+          </span>
         </p>
       )}
-      <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-y py-5 lg:grid-cols-3">
-        {[
-          ["Proposta original", b.listTotal],
-          ["Valor fechado", b.saleNet],
-          ["Negociação", b.totalDiscount],
-          ["Aditivos aprovados", r.extraValue],
-          ["Contrato atualizado", r.sale],
-          ["Custo previsto original", b.totalCost],
-          ["Custo realizado", summary?.incurred ?? incurred],
-          ["Compromissos não realizados", summary?.committed ?? committed],
-          ["Estimativa adicional", r.remainingEstimate],
-          ["Comissão da arquiteta", r.commission],
-          ["Tributos / despesas configuradas", r.taxes],
-          ["Custo total projetado", r.cost],
-          ["Resultado esperado", b.result],
-          ["Resultado projetado", r.result],
-        ].map(([l, v]) => (
-          <div key={String(l)}>
-            <p className="text-xs text-muted-foreground">{l}</p>
-            <p className="font-semibold num">
-              {!budgetId &&
-              ((!r.estimateConfirmed &&
-                ["Resultado projetado", "Custo total projetado", "Estimativa adicional"].includes(
-                  String(l),
-                )) ||
-                [
-                  "Resultado esperado",
-                  "Custo previsto original",
-                  "Negociação",
-                  "Proposta original",
-                ].includes(String(l)))
-                ? "Não conferido"
-                : fmtBRL(Number(v))}
-            </p>
-          </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
+        {(
+          [
+            ["Proposta original", b.listTotal, "neutral"],
+            ["Valor fechado", b.saleNet, "positive"],
+            ["Negociação", b.totalDiscount, "neutral"],
+            ["Aditivos aprovados", r.extraValue, "extra"],
+            ["Contrato atualizado", r.sale, "positive"],
+            ["Custo previsto original", b.totalCost, "negative"],
+            ["Custo realizado", summary?.incurred ?? incurred, "negative"],
+            ["Compromissos não realizados", summary?.committed ?? committed, "negative"],
+            ["Estimativa adicional", r.remainingEstimate, "negative"],
+            ["Comissão da arquiteta", r.commission, "negative"],
+            ["Tributos / despesas configuradas", r.taxes, "negative"],
+            ["Custo total projetado", r.cost, "negative"],
+            ["Resultado esperado", b.result, sign(b.result)],
+            ["Resultado projetado", r.result, sign(r.result)],
+          ] as [string, number, Tone][]
+        ).map(([l, v, tone]) => (
+          <KpiCard
+            key={l}
+            label={l}
+            tone={notChecked(l) ? "neutral" : tone}
+            value={
+              notChecked(l) ? (
+                <span className="text-base font-semibold text-muted-foreground">Não conferido</span>
+              ) : (
+                <Money value={Number(v)} />
+              )
+            }
+          />
         ))}
-        <div>
-          <p className="text-xs text-muted-foreground">Margem projetada</p>
-          <p className={`font-bold ${r.result < 0 ? "text-destructive" : "text-success"}`}>
-            {!budgetId && !r.estimateConfirmed ? "Não conferido" : fmtPct(r.margin)}
-          </p>
-        </div>
+        <KpiCard
+          label="Margem projetada"
+          tone={!budgetId && !r.estimateConfirmed ? "neutral" : sign(r.result)}
+          value={
+            !budgetId && !r.estimateConfirmed ? (
+              <span className="text-base font-semibold text-muted-foreground">Não conferido</span>
+            ) : (
+              <span className="num">{fmtPct(r.margin)}</span>
+            )
+          }
+        />
       </div>
       <p className="text-xs text-muted-foreground">
         Custo projetado = realizado + compromissos não realizados + estimativa adicional + comissão
@@ -177,7 +197,7 @@ export function WorkResult({ workId, budgetId }: { workId: string; budgetId: str
         repetem o custo.
       </p>
       <form
-        className="flex flex-wrap items-end gap-3"
+        className={cn(panelClass, "flex flex-wrap items-end gap-3 p-4 sm:p-5")}
         onSubmit={(e) => {
           e.preventDefault();
           estimate(new FormData(e.currentTarget));
@@ -199,25 +219,37 @@ export function WorkResult({ workId, budgetId }: { workId: string; budgetId: str
           Salvar estimativa
         </Button>
       </form>
-      <div className="divide-y">
-        {data.extras.map((x) => (
-          <article
-            key={x.id}
-            id={`record-${x.id}`}
-            className={`scroll-mt-6 py-4 flex flex-wrap items-start gap-3 ${selectedRecord === x.id ? "border-l-4 border-primary bg-accent/40 pl-3" : ""}`}
-          >
-            <div className="flex-1">
-              <h3 className="font-semibold">{x.description}</h3>
-              <p className="text-xs text-muted-foreground">
-                {x.approved ? `Aprovado · ${fmtDate(x.approval_date)}` : "Aguardando aprovação"} ·
-                prazo +{x.extra_days} dias · custo {fmtBRL(x.cost)}
-              </p>
-            </div>
-            <span className="font-semibold num">{fmtBRL(x.price)}</span>
-            <Attachment path={x.file_path} />
-          </article>
-        ))}
-      </div>
+      {data.extras.length > 0 && (
+        <div className={cn(panelClass, "divide-y divide-border/60 overflow-hidden")}>
+          {data.extras.map((x) => (
+            <article
+              key={x.id}
+              id={`record-${x.id}`}
+              className={cn(
+                "flex scroll-mt-6 flex-wrap items-start gap-3 px-4 py-4 sm:px-5",
+                selectedRecord === x.id &&
+                  "bg-accent/40 shadow-[inset_4px_0_0_var(--color-primary)]",
+              )}
+            >
+              <IconBubble icon={FilePlus2} tone="extra" />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-semibold leading-snug">{x.description}</h3>
+                  <Badge variant={x.approved ? "positive" : "alert"}>
+                    {x.approved ? "Aprovado" : "Aguardando aprovação"}
+                  </Badge>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {x.approved && `Aprovado em ${fmtDate(x.approval_date)} · `}prazo +{x.extra_days}{" "}
+                  dias · custo {fmtBRL(x.cost)}
+                </p>
+              </div>
+              <Money value={x.price} tone="extra" className="shrink-0 font-semibold" />
+              <Attachment path={x.file_path} />
+            </article>
+          ))}
+        </div>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>

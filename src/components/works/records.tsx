@@ -4,6 +4,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
 import { Field, Memo, Attachment, selectClass } from "./fields";
 import { text } from "@/lib/form-values";
@@ -16,6 +19,12 @@ import { fmtDate } from "@/lib/format";
 import { Plus, Pencil, NotebookPen } from "lucide-react";
 import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 type RecordRow = Database["public"]["Tables"]["work_records"]["Row"];
+const STATUS: Record<string, [string, BadgeProps["variant"]]> = {
+  pendente: ["Pendente", "alert"],
+  andamento: ["Em andamento", "info"],
+  concluido: ["Concluído", "positive"],
+  aceito: ["Aceito pelo cliente", "positive"],
+};
 const labels: Record<string, string> = {
   diario: "Diário de obra",
   entrega: "Checklist de entrega",
@@ -108,7 +117,7 @@ export function Records({
   return (
     <section>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-bold">{labels[kind]}</h2>
+        <h2 className="text-base font-semibold">{labels[kind]}</h2>
         <Button
           onClick={() => {
             setEditing(null);
@@ -119,13 +128,13 @@ export function Records({
           Novo registro
         </Button>
       </div>
-      <div className="divide-y">
+      <div className={cn(panelClass, "divide-y divide-border/60 overflow-hidden")}>
         {pending.map((p) => (
-          <article key={p.id} className="py-4 opacity-80">
-            <h3 className="font-semibold">{p.data.payload.title}</h3>
-            <p className="text-xs text-muted-foreground">
+          <article key={p.id} className="px-4 py-4 opacity-80 sm:px-5">
+            <h3 className="font-semibold leading-snug">{p.data.payload.title}</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
               {fmtDate(p.data.payload.record_date)} ·{" "}
-              <span className={p.lastError ? "text-destructive" : "text-warning-foreground"}>
+              <span className={p.lastError ? "text-negative" : "text-alert"}>
                 {p.lastError
                   ? `Erro no envio: ${p.lastError}`
                   : "Guardado no aparelho, aguardando envio"}
@@ -143,13 +152,22 @@ export function Records({
             <article
               key={r.id}
               id={`record-${r.id}`}
-              className={`scroll-mt-6 py-4 ${selectedRecord === r.id ? "border-l-4 border-primary bg-accent/40 pl-3" : ""}`}
+              className={cn(
+                "scroll-mt-6 px-4 py-4 sm:px-5",
+                selectedRecord === r.id &&
+                  "bg-accent/40 shadow-[inset_4px_0_0_var(--color-primary)]",
+              )}
             >
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold">{r.title}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {fmtDate(r.record_date)} · {r.responsible || "Sem responsável"} · {r.status}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-semibold leading-snug">{r.title}</h3>
+                    <Badge variant={STATUS[r.status]?.[1] ?? "neutral"}>
+                      {STATUS[r.status]?.[0] ?? r.status}
+                    </Badge>
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {fmtDate(r.record_date)} · {r.responsible || "Sem responsável"}
                     {r.due_date ? ` · prazo ${fmtDate(r.due_date)}` : ""}
                   </p>
                 </div>
@@ -167,10 +185,10 @@ export function Records({
                   <Pencil className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="mt-2 whitespace-pre-wrap text-sm">{r.body}</p>
+              {r.body && <p className="mt-2 whitespace-pre-wrap text-sm">{r.body}</p>}
               {r.team && <p className="mt-2 text-sm text-muted-foreground">Equipe: {r.team}</p>}
               {r.next_steps && <p className="mt-2 text-sm">Próximos passos: {r.next_steps}</p>}
-              {r.caption && <p className="text-xs text-muted-foreground">{r.caption}</p>}
+              {r.caption && <p className="mt-1 text-xs text-muted-foreground">{r.caption}</p>}
             </article>
           ))}
         {!records.some((r) => r.kind === kind) && pending.length === 0 && (

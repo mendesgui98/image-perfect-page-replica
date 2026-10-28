@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { FileDown, FileCheck, Save } from "lucide-react";
+import { AlertTriangle, FileDown, FileCheck, FileText, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { contractTemplate } from "@/lib/contract-template";
@@ -14,6 +14,11 @@ import { fmtBRL, fmtDate, reaisPorExtenso } from "@/lib/format";
 import { uploadDocument } from "@/lib/work-data";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { CONTRACT_STATUS } from "@/lib/status-badges";
+import { IconBubble, type Tone } from "@/components/kpi";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 import { Field, Attachment } from "./fields";
 import { text } from "@/lib/form-values";
 export function Contract({
@@ -153,14 +158,23 @@ export function Contract({
   }
   const missing = [...new Set(body.match(/\{\{[^}]+\}\}/g) ?? [])];
   const signed = data?.contract?.status === "assinado";
+  const status = (data?.contract && CONTRACT_STATUS[data.contract.status]) || {
+    label: data?.contract?.status || "Não gerado",
+    variant: "neutral" as const,
+    tone: "neutral" as const,
+  };
   if (data?.contract?.deleted_at)
     return <DeletedRecordNotice entity="contracts" id={data.contract.id} name="Contrato" />;
   if (error) return <p className="text-destructive">{error.message}</p>;
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap justify-between gap-3">
-        <h2 className="font-bold">Contrato · {data?.contract?.status || "não gerado"}</h2>
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <IconBubble icon={FileText} tone={status.tone} />
+          <h2 className="text-base font-semibold">Contrato</h2>
+          <Badge variant={status.variant}>{status.label}</Badge>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           {data?.contract && (
             <RecordDeleteButton entity="contracts" id={data.contract.id} name="Contrato" />
           )}
@@ -176,11 +190,14 @@ export function Contract({
         </div>
       </div>
       {missing.length > 0 && (
-        <div className="border-l-4 border-warning bg-warning/10 p-3 text-sm text-warning-foreground">
-          <b>Dados ausentes</b>
-          <p className="break-words">
-            {missing.map((s) => s.replace(/[{}]/g, "").replace(/_/g, " ")).join(", ")}
-          </p>
+        <div className="flex gap-3 rounded-xl bg-alert-soft p-4 text-sm text-alert">
+          <AlertTriangle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="min-w-0">
+            <b>Dados ausentes</b>
+            <p className="break-words">
+              {missing.map((s) => s.replace(/[{}]/g, "").replace(/_/g, " ")).join(", ")}
+            </p>
+          </div>
         </div>
       )}
       <Textarea
@@ -189,7 +206,7 @@ export function Contract({
         onChange={(e) => setBody(e.target.value)}
         rows={22}
         disabled={!me?.isAdmin || signed}
-        className="font-sans text-sm leading-relaxed"
+        className="rounded-xl bg-card font-sans text-sm leading-relaxed shadow-card"
       />
       {me?.isAdmin && !signed && (
         <>
@@ -205,7 +222,7 @@ export function Contract({
           </div>
           {data?.contract?.status === "gerado" && (
             <form
-              className="flex flex-wrap items-end gap-3 border-t pt-4"
+              className={cn(panelClass, "flex flex-wrap items-end gap-3 p-4 shadow-none sm:p-5")}
               onSubmit={(e) => {
                 e.preventDefault();
                 save("assinado", new FormData(e.currentTarget));

@@ -31,9 +31,8 @@ export function ConfirmRecordAction({
     <>
       <Button
         type="button"
-        variant="ghost"
+        variant="danger"
         size="sm"
-        className="text-destructive"
         aria-label={`${label} ${name}`}
         onClick={() => {
           setConfirmation("");

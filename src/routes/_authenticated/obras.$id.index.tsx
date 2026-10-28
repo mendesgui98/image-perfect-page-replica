@@ -2,7 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { FileDown, Settings } from "lucide-react";
+import { ChevronLeft, FileDown, Settings } from "lucide-react";
+import { IconBubble } from "@/components/kpi";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { workOptions } from "@/lib/work-data";
 import { pageMeta } from "@/lib/page-meta";
@@ -109,8 +112,12 @@ function Work() {
     people.filter((p) => (p.kind === kind && !p.deleted_at) || p.id === current);
   return (
     <div>
-      <Link to="/obras" className="text-sm text-muted-foreground">
-        ← Obras
+      <Link
+        to="/obras"
+        className="inline-flex min-h-10 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Obras
       </Link>
       <PageHeader
         title={w.name}
@@ -185,13 +192,16 @@ function Work() {
           <StagePhotos records={data.records} stages={data.stages} />
         </TabsContent>
         <TabsContent value="relatorios">
-          <h2 className="mb-4 font-bold">Relatórios de avanço</h2>
-          <Button asChild variant="outline">
-            <Link to="/obras/$id/relatorio/pdf" params={{ id }}>
-              <FileDown className="h-4 w-4" />
-              Relatório de evolução
-            </Link>
-          </Button>
+          <div className={cn(panelClass, "flex flex-wrap items-center gap-3 p-4 sm:p-5")}>
+            <IconBubble icon={FileDown} tone="brand" />
+            <h2 className="min-w-0 flex-1 text-base font-semibold">Relatórios de avanço</h2>
+            <Button asChild variant="outline">
+              <Link to="/obras/$id/relatorio/pdf" params={{ id }}>
+                <FileDown className="h-4 w-4" />
+                Relatório de evolução
+              </Link>
+            </Button>
+          </div>
         </TabsContent>
         <TabsContent value="cronograma">
           <Schedule

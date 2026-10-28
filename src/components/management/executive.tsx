@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch, useLocation } from "@tanstack/react-router";
 import {
@@ -29,8 +28,8 @@ import { Button } from "@/components/ui/button";
 import { selectClass } from "@/components/works/fields";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
-import { KpiCard, Money, type Tone } from "@/components/kpi";
-import { panelClass } from "@/lib/surface";
+import { KpiCard, Money, Segmented, type Tone } from "@/components/kpi";
+import { panelClass, segmentClass } from "@/lib/surface";
 import { cn } from "@/lib/utils";
 /** Ordem = prioridade no celular; `tone`/`filled`/`span` só definem a aparência do card. */
 const indicators: {
@@ -232,9 +231,9 @@ export function CompositionTable({
   indicator: Indicator;
 }) {
   return (
-    <div className="overflow-x-auto">
+    <div className={cn(panelClass, "overflow-x-auto shadow-none")}>
       <table className="w-full text-left text-sm">
-        <thead className="border-b text-xs text-muted-foreground">
+        <thead className="bg-muted/50 text-xs text-muted-foreground">
           <tr>
             {[
               "Data",
@@ -252,7 +251,7 @@ export function CompositionTable({
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.id} className="border-b">
+            <tr key={r.id} className="border-t border-border/60">
               <td className="whitespace-nowrap p-3 text-xs">{fmtDate(r.date)}</td>
               <td className="p-2">
                 <OriginLink row={r} />
@@ -379,14 +378,14 @@ export function ExecutivePanel() {
             <DialogTitle>{detail?.label}</DialogTitle>
           </DialogHeader>
           <ManagementFilters works={data.works.filter((s) => search.pilot || !s.work.is_pilot)} />
-          <div className="flex flex-wrap justify-between gap-3 border-b pb-4">
+          <div className="flex flex-wrap items-end justify-between gap-3 pb-1">
             <span className="text-xs text-muted-foreground">
               {rows.length} registros ·{" "}
               {["active", "value", "extras", "result"].includes(detail?.id || "")
                 ? "posição acumulada"
                 : "composição do período"}
             </span>
-            <span className="text-xl font-bold num">
+            <span className="text-2xl font-bold tracking-tight num">
               {total === null
                 ? "Não conferido"
                 : detail?.id === "active"
@@ -448,30 +447,38 @@ export function FinancialComposition() {
   if (!data) return <PageSkeleton cards={3} />;
   const rows = executiveComposition(data, search)[indicator];
   const total = indicatorTotal(rows);
+  const current = indicators.find((i) => i.id === indicator);
   return (
     <section>
       <ManagementFilters works={data.works.filter((s) => search.pilot || !s.work.is_pilot)} />
-      <Tabs
-        value={indicator}
-        onValueChange={(v) => {
-          const match = indicators.find((i) => i.id === v);
-          if (match) setIndicator(match.id);
-        }}
-      >
-        <TabsList className="h-auto flex-wrap justify-start">
-          {indicators
-            .filter((i) => ["received", "receivable", "payable", "spent", "cash"].includes(i.id))
-            .map((i) => (
-              <TabsTrigger key={i.id} value={i.id}>
-                {i.label}
-              </TabsTrigger>
-            ))}
-        </TabsList>
-      </Tabs>
-      <div className="my-5 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
-        <h2 className="font-semibold">{indicators.find((i) => i.id === indicator)?.label}</h2>
-        <span className="font-semibold num">
-          {total === null ? "Não conferido" : fmtBRL(total)}
+      <Segmented>
+        {indicators
+          .filter((i) => ["received", "receivable", "payable", "spent", "cash"].includes(i.id))
+          .map((i) => (
+            <button
+              key={i.id}
+              type="button"
+              role="tab"
+              aria-selected={indicator === i.id}
+              onClick={() => setIndicator(i.id)}
+              className={segmentClass(indicator === i.id)}
+            >
+              <i.icon />
+              {i.label}
+            </button>
+          ))}
+      </Segmented>
+      <div className="my-5 flex flex-wrap items-end justify-between gap-3">
+        <h2 className="text-base font-semibold">{current?.label}</h2>
+        <span className="text-2xl font-bold tracking-tight">
+          {total === null ? (
+            "Não conferido"
+          ) : (
+            <Money
+              value={total}
+              tone={!current || current.tone === "brand" ? "auto" : current.tone}
+            />
+          )}
         </span>
       </div>
       <CompositionTable rows={rows} indicator={indicator} />

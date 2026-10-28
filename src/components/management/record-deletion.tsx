@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ConfirmRecordAction } from "./confirm-record-action";
 import { fmtDate } from "@/lib/format";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 
 export type DeletableEntity = "budgets" | "contracts" | "schedules" | "people" | "work_registry";
@@ -80,7 +82,7 @@ export function DeletedRecordNotice({
   const manage = useDeletion();
   const [busy, setBusy] = useState(false);
   return (
-    <section className="space-y-4 rounded-lg border p-5">
+    <section className={cn(panelClass, "space-y-4 p-5")}>
       <h2 className="font-semibold">{name} está na lixeira</h2>
       <p className="text-sm text-muted-foreground">
         Restaure para voltar a editar. Os registros vinculados continuam preservados.

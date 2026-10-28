@@ -2,7 +2,7 @@ import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -20,7 +20,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { fmtBRL, fmtNum, UNIT_LABEL } from "@/lib/format";
+import { fmtNum, UNIT_LABEL } from "@/lib/format";
+import { Badge } from "@/components/ui/badge";
+import { IconBubble, Money } from "@/components/kpi";
+import { EmptyState } from "@/components/feedback";
+import { selectClass } from "@/components/works/fields";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 import { materialPackages, materialQty, materialUnitCost, type ItemMaterial } from "@/lib/pricing";
 
 type Svc = Database["public"]["Tables"]["services"]["Row"];
@@ -124,63 +130,76 @@ function Servicos() {
           </Button>
         }
       />
-      <select
-        className="mb-4 h-10 rounded-md border border-input bg-background px-3 text-sm"
-        value={stageFilter}
-        onChange={(e) => setStageFilter(e.target.value)}
-      >
-        <option value="">Todas as etapas</option>
-        {stages.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.name}
-          </option>
-        ))}
-      </select>
-      <div className="overflow-x-auto rounded-lg border bg-card shadow-card">
-        <table className="w-full text-sm">
-          <thead className="bg-muted text-left text-muted-foreground">
-            <tr>
-              <th className="p-3">Serviço</th>
-              <th className="p-3">Etapa</th>
-              <th className="p-3">Unidade</th>
-              <th className="p-3 text-right">Custo MO / un</th>
-              <th className="p-3 text-right">Custo mat. / un</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((s) => (
-              <tr
-                key={s.id}
-                className={`cursor-pointer border-t hover:bg-muted/50 ${s.active ? "" : "opacity-50"}`}
-                onClick={() =>
-                  setEdit({
-                    ...s,
-                    comp: s.service_materials.map((c) => ({
-                      id: c.id,
-                      material_id: c.material_id,
-                      consumption: c.consumption,
-                      loss_pct: c.loss_pct,
-                    })),
-                  })
-                }
-              >
-                <td className="p-3 font-medium">{s.description}</td>
-                <td className="p-3">{stageName(s.stage_id)}</td>
-                <td className="p-3">{UNIT_LABEL[s.unit]}</td>
-                <td className="p-3 text-right num">{fmtBRL(s.labor_cost)}</td>
-                <td className="p-3 text-right num">{fmtBRL(matCost(s))}</td>
-              </tr>
-            ))}
-            {list.length === 0 && (
-              <tr>
-                <td colSpan={5} className="p-6 text-center text-muted-foreground">
-                  Nenhum serviço.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <div className={cn(panelClass, "mb-4 p-3 shadow-none sm:p-4")}>
+        <select
+          aria-label="Filtrar por etapa"
+          className={cn(selectClass, "sm:max-w-xs")}
+          value={stageFilter}
+          onChange={(e) => setStageFilter(e.target.value)}
+        >
+          <option value="">Todas as etapas</option>
+          {stages.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
       </div>
+      {list.length === 0 ? (
+        <EmptyState compact icon={Wrench} title="Nenhum serviço." />
+      ) : (
+        <div className={cn(panelClass, "divide-y divide-border/60 overflow-hidden")}>
+          <div className="hidden grid-cols-[minmax(0,1fr)_8rem_8rem] gap-4 bg-muted/40 px-5 py-2.5 text-xs font-medium text-muted-foreground md:grid">
+            <span>Serviço</span>
+            <span className="text-right">Custo MO / un</span>
+            <span className="text-right">Custo mat. / un</span>
+          </div>
+          {list.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              className={cn(
+                "flex w-full cursor-pointer flex-col gap-2 px-4 py-4 text-left transition-colors hover:bg-muted/50 sm:px-5 md:grid md:grid-cols-[minmax(0,1fr)_8rem_8rem] md:items-center md:gap-4",
+                !s.active && "opacity-60",
+              )}
+              onClick={() =>
+                setEdit({
+                  ...s,
+                  comp: s.service_materials.map((c) => ({
+                    id: c.id,
+                    material_id: c.material_id,
+                    consumption: c.consumption,
+                    loss_pct: c.loss_pct,
+                  })),
+                })
+              }
+            >
+              <span className="flex min-w-0 flex-1 items-start gap-3">
+                <IconBubble icon={Wrench} tone="neutral" />
+                <span className="min-w-0">
+                  <span className="block font-medium leading-snug">{s.description}</span>
+                  <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                    <span>{stageName(s.stage_id)}</span>
+                    <span aria-hidden>·</span>
+                    <span>{UNIT_LABEL[s.unit]}</span>
+                    {!s.active && <Badge variant="neutral">Inativo</Badge>}
+                  </span>
+                </span>
+              </span>
+              <span className="flex flex-wrap items-baseline gap-x-5 gap-y-1 pl-12 md:contents">
+                <span className="block md:text-right">
+                  <span className="mr-1 text-xs text-muted-foreground md:hidden">Mão de obra</span>
+                  <Money value={s.labor_cost} className="font-semibold" />
+                </span>
+                <span className="block text-sm text-muted-foreground md:text-right md:text-foreground">
+                  <span className="mr-1 text-xs md:hidden">Materiais</span>
+                  <Money value={matCost(s)} />
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
@@ -201,7 +220,7 @@ function Servicos() {
                   <div className="space-y-1">
                     <Label>Etapa</Label>
                     <select
-                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      className={selectClass}
                       value={edit.stage_id ?? ""}
                       onChange={(e) => setEdit({ ...edit, stage_id: e.target.value })}
                     >
@@ -218,7 +237,7 @@ function Servicos() {
                   <div className="space-y-1">
                     <Label>Cobrança por</Label>
                     <select
-                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      className={selectClass}
                       value={edit.unit ?? "un"}
                       onChange={(e) => setEdit({ ...edit, unit: e.target.value as Svc["unit"] })}
                     >
@@ -250,7 +269,7 @@ function Servicos() {
                 </div>
                 <div>
                   <div className="mb-2 flex items-center justify-between">
-                    <h3 className="font-semibold">Composição por unidade do serviço</h3>
+                    <h3 className="text-base font-semibold">Composição por unidade do serviço</h3>
                     <Button
                       type="button"
                       size="sm"
@@ -277,10 +296,13 @@ function Servicos() {
                           comp: edit.comp.map((x, j) => (j === i ? { ...x, ...p } : x)),
                         });
                       return (
-                        <div key={i} className="grid grid-cols-12 items-end gap-2">
+                        <div
+                          key={i}
+                          className="grid grid-cols-12 items-end gap-2 rounded-xl bg-muted/40 p-3"
+                        >
                           <div className="col-span-12 sm:col-span-6">
                             <select
-                              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                              className={selectClass}
                               value={c.material_id}
                               onChange={(e) => set({ material_id: e.target.value })}
                             >
@@ -320,7 +342,7 @@ function Servicos() {
                           </div>
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant="danger"
                             size="icon"
                             className="col-span-2 sm:col-span-1"
                             aria-label="Remover"

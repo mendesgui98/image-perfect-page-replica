@@ -2,6 +2,8 @@ import { businessDate } from "@/lib/dashboard-math";
 import { Link } from "@tanstack/react-router";
 import { scheduleSituation, type ScheduleStage } from "@/lib/work-schedule";
 import { fmtDate } from "@/lib/format";
+import { badgeVariants } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 export function ScheduleSituation({
   workId,
   stages,
@@ -15,11 +17,7 @@ export function ScheduleSituation({
 }) {
   const s = scheduleSituation(stages, businessDate(), end);
   return (
-    <div
-      className={
-        compact ? "space-y-1 text-xs" : "grid gap-4 border-b pb-4 sm:grid-cols-2 lg:grid-cols-4"
-      }
-    >
+    <div className={compact ? "space-y-1 text-xs" : "grid gap-4 sm:grid-cols-2 lg:grid-cols-4"}>
       <div>
         <p className="text-xs text-muted-foreground">Etapa atual</p>
         <p className="text-sm font-medium">
@@ -48,7 +46,17 @@ export function ScheduleSituation({
           to="/obras/$id"
           params={{ id: workId }}
           search={{ tab: "cronograma" }}
-          className={`text-sm font-semibold ${s.status === "Atrasado" ? "text-destructive" : s.status === "Atenção" ? "text-warning" : "text-success"}`}
+          className={cn(
+            badgeVariants({
+              variant:
+                s.status === "Atrasado"
+                  ? "negative"
+                  : s.status === "Atenção"
+                    ? "alert"
+                    : "positive",
+            }),
+            "mt-0.5 hover:opacity-80",
+          )}
         >
           {s.status}
           {s.late.length > 0 && ` · ${s.late.length} etapas atrasadas`}

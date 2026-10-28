@@ -42,7 +42,7 @@ export function Installments({
     if (form) form.dispatchEvent(new Event("input", { bubbles: true }));
   }, [rows]);
   return (
-    <fieldset ref={ref} className="space-y-3 border-t pt-3">
+    <fieldset ref={ref} className="space-y-3 border-t border-border/60 pt-4">
       <legend className="text-sm font-semibold">Parcelas e vencimentos</legend>
       <div className="grid grid-cols-2 gap-3">
         <label className="text-sm">
@@ -83,7 +83,7 @@ export function Installments({
       </Button>
       {rows.map((r, i) => (
         <div key={i} className="grid grid-cols-[2rem_1fr_1fr] items-center gap-2">
-          <span className="text-xs">
+          <span className="text-xs text-muted-foreground num">
             {i + 1}/{rows.length}
           </span>
           <Input
@@ -110,7 +110,10 @@ export function Installments({
       ))}
       {rows.length > 0 && (
         <p className="text-xs text-muted-foreground">
-          Total das parcelas: {fmtBRL(rows.reduce((s, r) => s + r.amount, 0))}
+          Total das parcelas:{" "}
+          <span className="font-semibold text-foreground num">
+            {fmtBRL(rows.reduce((s, r) => s + r.amount, 0))}
+          </span>
         </p>
       )}
       <input type="hidden" name={name} value={JSON.stringify(rows)} />

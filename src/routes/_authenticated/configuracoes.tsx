@@ -4,7 +4,7 @@ import { capitalizeWordsProps } from "@/lib/text-case";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Plus, Trash2, User } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -21,6 +21,9 @@ import type { Tax } from "@/lib/pricing";
 import { apiConfigured } from "@/lib/api-client";
 import { UsersAdmin } from "@/components/admin/users-admin";
 import { MfaSettings } from "@/components/admin/mfa";
+import { IconBubble } from "@/components/kpi";
+import { selectClass } from "@/components/works/fields";
+import { cn } from "@/lib/utils";
 
 type Company = Database["public"]["Tables"]["company_settings"]["Row"];
 type Pricing = Database["public"]["Tables"]["pricing_settings"]["Row"];
@@ -127,9 +130,9 @@ function Empresa({ ro }: { ro: boolean }) {
     onError: (e) => toast.error((e as Error).message),
   });
   return (
-    <Card className="mt-4 shadow-card">
+    <Card className="mt-4">
       <SubmitForm onSubmit={() => save.mutate()} pending={save.isPending} className="">
-        <CardContent className="grid gap-3 p-6 sm:grid-cols-2 lg:grid-cols-4">
+        <CardContent className="grid gap-4 p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-4">
           {COMPANY_FIELDS.map(([k, l]) => (
             <div
               key={k}
@@ -251,16 +254,17 @@ function Precos({ ro }: { ro: boolean }) {
       pending={save.isPending}
       className="mt-4 grid gap-6 lg:grid-cols-2"
     >
-      <Card className="shadow-card">
-        <CardHeader>
-          <CardTitle className="text-lg">Percentuais padrão da JMG</CardTitle>
+      <Card>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle>Percentuais padrão da JMG</CardTitle>
           {!data?.configured && (
-            <p className="text-sm text-warning-foreground">
+            <p className="flex items-center gap-2 rounded-xl bg-alert-soft px-3 py-2 text-sm text-alert">
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
               Ainda não configurado — todos estão em 0%.
             </p>
           )}
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
           {PCT_FIELDS.map(([k, l, h]) => (
             <div key={k} className="space-y-1">
               <Label>{l}</Label>
@@ -276,18 +280,21 @@ function Precos({ ro }: { ro: boolean }) {
           ))}
         </CardContent>
       </Card>
-      <Card className="shadow-card">
-        <CardHeader>
-          <CardTitle className="text-lg">Tributos e despesas sobre a venda</CardTitle>
+      <Card>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle>Tributos e despesas sobre a venda</CardTitle>
           <p className="text-sm text-muted-foreground">
             Cadastre conforme orientação do seu contador. O sistema não presume alíquotas.
           </p>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-4 pt-0 sm:p-6 sm:pt-0">
           {taxes.map((t, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2">
+            <div
+              key={i}
+              className="grid grid-cols-12 gap-2 rounded-xl bg-muted/40 p-2 sm:bg-transparent sm:p-0"
+            >
               <Input
-                className="col-span-5"
+                className="col-span-12 sm:col-span-5"
                 disabled={ro}
                 placeholder="Nome"
                 value={t.name}
@@ -296,7 +303,7 @@ function Precos({ ro }: { ro: boolean }) {
                 }
               />
               <Input
-                className="col-span-2"
+                className="col-span-3 sm:col-span-2"
                 type="number"
                 step="any"
                 disabled={ro}
@@ -308,7 +315,7 @@ function Precos({ ro }: { ro: boolean }) {
                 }
               />
               <select
-                className="col-span-4 h-10 rounded-md border border-input bg-background px-2 text-sm"
+                className={cn(selectClass, "col-span-7 px-2 sm:col-span-4")}
                 disabled={ro}
                 value={t.base}
                 onChange={(e) =>
@@ -325,9 +332,9 @@ function Precos({ ro }: { ro: boolean }) {
               {!ro && (
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="danger"
                   size="icon"
-                  className="col-span-1"
+                  className="col-span-2 justify-self-end sm:col-span-1"
                   aria-label="Remover"
                   onClick={() => setTaxes(taxes.filter((_, j) => j !== i))}
                 >
@@ -389,27 +396,33 @@ function Usuarios() {
     onError: (e) => toast.error((e as Error).message),
   });
   return (
-    <Card className="mt-4 shadow-card">
-      <CardContent className="divide-y p-0">
+    <Card className="mt-4 overflow-hidden">
+      <CardContent className="divide-y divide-border/60 p-0">
         {data.map((u) => (
-          <div key={u.id} className="flex flex-wrap items-center gap-3 p-4">
+          <div key={u.id} className="flex flex-wrap items-center gap-3 px-4 py-4 sm:px-5">
+            <IconBubble icon={User} tone="neutral" />
             <div className="min-w-0 flex-1">
               <div className="font-medium">{u.full_name || u.email}</div>
               <div className="text-xs text-muted-foreground">{u.email}</div>
             </div>
-            {(["admin", "financeiro", "equipe"] as Role[]).map((r) => (
-              <label key={r} className="flex items-center gap-1.5 text-sm capitalize">
-                <input
-                  type="checkbox"
-                  checked={u.roles.includes(r)}
-                  onChange={(e) => toggle.mutate({ uid: u.id, role: r, on: e.target.checked })}
-                />
-                {r === "equipe" ? "equipe de obra" : r}
-              </label>
-            ))}
+            <div className="flex w-full flex-wrap gap-2 pl-12 sm:w-auto sm:pl-0">
+              {(["admin", "financeiro", "equipe"] as Role[]).map((r) => (
+                <label
+                  key={r}
+                  className="flex min-h-9 items-center gap-1.5 rounded-lg bg-muted/60 px-2.5 text-sm capitalize"
+                >
+                  <input
+                    type="checkbox"
+                    checked={u.roles.includes(r)}
+                    onChange={(e) => toggle.mutate({ uid: u.id, role: r, on: e.target.checked })}
+                  />
+                  {r === "equipe" ? "equipe de obra" : r}
+                </label>
+              ))}
+            </div>
           </div>
         ))}
-        <p className="p-4 text-xs text-muted-foreground">
+        <p className="px-4 py-4 text-xs text-muted-foreground sm:px-5">
           Administrador e financeiro veem custos, margens e orçamentos. A equipe de obra não tem
           acesso a esses dados — o bloqueio é aplicado no banco de dados.
         </p>

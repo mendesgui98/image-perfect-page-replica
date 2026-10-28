@@ -17,6 +17,8 @@ import {
 import { type Item } from "@/lib/budget-data";
 import { computeBudget, type BudgetResult, type PricingParams } from "@/lib/pricing";
 import { fmtBRL, fmtNum, fmtPct } from "@/lib/format";
+import { Money } from "@/components/kpi";
+import { cn } from "@/lib/utils";
 
 const PARAM_FIELDS: [keyof PricingParams, string][] = [
   ["labor_markup", "Acréscimo MO (% s/ custo)"],
@@ -82,41 +84,51 @@ export function PricingPanel({
           <CardTitle className="text-base">Resultado interno</CardTitle>
           <p className="text-xs text-muted-foreground">Não aparece no documento do cliente.</p>
         </CardHeader>
-        <CardContent className="space-y-1.5 text-sm">
-          <Row l="Custo mão de obra (terceiros)" v={result.laborCost} />
-          <Row l="Custo materiais (JMG)" v={result.materialsCost} />
-          <Row l="Preço lista" v={result.listTotal} muted />
-          <Row l="  dos quais reserva de negociação" v={result.reserveAmount} muted />
-          <Row l="Descontos (itens + geral)" v={-result.totalDiscount} />
-          <Row l="Venda mão de obra" v={result.laborNet} />
-          <Row l="Venda materiais" v={result.materialsNet} />
-          <Row l="Total ao cliente" v={result.saleNet} strong />
-          {result.taxes.map((t) => (
-            <Row
-              key={t.name}
-              l={`${t.name} (${fmtNum(t.rate)}% s/ ${t.base === "venda" ? "venda" : "MO"})`}
-              v={-t.amount}
-            />
-          ))}
-          <Row l="Comissão arquiteta (s/ MO líquida)" v={-result.commission} />
-          <Row l="Resultado estimado" v={result.result} strong />
-          <div className="flex justify-between">
-            <span>Margem sobre a venda</span>
-            <span className={`font-semibold num ${result.belowMin ? "text-destructive" : ""}`}>
-              {fmtPct(result.margin)}
-            </span>
+        <CardContent className="divide-y divide-border/60 text-sm [&>*]:py-3 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
+          <div className="space-y-1.5">
+            <Row l="Custo mão de obra (terceiros)" v={result.laborCost} />
+            <Row l="Custo materiais (JMG)" v={result.materialsCost} />
           </div>
-          <Row l="Destinação a reinvestimento" v={result.reinvestment} muted />
-          <div className="mt-2 rounded bg-secondary p-2 text-xs text-secondary-foreground">
-            Desconto adicional possível mantendo a margem mínima:{" "}
-            <b className="num">{fmtBRL(result.maxExtraDiscount)}</b>
+          <div className="space-y-1.5">
+            <Row l="Preço lista" v={result.listTotal} muted />
+            <Row l="  dos quais reserva de negociação" v={result.reserveAmount} muted />
+            <Row l="Descontos (itens + geral)" v={-result.totalDiscount} />
+            <Row l="Venda mão de obra" v={result.laborNet} />
+            <Row l="Venda materiais" v={result.materialsNet} />
+            <Row l="Total ao cliente" v={result.saleNet} strong />
           </div>
-          {result.belowMin && (
-            <div className="flex gap-2 rounded bg-destructive/10 p-2 text-xs text-destructive">
-              <AlertTriangle className="h-4 w-4 shrink-0" /> Resultado abaixo da margem mínima
-              configurada.
+          <div className="space-y-1.5">
+            {result.taxes.map((t) => (
+              <Row
+                key={t.name}
+                l={`${t.name} (${fmtNum(t.rate)}% s/ ${t.base === "venda" ? "venda" : "MO"})`}
+                v={-t.amount}
+              />
+            ))}
+            <Row l="Comissão arquiteta (s/ MO líquida)" v={-result.commission} />
+          </div>
+          <div className="space-y-1.5">
+            <Row l="Resultado estimado" v={result.result} strong />
+            <div className="flex justify-between gap-2">
+              <span>Margem sobre a venda</span>
+              <span className={`font-semibold num ${result.belowMin ? "text-negative" : ""}`}>
+                {fmtPct(result.margin)}
+              </span>
             </div>
-          )}
+            <Row l="Destinação a reinvestimento" v={result.reinvestment} muted />
+          </div>
+          <div className="space-y-2">
+            <div className="rounded-xl bg-neutral-soft px-3 py-2.5 text-xs text-muted-foreground">
+              Desconto adicional possível mantendo a margem mínima:{" "}
+              <Money value={result.maxExtraDiscount} className="font-semibold text-foreground" />
+            </div>
+            {result.belowMin && (
+              <div className="flex gap-2 rounded-xl bg-alert-soft px-3 py-2.5 text-xs text-alert">
+                <AlertTriangle className="h-4 w-4 shrink-0" /> Resultado abaixo da margem mínima
+                configurada.
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -139,7 +151,7 @@ export function PricingPanel({
                 />
               </div>
             ))}
-            <div className="flex items-center justify-between gap-2 border-t pt-2">
+            <div className="mt-1 flex items-center justify-between gap-2 border-t border-border/60 pt-3">
               <Label className="text-xs">Desconto geral (R$)</Label>
               <Input
                 className="h-8 w-28 text-right num"
@@ -185,25 +197,23 @@ export function PricingPanel({
                   ["Resultado", result.result, sim.result],
                 ] as const
               ).map(([l, a, b]) => (
-                <tr key={l} className="border-t">
+                <tr key={l} className="border-t border-border/60">
                   <td className="py-1.5">{l}</td>
                   <td className="text-right">{fmtBRL(a)}</td>
                   <td className="text-right font-semibold">{fmtBRL(b)}</td>
                 </tr>
               ))}
-              <tr className="border-t">
+              <tr className="border-t border-border/60">
                 <td className="py-1.5">Margem</td>
                 <td className="text-right">{fmtPct(result.margin)}</td>
-                <td
-                  className={`text-right font-semibold ${sim.belowMin ? "text-destructive" : ""}`}
-                >
+                <td className={`text-right font-semibold ${sim.belowMin ? "text-negative" : ""}`}>
                   {fmtPct(sim.margin)}
                 </td>
               </tr>
             </tbody>
           </table>
           {sim.belowMin && (
-            <div className="flex gap-2 rounded bg-destructive/10 p-2 text-sm text-destructive">
+            <div className="flex gap-2 rounded-xl bg-alert-soft px-3 py-2.5 text-sm text-alert">
               <AlertTriangle className="h-4 w-4 shrink-0" /> O novo resultado fica abaixo da margem
               mínima.
             </div>
@@ -230,10 +240,14 @@ export function PricingPanel({
 function Row({ l, v, strong, muted }: { l: string; v: number; strong?: boolean; muted?: boolean }) {
   return (
     <div
-      className={`flex justify-between gap-2 ${strong ? "border-t pt-1.5 font-semibold" : ""} ${muted ? "text-muted-foreground" : ""}`}
+      className={cn(
+        "flex items-baseline justify-between gap-2",
+        strong && "pt-1 text-base font-semibold",
+        muted && "text-muted-foreground",
+      )}
     >
       <span className="whitespace-pre">{l}</span>
-      <span className="num">{fmtBRL(v)}</span>
+      <Money value={v} tone={strong ? "auto" : "inherit"} />
     </div>
   );
 }

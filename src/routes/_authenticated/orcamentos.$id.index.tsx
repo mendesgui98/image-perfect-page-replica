@@ -3,7 +3,17 @@ import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { Copy, FileDown, GitBranch, Lock, PencilLine } from "lucide-react";
+import {
+  ArrowDown,
+  Copy,
+  FileDown,
+  FileSpreadsheet,
+  GitBranch,
+  Lock,
+  PencilLine,
+  Percent,
+  TrendingUp,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useMe } from "@/hooks/use-me";
 import { NoAccess } from "@/components/page-header";
@@ -20,6 +30,10 @@ import { DadosEditor } from "@/components/budgets/budget-details";
 import { MaterialsSummary } from "@/components/budgets/materials-summary";
 import { PricingPanel } from "@/components/budgets/pricing-panel";
 import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { BUDGET_STATUS_VARIANT } from "@/lib/status-badges";
+import { KpiCard, Money } from "@/components/kpi";
+import { fmtPct } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/orcamentos/$id/")({
   head: () => pageMeta("Orçamento", "Serviços, condições e aprovação da proposta JMG."),
@@ -107,17 +121,17 @@ function Editor() {
           <Link to="/orcamentos" className="text-sm text-muted-foreground hover:underline">
             ← Orçamentos
           </Link>
-          <h1 className="text-2xl font-semibold tracking-tight md:text-[28px]">
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight md:text-[28px]">
             Orçamento nº {budget.number}
             {budget.revision ? ` · Rev. ${budget.revision}` : ""}
           </h1>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <span className="rounded-full bg-secondary px-2.5 py-0.5 font-medium text-secondary-foreground">
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <Badge variant={BUDGET_STATUS_VARIANT[budget.status] ?? "neutral"}>
               {STATUS_LABEL[budget.status]}
-            </span>
-            <span>{budget.client_display}</span>
+            </Badge>
+            <span className="font-medium text-foreground">{budget.client_display}</span>
             {locked && (
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 text-xs">
                 <Lock className="h-3.5 w-3.5" />
                 {budget.status === "aprovado"
                   ? "Bloqueado — para mudar, use Reabrir para edição"
@@ -126,7 +140,7 @@ function Editor() {
             )}
           </div>
           {budget.status === "substituido" && budget.superseded_by && (
-            <p className="mt-2 text-sm">
+            <p className="mt-3 rounded-xl bg-neutral-soft px-3 py-2 text-sm">
               Substituído pela{" "}
               <Link
                 to="/orcamentos/$id"
@@ -139,7 +153,7 @@ function Editor() {
             </p>
           )}
           {replaces && !locked && (
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-3 max-w-2xl rounded-xl bg-primary-soft px-3 py-2 text-sm text-foreground/80">
               Ao aprovar, esta revisão substitui a{" "}
               <Link
                 to="/orcamentos/$id"
@@ -176,24 +190,50 @@ function Editor() {
         </div>
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        <RecordDeleteButton
-          entity="budgets"
-          id={id}
-          name={`Orçamento nº ${budget.number}`}
-          onDeleted={() => void navigate({ to: "/orcamentos" })}
+      <div className="mb-6 grid grid-cols-2 gap-3 xl:grid-cols-[1.5fr_1fr_1fr_1fr]">
+        <KpiCard
+          hero
+          label="Valor de venda"
+          icon={FileSpreadsheet}
+          value={<Money value={result.saleNet} />}
+          hint="Total ao cliente"
+          className="col-span-2 xl:col-span-1"
         />
+        <KpiCard
+          label="Custo total"
+          icon={ArrowDown}
+          tone="negative"
+          value={<Money value={result.totalCost} />}
+          hint="Mão de obra e materiais"
+        />
+        <KpiCard
+          label="Resultado estimado"
+          icon={TrendingUp}
+          tone={result.result < 0 ? "negative" : "brand"}
+          value={<Money value={result.result} />}
+        />
+        <KpiCard
+          label="Margem sobre a venda"
+          icon={Percent}
+          tone={result.belowMin ? "negative" : result.belowDesired ? "alert" : "positive"}
+          value={<span className="num">{fmtPct(result.margin)}</span>}
+          hint={result.belowMin ? "Abaixo da margem mínima" : "Não aparece para o cliente"}
+          className="col-span-2 sm:col-span-1"
+        />
+      </div>
+
+      <div className="mb-6 flex flex-wrap items-center gap-2">
         {budget.status === "elaboracao" && (
-          <Button size="sm" variant="secondary" onClick={() => setStatus("enviado")}>
+          <Button size="sm" variant="soft" onClick={() => setStatus("enviado")}>
             Marcar como enviado
           </Button>
         )}
         {budget.status === "enviado" && (
           <>
-            <Button size="sm" variant="secondary" onClick={() => setStatus("elaboracao")}>
+            <Button size="sm" variant="outline" onClick={() => setStatus("elaboracao")}>
               Voltar para elaboração
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => setStatus("recusado")}>
+            <Button size="sm" variant="danger" onClick={() => setStatus("recusado")}>
               Marcar como recusado
             </Button>
           </>
@@ -209,6 +249,14 @@ function Editor() {
             Desarquivar
           </Button>
         )}
+        <span className="ml-auto">
+          <RecordDeleteButton
+            entity="budgets"
+            id={id}
+            name={`Orçamento nº ${budget.number}`}
+            onDeleted={() => void navigate({ to: "/orcamentos" })}
+          />
+        </span>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">

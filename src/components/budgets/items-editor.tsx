@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Layers, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   activeMaterialsOptions,
@@ -39,6 +39,8 @@ import {
 } from "@/lib/pricing";
 import { fmtBRL, fmtNum, UNIT_LABEL } from "@/lib/format";
 import { selectClass } from "@/components/works/fields";
+import { EmptyState } from "@/components/feedback";
+import { Money } from "@/components/kpi";
 
 type CatalogMaterial = Database["public"]["Tables"]["materials"]["Row"];
 
@@ -133,9 +135,7 @@ export function ItemsEditor({
   return (
     <div className="space-y-4">
       {sections.length === 0 && (
-        <p className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-          Adicione a primeira etapa da proposta.
-        </p>
+        <EmptyState icon={Layers} title="Adicione a primeira etapa da proposta." />
       )}
       {sections.map((s, idx) => (
         <SectionCard
@@ -154,7 +154,7 @@ export function ItemsEditor({
       {!locked && (
         <div className="flex flex-wrap gap-2">
           <select
-            className={`${selectClass} max-w-xs`}
+            className={`${selectClass} min-w-0 flex-1 sm:max-w-xs`}
             value={stageId}
             onChange={(e) => setStageId(e.target.value)}
           >
@@ -252,11 +252,13 @@ function SectionCard({
   }
   return (
     <Card className="shadow-card">
-      <CardHeader className="flex-row items-center gap-2 space-y-0 pb-3">
-        <span className="font-display font-bold text-primary">{idx}.</span>
+      <CardHeader className="flex-row flex-wrap items-center gap-2 space-y-0 p-4 pb-2 sm:p-6 sm:pb-2">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-soft font-display text-sm font-bold text-primary">
+          {idx}
+        </span>
         <Input
           onKeyDown={commitOnEnter}
-          className="font-display font-bold uppercase"
+          className="min-w-0 flex-1 basis-40 border-transparent bg-transparent px-2 font-display font-bold uppercase shadow-none hover:border-input disabled:opacity-100"
           defaultValue={section.title}
           disabled={locked}
           onBlur={(e) =>
@@ -264,10 +266,11 @@ function SectionCard({
             run(budgetApi.updateSection(section.id, { title: e.target.value }))
           }
         />
-        <span className="whitespace-nowrap text-sm font-semibold num">{fmtBRL(total)}</span>
+        <Money value={total} className="ml-auto text-base font-semibold" />
         {!locked && (
           <Button
-            variant="ghost"
+            type="button"
+            variant="danger"
             size="icon"
             aria-label="Excluir etapa"
             onClick={() =>
@@ -279,28 +282,36 @@ function SectionCard({
           </Button>
         )}
       </CardHeader>
-      <CardContent className="space-y-3">
-        {items.map((it) => (
-          <ItemRow
-            key={it.id}
-            item={it}
-            r={result.items.find((x) => x.id === it.id)}
-            params={params}
-            locked={locked}
-            catalog={catalog}
-            run={run}
-          />
-        ))}
+      <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+        <div className="divide-y divide-border/60">
+          {items.map((it) => (
+            <ItemRow
+              key={it.id}
+              item={it}
+              r={result.items.find((x) => x.id === it.id)}
+              params={params}
+              locked={locked}
+              catalog={catalog}
+              run={run}
+            />
+          ))}
+        </div>
         {!locked && (
-          <Button size="sm" variant="outline" onClick={onAdd}>
+          <Button type="button" size="sm" variant="soft" className="mt-2" onClick={onAdd}>
             <Plus className="h-4 w-4" /> Serviço
           </Button>
         )}
-        <div className="space-y-1 pt-2">
-          <div className="flex items-center justify-between">
-            <Label>Materiais inclusos (texto do PDF)</Label>
+        <div className="mt-4 space-y-1.5 rounded-xl bg-muted/40 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-xs text-muted-foreground">
+              Materiais inclusos (texto do PDF)
+            </Label>
             {!locked && (
-              <button className="text-xs text-primary hover:underline" onClick={autoMaterials}>
+              <button
+                type="button"
+                className="text-xs font-medium text-primary hover:underline"
+                onClick={autoMaterials}
+              >
                 Gerar a partir dos itens
               </button>
             )}
@@ -310,6 +321,7 @@ function SectionCard({
             defaultValue={section.materials_text ?? ""}
             disabled={locked}
             rows={2}
+            className="bg-card"
             onBlur={(e) =>
               e.target.value !== (section.materials_text ?? "") &&
               run(budgetApi.updateSection(section.id, { materials_text: e.target.value }))
@@ -344,7 +356,7 @@ function ItemRow({
     upd({ materials: item.materials.map((m, j) => (j === i ? { ...m, ...p } : m)) });
 
   return (
-    <div className="rounded-md border bg-background p-3">
+    <div className="py-4">
       <div className="grid grid-cols-12 gap-2">
         <Textarea
           rows={1}
@@ -383,7 +395,7 @@ function ItemRow({
           <div className="mt-0.5 text-xs text-muted-foreground">custo MO / un</div>
         </div>
         <div className="col-span-4 text-right md:col-span-2">
-          <div className="font-semibold num">{fmtBRL(r?.total)}</div>
+          <Money value={r?.total ?? 0} className="font-semibold" />
           <div className="text-xs text-muted-foreground num">
             custo {fmtBRL((r?.laborCost ?? 0) + (r?.materialsCost ?? 0))}
           </div>
@@ -391,7 +403,8 @@ function ItemRow({
       </div>
       <div className="mt-2 flex items-center gap-3">
         <button
-          className="flex items-center gap-1 text-xs text-primary"
+          type="button"
+          className="flex min-h-8 items-center gap-1 text-xs font-medium text-primary hover:underline"
           onClick={() => setOpen(!open)}
         >
           {open ? (
@@ -402,16 +415,19 @@ function ItemRow({
           Materiais ({item.materials.length}), percentuais e desconto
         </button>
         {!locked && (
-          <button
-            className="ml-auto text-xs text-destructive hover:underline"
+          <Button
+            type="button"
+            size="sm"
+            variant="danger"
+            className="ml-auto"
             onClick={() => run(budgetApi.deleteItem(item.id))}
           >
             Remover
-          </button>
+          </Button>
         )}
       </div>
       {open && (
-        <div className="mt-3 space-y-3 border-t pt-3 text-sm">
+        <div className="mt-3 space-y-3 rounded-xl bg-muted/40 p-3 text-sm">
           <div className="grid gap-2 sm:grid-cols-4">
             <div>
               <Label className="text-xs">Unidade</Label>
@@ -472,7 +488,10 @@ function ItemRow({
             </div>
           </div>
           {item.materials.map((m, i) => (
-            <div key={i} className="grid grid-cols-12 items-end gap-2 rounded bg-muted/50 p-2">
+            <div
+              key={i}
+              className="grid grid-cols-12 items-end gap-2 border-t border-border/60 pt-3"
+            >
               <div className="col-span-12 text-sm font-medium sm:col-span-4">
                 {m.name}
                 <div className="text-xs text-muted-foreground">
@@ -534,20 +553,22 @@ function ItemRow({
                 </select>
               </div>
               {!locked && (
-                <button
+                <Button
                   type="button"
-                  className="col-span-12 justify-self-end text-xs text-destructive hover:underline"
+                  size="sm"
+                  variant="danger"
+                  className="col-span-12 justify-self-end"
                   onClick={() => upd({ materials: item.materials.filter((_, j) => j !== i) })}
                 >
                   Remover material
-                </button>
+                </Button>
               )}
             </div>
           ))}
           {!locked && (
             <div className="flex flex-wrap items-center gap-2">
               <select
-                className={`${selectClass} max-w-sm`}
+                className={`${selectClass} min-w-0 flex-1 bg-card sm:max-w-sm`}
                 aria-label="Material do catálogo"
                 value={newMaterial}
                 onChange={(e) => setNewMaterial(e.target.value)}
@@ -562,7 +583,6 @@ function ItemRow({
               </select>
               <Button
                 type="button"
-                size="sm"
                 variant="outline"
                 disabled={!newMaterial}
                 onClick={() => {

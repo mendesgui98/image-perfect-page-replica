@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil, Copy, Trash2, ArrowUp, ArrowDown, LockKeyhole } from "lucide-react";
+import { Plus, Pencil, Copy, Trash2, ArrowUp, ArrowDown, LockKeyhole, History } from "lucide-react";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { STAGE_STATUS_VARIANT } from "@/lib/status-badges";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
+import { businessDate } from "@/lib/dashboard-math";
+import { stageStatus } from "@/lib/work-progress";
+import { stageLabels } from "@/lib/stage-labels";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { EditableStage, ScheduleHeader } from "@/lib/schedule-data";
@@ -33,6 +40,7 @@ export function StandaloneEditor({
   onChange: () => void;
 }) {
   const { data: me } = useMe();
+  const today = businessDate();
   const [editing, setEditing] = useState<EditableStage | null>(null),
     [open, setOpen] = useState(false),
     [start, setStart] = useState(""),
@@ -109,7 +117,8 @@ export function StandaloneEditor({
   return (
     <section className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">
+        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          {base && <LockKeyhole aria-hidden className="h-3.5 w-3.5" />}
           {base
             ? `Original preservado · ${versions.length} versões`
             : "Em elaboração · original ainda não aprovado"}
@@ -158,107 +167,118 @@ export function StandaloneEditor({
             : undefined
         }
       />
-      <div className="divide-y">
-        {stages.map((s, i) => (
-          <article key={s.id} className="flex flex-wrap items-center gap-3 py-4">
-            <div className="min-w-0 flex-1">
-              <h3 className="break-words font-semibold">{s.name}</h3>
-              <p className="text-xs text-muted-foreground">
-                {fmtDate(s.planned_start)} → {fmtDate(s.planned_end)} ·{" "}
-                {calendarDays(s.planned_start, s.planned_end) ?? "—"} dias · {fmtNum(s.progress)}%
-              </p>
-              {s.scope_services && (
-                <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">
-                  {s.scope_services}
-                </p>
-              )}
-              {s.dependency_id && (
-                <p className="text-xs text-muted-foreground">
-                  Dependência: {stages.find((x) => x.id === s.dependency_id)?.name}
-                </p>
-              )}
-            </div>
-            {me?.canSeeCosts && (
-              <div className="flex flex-wrap gap-1">
-                {[-1, 1].map((delta) => (
-                  <Button
-                    key={delta}
-                    variant="ghost"
-                    size="icon"
-                    title={delta < 0 ? "Subir" : "Descer"}
-                    aria-label={`${delta < 0 ? "Subir" : "Descer"} ${s.name}`}
-                    disabled={i + delta < 0 || i + delta >= stages.length}
-                    onClick={() => {
-                      const next = [...stages];
-                      const other = next[i + delta];
-                      if (other) {
-                        next[i] = other;
-                        next[i + delta] = s;
-                        change(next.map((x, sort) => ({ ...x, sort })));
+      {stages.length > 0 && (
+        <div className={cn(panelClass, "divide-y divide-border/60 overflow-hidden")}>
+          {stages.map((s, i) => {
+            const state = stageStatus(s, today);
+            return (
+              <article key={s.id} className="flex flex-wrap items-center gap-3 px-4 py-4 sm:px-5">
+                <div className="min-w-0 flex-1 basis-56">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="break-words font-semibold">{s.name}</h3>
+                    <Badge variant={STAGE_STATUS_VARIANT[state] ?? "neutral"}>
+                      {stageLabels[state]}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {fmtDate(s.planned_start)} → {fmtDate(s.planned_end)} ·{" "}
+                    {calendarDays(s.planned_start, s.planned_end) ?? "—"} dias ·{" "}
+                    {fmtNum(s.progress)}%
+                  </p>
+                  {s.scope_services && (
+                    <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">
+                      {s.scope_services}
+                    </p>
+                  )}
+                  {s.dependency_id && (
+                    <p className="text-xs text-muted-foreground">
+                      Dependência: {stages.find((x) => x.id === s.dependency_id)?.name}
+                    </p>
+                  )}
+                </div>
+                {me?.canSeeCosts && (
+                  <div className="flex flex-wrap gap-1">
+                    {[-1, 1].map((delta) => (
+                      <Button
+                        key={delta}
+                        variant="ghost"
+                        size="icon"
+                        title={delta < 0 ? "Subir" : "Descer"}
+                        aria-label={`${delta < 0 ? "Subir" : "Descer"} ${s.name}`}
+                        disabled={i + delta < 0 || i + delta >= stages.length}
+                        onClick={() => {
+                          const next = [...stages];
+                          const other = next[i + delta];
+                          if (other) {
+                            next[i] = other;
+                            next[i + delta] = s;
+                            change(next.map((x, sort) => ({ ...x, sort })));
+                          }
+                        }}
+                      >
+                        {delta < 0 ? (
+                          <ArrowUp className="h-4 w-4" />
+                        ) : (
+                          <ArrowDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                    ))}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Editar ${s.name}`}
+                      title="Editar etapa"
+                      onClick={() => begin(s)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Duplicar ${s.name}`}
+                      title="Duplicar etapa"
+                      onClick={() =>
+                        change([
+                          ...stages,
+                          {
+                            ...s,
+                            id: crypto.randomUUID(),
+                            name: s.name + " · cópia",
+                            sort: stages.length,
+                            progress: 0,
+                            status: "nao_iniciado",
+                            actual_start: null,
+                            actual_end: null,
+                          },
+                        ])
                       }
-                    }}
-                  >
-                    {delta < 0 ? (
-                      <ArrowUp className="h-4 w-4" />
-                    ) : (
-                      <ArrowDown className="h-4 w-4" />
-                    )}
-                  </Button>
-                ))}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Editar ${s.name}`}
-                  title="Editar etapa"
-                  onClick={() => begin(s)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Duplicar ${s.name}`}
-                  title="Duplicar etapa"
-                  onClick={() =>
-                    change([
-                      ...stages,
-                      {
-                        ...s,
-                        id: crypto.randomUUID(),
-                        name: s.name + " · cópia",
-                        sort: stages.length,
-                        progress: 0,
-                        status: "nao_iniciado",
-                        actual_start: null,
-                        actual_end: null,
-                      },
-                    ])
-                  }
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Excluir ${s.name}`}
-                  title="Excluir etapa"
-                  onClick={() => {
-                    if (stages.some((x) => x.dependency_id === s.id)) {
-                      toast.error("Remova as dependências desta etapa antes de excluir.");
-                      return;
-                    }
-                    setPending(stages.filter((x) => x.id !== s.id));
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </article>
-        ))}
-      </div>
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="icon"
+                      aria-label={`Excluir ${s.name}`}
+                      title="Excluir etapa"
+                      onClick={() => {
+                        if (stages.some((x) => x.dependency_id === s.id)) {
+                          toast.error("Remova as dependências desta etapa antes de excluir.");
+                          return;
+                        }
+                        setPending(stages.filter((x) => x.id !== s.id));
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      )}
       <form
-        className="space-y-3 border-t pt-4"
+        className="space-y-3"
         onSubmit={(e) => {
           e.preventDefault();
           const d = new FormData(e.currentTarget);
@@ -280,19 +300,24 @@ export function StandaloneEditor({
         )}
       </form>
       {versions.length > 0 && (
-        <details className="text-sm">
-          <summary className="cursor-pointer">Histórico de versões</summary>
-          {versions.map((v) => (
-            <div key={v.id} className="border-b py-3">
-              <p className="font-semibold">
-                Versão {v.version} · {new Date(v.created_at).toLocaleString("pt-BR")}
-              </p>
-              <p>{v.reason}</p>
-              <p className="text-xs text-muted-foreground">
-                {v.created_by === me?.id ? me.name : "Autoria registrada"}
-              </p>
-            </div>
-          ))}
+        <details className="rounded-xl bg-muted/40 px-4 py-3 text-sm">
+          <summary className="flex min-h-8 cursor-pointer items-center gap-2 font-medium">
+            <History aria-hidden className="h-4 w-4" />
+            Histórico de versões
+          </summary>
+          <div className="mt-2 divide-y divide-border/60">
+            {versions.map((v) => (
+              <div key={v.id} className="py-3">
+                <p className="font-semibold">
+                  Versão {v.version} · {new Date(v.created_at).toLocaleString("pt-BR")}
+                </p>
+                <p>{v.reason}</p>
+                <p className="text-xs text-muted-foreground">
+                  {v.created_by === me?.id ? me.name : "Autoria registrada"}
+                </p>
+              </div>
+            ))}
+          </div>
         </details>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
