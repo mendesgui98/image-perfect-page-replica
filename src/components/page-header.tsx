@@ -22,7 +22,7 @@ export function PageBand({ children, className }: { children: ReactNode; classNa
         src="/jmg-logo-white.png"
         alt=""
         aria-hidden
-        className="pointer-events-none absolute -right-6 -top-10 -z-10 h-48 w-48 select-none object-contain opacity-[0.07] md:h-64 md:w-64"
+        className="pointer-events-none absolute right-6 top-1/2 -z-10 h-20 w-20 -translate-y-1/2 select-none object-contain opacity-[0.1] md:right-10 md:h-24 md:w-24"
       />
       <span
         aria-hidden
