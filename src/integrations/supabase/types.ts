@@ -2154,7 +2154,10 @@ export type Database = {
         Args: { _reason: string; _work_id: string };
         Returns: number;
       };
-      convert_budget: { Args: { _budget_id: string }; Returns: string };
+      convert_budget: {
+        Args: { _budget_id: string; _services?: Json };
+        Returns: string;
+      };
       cancel_financial_entry: { Args: { _entry_id: string }; Returns: undefined };
       register_cash_movement: {
         Args: {

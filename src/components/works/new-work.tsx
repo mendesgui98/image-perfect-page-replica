@@ -12,6 +12,7 @@ import { DraftForm } from "./draft-form";
 import { localDate } from "@/lib/dashboard-math";
 import { openingPosition } from "@/lib/work-opening";
 import { uploadDocument } from "@/lib/work-data";
+import { convertBudgetToWork } from "@/lib/work-budget";
 export function NewWork() {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState("");
@@ -47,9 +48,7 @@ export function NewWork() {
     try {
       let id: string;
       if (mode === "budget") {
-        const r = await supabase.rpc("convert_budget", { _budget_id: text(d, "budget") });
-        if (r.error) throw r.error;
-        id = r.data;
+        id = await convertBudgetToWork(text(d, "budget"));
       } else {
         openingPosition(
           number(d, "original_value"),

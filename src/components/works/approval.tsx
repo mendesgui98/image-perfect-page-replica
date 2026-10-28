@@ -4,6 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Check, HardHat } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { convertBudgetToWork } from "@/lib/work-budget";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, Attachment } from "./fields";
@@ -59,9 +60,7 @@ export function Approval({
   });
   const convert = useMutation({
     mutationFn: async () => {
-      const r = await supabase.rpc("convert_budget", { _budget_id: budgetId });
-      if (r.error) throw r.error;
-      return r.data;
+      return convertBudgetToWork(budgetId);
     },
     onSuccess: (id) => {
       qc.invalidateQueries({ queryKey: ["works"] });

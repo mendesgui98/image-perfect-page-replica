@@ -1,6 +1,20 @@
 import { supabase } from "@/integrations/supabase/client";
 import { loadBudget, type Budget } from "./budget-data";
 import { emptyParams, computeBudget, directContractBase } from "./pricing";
+import { budgetStageServices } from "./operations";
+
+/** Converte orçamento aprovado em obra levando, para cada etapa, os serviços com o custo
+ * previsto de mão de obra e materiais (calculado por computeBudget). */
+export async function convertBudgetToWork(budgetId: string) {
+  const b = await loadBudget(budgetId);
+  const result = computeBudget(b.items, b.params, b.budget.general_discount);
+  const r = await supabase.rpc("convert_budget", {
+    _budget_id: budgetId,
+    _services: budgetStageServices(result.items),
+  });
+  if (r.error) throw r.error;
+  return r.data;
+}
 export async function loadWorkBudget(workId: string) {
   const wr = await supabase.from("work_registry").select("*").eq("id", workId).single();
   if (wr.error) throw wr.error;

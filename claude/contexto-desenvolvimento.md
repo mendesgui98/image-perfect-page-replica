@@ -14,7 +14,14 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 - "Peso" renomeado: "Avanço: vale X% da obra" no card e no relatório, "Avanço distribuído" no topo, "Avanço (% da obra)" nos formulários.
 - Conferido no navegador com etapa de teste (removida depois). Corrigido: salvar os dois campos em sequência apagava o primeiro; agora cada campo grava só o próprio valor.
 
-**Pendência (parte 3, aguardando decisão):** ao converter orçamento em obra, levar serviços e materiais de cada grupo para as etapas — falta decidir custo ou preço de venda como previsto.
+### 2026-10-27 — Orçamento vira obra já com serviços e custos nas etapas (branch `feat/fundacao-tecnica`)
+
+**Decisão do Guilherme:** o previsto da etapa vindo do orçamento é o **custo** (o que a JMG paga), não o preço de venda.
+
+- Migração `20261028000003_convert_budget_stage_services.sql`: `convert_budget(_budget_id, _services jsonb default '[]')` substitui a versão de um argumento. Cria um `work_stage_services` por item do orçamento, na etapa do seu grupo (`budget_section_id`), com MO e materiais do custo; descrição/ordem vêm do banco e item de outro orçamento é recusado. Tudo na transação da conversão.
+- Front: `convertBudgetToWork` (work-budget.ts) carrega o orçamento, roda `computeBudget` e manda `budgetStageServices(result.items)` (operations.ts, testado). Usado na aprovação do orçamento e em "Nova obra a partir de orçamento".
+- Testado no banco (transação desfeita): 3 itens em 2 grupos → serviços nas etapas Elétrica/Pintura com os custos; reconverter devolve a mesma obra; item estranho → "Serviço não pertence a este orçamento.". API responde com e sem `_services`.
+- Obras já convertidas antes disso não recebem os serviços retroativamente.
 
 ### 2026-10-27 — Etapas da obra num card só (branch `feat/fundacao-tecnica`)
 

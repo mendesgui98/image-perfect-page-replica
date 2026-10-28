@@ -9,6 +9,7 @@ import {
   cashMovements,
   cashSummary,
   stageCosts,
+  budgetStageServices,
   type AccountEntry,
 } from "./operations";
 const entry = {
@@ -268,5 +269,24 @@ describe("valores da etapa", () => {
 
   it("etapa sem valor digitado nem serviços fica zerada", () => {
     expect(stageCosts("nova", [], [], [], null)).toMatchObject({ planned: 0, balance: 0 });
+  });
+});
+
+describe("etapas a partir do orçamento", () => {
+  it("leva o custo de MO e de materiais de cada item, em centavos", () => {
+    expect(
+      budgetStageServices([
+        { id: "i1", laborCost: 1234.5678, materialsCost: 800 },
+        { id: "i2", laborCost: 0, materialsCost: 99.999 },
+      ]),
+    ).toEqual([
+      { item_id: "i1", labor_planned: 1234.57, material_planned: 800 },
+      { item_id: "i2", labor_planned: 0, material_planned: 100 },
+    ]);
+  });
+  it("custo inválido ou negativo vira zero", () => {
+    expect(budgetStageServices([{ id: "i", laborCost: NaN, materialsCost: -5 }])).toEqual([
+      { item_id: "i", labor_planned: 0, material_planned: 0 },
+    ]);
   });
 });

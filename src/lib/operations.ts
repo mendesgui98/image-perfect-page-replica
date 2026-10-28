@@ -279,3 +279,22 @@ export function stageCosts(
     materialBalance: materialPlanned - materialSpent,
   };
 }
+
+/** Serviços das etapas de uma obra vinda do orçamento: custo de MO e materiais de cada item
+ * (já calculado por computeBudget), em centavos. O banco liga cada item à etapa do seu grupo. */
+export function budgetStageServices(
+  items: { id?: string | undefined; laborCost: number; materialsCost: number }[],
+) {
+  const cents = (n: number) => Math.round(Math.max(0, Number(n) || 0) * 100) / 100;
+  return items.flatMap((it) =>
+    it.id
+      ? [
+          {
+            item_id: it.id,
+            labor_planned: cents(it.laborCost),
+            material_planned: cents(it.materialsCost),
+          },
+        ]
+      : [],
+  );
+}
