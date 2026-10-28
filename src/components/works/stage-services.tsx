@@ -13,6 +13,7 @@ import { stageCosts } from "@/lib/operations";
 import { financeOptions } from "@/lib/finance-data";
 import {
   stageServicesOptions,
+  stageValuesOptions,
   syncStageProgress,
   type StageService,
 } from "@/lib/stage-services-data";
@@ -34,6 +35,7 @@ export function StageServicesPanel({
   const qc = useQueryClient();
   const { data: all = [] } = useQuery(stageServicesOptions(workId));
   const { data: finance } = useQuery(financeOptions);
+  const { data: values = [] } = useQuery(stageValuesOptions(workId));
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState({ description: "", labor: "", material: "" });
   const [busy, setBusy] = useState(false);
@@ -43,12 +45,25 @@ export function StageServicesPanel({
     services,
     (finance?.entries ?? []).filter((e) => e.work_id === workId),
     finance?.settlements ?? [],
+    values.find((v) => v.stage_id === stage.id),
   );
 
   async function after(next: StageService[]) {
     await syncStageProgress(stage, next);
     await qc.invalidateQueries({ queryKey: ["stage-services", workId] });
     onChange();
+  }
+  async function saveTyped(field: "labor_planned" | "material_planned", raw: string) {
+    const value = money(raw);
+    const current = values.find((v) => v.stage_id === stage.id);
+    if ((current?.[field] ?? 0) === value) return;
+    // Só o campo alterado: o upsert mantém o outro valor já gravado, mesmo salvando em sequência.
+    const key = { stage_id: stage.id, work_id: workId };
+    const row: Database["public"]["Tables"]["work_stage_values"]["Insert"] = { ...key };
+    row[field] = value;
+    const r = await supabase.from("work_stage_values").upsert(row, { onConflict: "stage_id" });
+    if (r.error) return void toast.error(r.error.message);
+    await qc.invalidateQueries({ queryKey: ["stage-values", workId] });
   }
   async function update(s: StageService, patch: Partial<StageService>) {
     const r = await supabase.from("work_stage_services").update(patch).eq("id", s.id);
@@ -95,23 +110,67 @@ export function StageServicesPanel({
   }
 
   const usedPct = costs.planned > 0 ? (costs.spent / costs.planned) * 100 : 0;
+  const typedField = (
+    field: "labor_planned" | "material_planned",
+    label: string,
+    value: number,
+  ) => (
+    <label className="block">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      {costs.fromServices ? (
+        <span className="mt-1 block font-semibold num" title="Soma dos serviços da etapa">
+          {fmtBRL(value)}
+          <span className="ml-1 text-xs font-normal text-muted-foreground">
+            (soma dos serviços)
+          </span>
+        </span>
+      ) : (
+        <span className="mt-1 flex items-center gap-1">
+          <span className="text-xs text-muted-foreground">R$</span>
+          <Input
+            key={`${stage.id}-${field}-${value}`}
+            className="h-9 num"
+            aria-label={`${label} — ${stage.name}`}
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0,00"
+            defaultValue={value || ""}
+            onKeyDown={commitOnEnter}
+            onBlur={(e) => saveTyped(field, e.target.value)}
+          />
+        </span>
+      )}
+    </label>
+  );
+  const split = (labor: number, material: number) =>
+    `Etapa ${fmtBRL(labor)} · Mat. ${fmtBRL(material)}`;
   return (
-    <div className="mt-4 border-t pt-4 text-sm">
+    <div className="mt-4 space-y-4 border-t pt-4 text-sm">
+      <div className="grid gap-3 sm:grid-cols-2 sm:max-w-xl">
+        {typedField("labor_planned", "Valor da etapa (mão de obra / serviço)", costs.laborPlanned)}
+        {typedField("material_planned", "Valor dos materiais da etapa", costs.materialPlanned)}
+      </div>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
         <div>
           <dt className="text-xs text-muted-foreground">Valor previsto</dt>
           <dd className="font-semibold num">{fmtBRL(costs.planned)}</dd>
           <dd className="text-xs text-muted-foreground">
-            MO {fmtBRL(costs.laborPlanned)} · Mat. {fmtBRL(costs.materialPlanned)}
+            {split(costs.laborPlanned, costs.materialPlanned)}
           </dd>
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">Já pago</dt>
-          <dd className="font-semibold num">{fmtBRL(costs.spent)}</dd>
+          <dd className="font-semibold num">
+            {fmtBRL(costs.spent)}
+            {costs.planned > 0 && (
+              <span className="ml-1 text-xs font-normal text-muted-foreground">
+                ({fmtNum(usedPct, 0)}%)
+              </span>
+            )}
+          </dd>
           <dd className="text-xs text-muted-foreground">
-            {costs.planned > 0
-              ? `${fmtNum(usedPct, 0)}% do previsto`
-              : `MO ${fmtBRL(costs.laborSpent)} · Mat. ${fmtBRL(costs.materialSpent)}`}
+            {split(costs.laborSpent, costs.materialSpent)}
             {costs.otherSpent > 0 && ` · Outros ${fmtBRL(costs.otherSpent)}`}
           </dd>
         </div>
@@ -121,7 +180,9 @@ export function StageServicesPanel({
             {fmtBRL(costs.balance)}
           </dd>
           <dd className="text-xs text-muted-foreground">
-            {costs.balance < 0 ? "Acima do previsto" : "Previsto − já pago"}
+            {costs.balance < 0
+              ? "Acima do previsto"
+              : split(costs.laborBalance, costs.materialBalance)}
           </dd>
         </div>
         <div>
@@ -138,7 +199,9 @@ export function StageServicesPanel({
       >
         {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
         Serviços da etapa ({services.length})
-        {services.length > 0 && " · o avanço da etapa é calculado por eles"}
+        {services.length > 0
+          ? " · o valor e o avanço da etapa vêm deles"
+          : " · opcional, para detalhar a etapa"}
       </button>
       {open && (
         <div className="mt-2 space-y-2">

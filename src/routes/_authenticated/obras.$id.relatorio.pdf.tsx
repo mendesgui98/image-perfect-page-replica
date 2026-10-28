@@ -76,7 +76,7 @@ function Report() {
               <div>
                 <span>{s.name}</span>
                 <p className="text-xs text-muted-foreground">
-                  Peso {fmtNum(s.weight)}% · {s.responsible || "Sem responsável"}
+                  Avanço: vale {fmtNum(s.weight)}% da obra · {s.responsible || "Sem responsável"}
                 </p>
                 <p className="text-xs">
                   Previsto {fmtDate(s.planned_start)} → {fmtDate(s.planned_end)} · Início real{" "}

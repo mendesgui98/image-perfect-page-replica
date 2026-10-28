@@ -1909,6 +1909,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      work_stage_values: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          labor_planned: number;
+          material_planned: number;
+          stage_id: string;
+          updated_at: string;
+          updated_by: string | null;
+          work_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          labor_planned?: number;
+          material_planned?: number;
+          stage_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          work_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          labor_planned?: number;
+          material_planned?: number;
+          stage_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          work_id?: string;
+        };
+        Relationships: [];
+      };
       work_stages: {
         Row: {
           actual_end: string | null;

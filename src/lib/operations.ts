@@ -240,10 +240,14 @@ export function stageCosts(
   services: { stage_id: string; labor_planned: number; material_planned: number }[],
   entries: (AccountEntry & { stage_id?: string | null })[],
   settlements: SettlementLike[],
+  /** Valor digitado na etapa; só vale enquanto a etapa não tem serviços. */
+  typed?: { labor_planned: number; material_planned: number } | null,
 ) {
   const own = services.filter((s) => s.stage_id === stageId);
-  const laborPlanned = own.reduce((t, s) => t + (Number(s.labor_planned) || 0), 0);
-  const materialPlanned = own.reduce((t, s) => t + (Number(s.material_planned) || 0), 0);
+  const fromServices = own.length > 0;
+  const planBase = fromServices ? own : typed ? [typed] : [];
+  const laborPlanned = planBase.reduce((t, s) => t + (Number(s.labor_planned) || 0), 0);
+  const materialPlanned = planBase.reduce((t, s) => t + (Number(s.material_planned) || 0), 0);
   const outflows = entries.filter(
     (e) => e.stage_id === stageId && e.direction === "saida" && !e.canceled,
   );
@@ -261,6 +265,7 @@ export function stageCosts(
   const planned = laborPlanned + materialPlanned;
   const spent = laborSpent + materialSpent + otherSpent;
   return {
+    fromServices,
     laborPlanned,
     materialPlanned,
     planned,
@@ -270,5 +275,7 @@ export function stageCosts(
     spent,
     committed,
     balance: planned - spent,
+    laborBalance: laborPlanned - laborSpent,
+    materialBalance: materialPlanned - materialSpent,
   };
 }

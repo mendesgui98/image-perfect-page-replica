@@ -362,7 +362,7 @@ export function StandaloneEditor({
             </label>
             <Field
               name="weight"
-              label="Peso no avanço (%)"
+              label="Avanço (% da obra)"
               type="number"
               value={editing?.weight ?? (stages.length ? 0 : 100)}
             />

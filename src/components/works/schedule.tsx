@@ -224,7 +224,8 @@ export function Schedule({
             {fmtNum(physicalProgress(stages, opening?.progress ?? 0))}%
           </h2>
           <p className={`text-sm ${w.valid ? "text-muted-foreground" : "text-warning"}`}>
-            Pesos: {fmtNum(w.weightSum)}%{!w.valid ? " · confira a distribuição dos pesos" : ""}
+            Avanço distribuído: {fmtNum(w.weightSum)}%
+            {!w.valid ? " · a soma das etapas precisa dar 100%" : ""}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -255,7 +256,7 @@ export function Schedule({
                   {s.name}
                 </Button>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {s.responsible || "Sem responsável"} · peso {fmtNum(s.weight)}%
+                  {s.responsible || "Sem responsável"} · Avanço: vale {fmtNum(s.weight)}% da obra
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {fmtDate(s.planned_start)} → {fmtDate(s.planned_end)} ·{" "}
@@ -421,7 +422,7 @@ export function Schedule({
             <Field
               name="weight"
               type="number"
-              label="Peso no avanço (%)"
+              label="Avanço (% da obra)"
               value={editing?.weight ?? (stages.length ? 0 : 100)}
             />
             <label className="text-sm">

@@ -4,6 +4,18 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-27 — Valor da etapa e dos materiais digitados na obra (branch `feat/fundacao-tecnica`)
+
+**Pedido do Guilherme:** na obra feita do zero, digitar o valor da etapa (ex.: R$ 10.000) e o valor dos materiais, para calcular quanto já foi pago e quanto falta de cada um; "peso" passa a se chamar avanço.
+
+- Migração `20261028000002_stage_planned_values.sql`: tabela `work_stage_values` (uma linha por etapa: `labor_planned`, `material_planned`), RLS `can_see_costs`, guarda de etapa ativa da mesma obra, auditoria em `work_history`, cascata com etapa/obra.
+- `stageCosts` (operations.ts) recebe o valor digitado; com serviços na etapa, o previsto é a soma deles e o digitado não entra (sem dupla contagem). Novos campos `fromServices`, `laborBalance`, `materialBalance`. Testes: R$ 10.000 + R$ 5.000 com R$ 4.000/R$ 2.000 pagos → restante R$ 6.000/R$ 3.000; outras categorias só reduzem o total.
+- Card da etapa (`stage-services.tsx`): campos "Valor da etapa (mão de obra / serviço)" e "Valor dos materiais da etapa" (salvam ao sair do campo/Enter; travados mostrando a soma quando há serviços); previsto, já pago e restante separados em etapa e materiais.
+- "Peso" renomeado: "Avanço: vale X% da obra" no card e no relatório, "Avanço distribuído" no topo, "Avanço (% da obra)" nos formulários.
+- Conferido no navegador com etapa de teste (removida depois). Corrigido: salvar os dois campos em sequência apagava o primeiro; agora cada campo grava só o próprio valor.
+
+**Pendência (parte 3, aguardando decisão):** ao converter orçamento em obra, levar serviços e materiais de cada grupo para as etapas — falta decidir custo ou preço de venda como previsto.
+
 ### 2026-10-27 — Etapas da obra num card só (branch `feat/fundacao-tecnica`)
 
 **Pedido do Guilherme:** os valores ficavam num quadro separado embaixo da etapa, com uma barra de avanço no meio; juntar tudo e tirar a barra.

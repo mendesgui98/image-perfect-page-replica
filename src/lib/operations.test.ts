@@ -231,4 +231,42 @@ describe("valores da etapa", () => {
     const r = stageCosts("st", services, [saida("mo", "Mão de obra", 800)], [paid("mo", 300)]);
     expect(r).toMatchObject({ spent: 300, committed: 500, balance: 2700 });
   });
+
+  it("obra do zero: valor da etapa R$ 10.000 e materiais R$ 5.000 digitados", () => {
+    const r = stageCosts(
+      "nova",
+      services,
+      [saida("mo", "Mão de obra", 4000, "nova"), saida("mat", "Materiais", 2000, "nova")],
+      [paid("mo", 4000), paid("mat", 2000)],
+      { labor_planned: 10000, material_planned: 5000 },
+    );
+    expect(r).toMatchObject({
+      fromServices: false,
+      planned: 15000,
+      spent: 6000,
+      balance: 9000,
+      laborBalance: 6000,
+      materialBalance: 3000,
+    });
+  });
+
+  it("com serviços, o previsto é a soma deles e o valor digitado não soma de novo", () => {
+    const r = stageCosts("st", services, [], [], { labor_planned: 10000, material_planned: 5000 });
+    expect(r).toMatchObject({ fromServices: true, laborPlanned: 2000, materialPlanned: 1000 });
+  });
+
+  it("gasto em outras categorias reduz o total, não o restante de MO ou material", () => {
+    const r = stageCosts(
+      "nova",
+      [],
+      [saida("frete", "Outras", 300, "nova")],
+      [paid("frete", 300)],
+      { labor_planned: 1000, material_planned: 500 },
+    );
+    expect(r).toMatchObject({ balance: 1200, laborBalance: 1000, materialBalance: 500 });
+  });
+
+  it("etapa sem valor digitado nem serviços fica zerada", () => {
+    expect(stageCosts("nova", [], [], [], null)).toMatchObject({ planned: 0, balance: 0 });
+  });
 });

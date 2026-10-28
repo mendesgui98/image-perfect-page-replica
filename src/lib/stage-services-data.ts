@@ -30,3 +30,16 @@ export async function syncStageProgress(stage: Stage, services: StageService[]) 
     .eq("id", stage.id);
   if (r.error) throw r.error;
 }
+
+export type StageValue = Database["public"]["Tables"]["work_stage_values"]["Row"];
+
+/** Valor da etapa e dos materiais digitados direto na etapa (obra feita do zero). */
+export const stageValuesOptions = (workId: string) =>
+  queryOptions({
+    queryKey: ["stage-values", workId],
+    queryFn: async () => {
+      const r = await supabase.from("work_stage_values").select("*").eq("work_id", workId);
+      if (r.error) throw r.error;
+      return r.data;
+    },
+  });
