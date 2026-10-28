@@ -257,6 +257,7 @@ export type Database = {
           payment_terms: Json;
           revision: number;
           status: Database["public"]["Enums"]["budget_status"];
+          superseded_by: string | null;
           title: string;
           uf: string | null;
           updated_at: string;
@@ -292,6 +293,7 @@ export type Database = {
           payment_terms?: Json;
           revision?: number;
           status?: Database["public"]["Enums"]["budget_status"];
+          superseded_by?: string | null;
           title?: string;
           uf?: string | null;
           updated_at?: string;
@@ -327,6 +329,7 @@ export type Database = {
           payment_terms?: Json;
           revision?: number;
           status?: Database["public"]["Enums"]["budget_status"];
+          superseded_by?: string | null;
           title?: string;
           uf?: string | null;
           updated_at?: string;
@@ -2281,7 +2284,8 @@ export type Database = {
     };
     Enums: {
       app_role: "admin" | "financeiro" | "equipe";
-      budget_status: "elaboracao" | "enviado" | "aprovado" | "recusado" | "cancelado";
+      budget_status:
+        "elaboracao" | "enviado" | "aprovado" | "recusado" | "cancelado" | "substituido";
       person_kind: "cliente" | "contato" | "arquiteto" | "fornecedor" | "prestador";
       service_unit: "m2" | "ml" | "un" | "diaria" | "vb";
       supplier_side: "jmg" | "cliente";
@@ -2407,7 +2411,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "financeiro", "equipe"],
-      budget_status: ["elaboracao", "enviado", "aprovado", "recusado", "cancelado"],
+      budget_status: ["elaboracao", "enviado", "aprovado", "recusado", "cancelado", "substituido"],
       person_kind: ["cliente", "contato", "arquiteto", "fornecedor", "prestador"],
       service_unit: ["m2", "ml", "un", "diaria", "vb"],
       supplier_side: ["jmg", "cliente"],

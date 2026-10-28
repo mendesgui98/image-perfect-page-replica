@@ -41,6 +41,19 @@ export const activeMaterialsOptions = {
     (await check(supabase.from("materials").select("*").eq("active", true).order("name"))) ?? [],
 };
 
+/** Versões do mesmo orçamento (revisões mantêm o número). */
+export const budgetFamilyOptions = (number: number) => ({
+  queryKey: ["budget-family", number],
+  queryFn: async () =>
+    (await check(
+      supabase
+        .from("budgets")
+        .select("id, revision, status, deleted_at, superseded_by")
+        .eq("number", number)
+        .order("revision"),
+    )) ?? [],
+});
+
 export const budgetApi = {
   update: (id: string, patch: BudgetUpdate | Record<string, unknown>) =>
     check(

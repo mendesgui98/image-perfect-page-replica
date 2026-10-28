@@ -28,6 +28,7 @@ export async function loadWorkBudget(workId: string) {
     number: 0,
     revision: 0,
     parent_budget_id: null,
+    superseded_by: null,
     title: w.name,
     client_id: w.client_id,
     architect_id: w.architect_id,

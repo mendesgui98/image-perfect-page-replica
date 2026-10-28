@@ -7,10 +7,10 @@ Desenvolvimento direto pelo GitHub (sem Lovable). Trabalhe em branches e abra PR
 - All price/margin math lives in `src/lib/pricing.ts` (pure, tested in `pricing.test.ts`); UI and PDF only call `computeBudget` — never duplicate formulas.
 - Budget items snapshot catalog costs/composition (jsonb `materials`) so catalog edits never silently change existing budgets.
 - Cost data access is enforced by RLS via `public.can_see_costs()` (admin/financeiro); roles live in `user_roles`, never on profiles.
-- Approved/refused budgets are locked by DB trigger; changes go through `copy_budget(id, true)` revisions.
+- Approved/refused/superseded budgets are locked by DB trigger; changes go through "Reabrir para edição" (`copy_budget(id, true)` revisions, reusing an open newer revision via `openRevision`). Approving a revision (trigger `supersede_previous_budget`) atomically marks the previous approved version `substituido` (`superseded_by`), moves the linked work's `linked_budget_id` and stage sections to it, and is refused when that work has a signed contract (use extras instead).
 - Works use the shared record trash (`manage_record_deletion` with `work_registry`): trashing also trashes the linked schedule header; permanent deletion is refused while financial, purchase, contract, record, extra or estimate links exist. Work list readers filter `deleted_at`.
 - Client PDF is an HTML print view (`/orcamentos/$id/pdf`) styled after the client's model; it must never render internal costs/margins.
-- work_registry is canonical for both origins; linked_budget_id alone references an immutable approved budget. Legacy works mirrors conversion atomically to preserve identifiers; direct works never insert budgets.
+- work_registry is canonical for both origins; linked_budget_id alone references an immutable approved budget (only the supersede trigger may move it within the same budget family). Legacy works mirrors conversion atomically to preserve identifiers; direct works never insert budgets.
 - Operational quantities and cash/allocations use pure tested helpers in operations.ts and work-opening.ts; economic price/result calculations stay in pricing.ts.
 - Uploaded evidence and work documents use the private `jmg-documents` bucket and temporary signed URLs; team access is limited to operational records.
 - Purchases create commitments atomically; partial receipts determine incurred purchase cost, while settlements affect only cash, never a second expense.

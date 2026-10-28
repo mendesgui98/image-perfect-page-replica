@@ -4,6 +4,17 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Reabrir orçamento aprovado para edição (branch `feat/fundacao-tecnica`)
+
+**Decisão do Guilherme:** opção A — o aprovado continua imutável; "Reabrir para edição" cria a revisão e, ao aprovar de novo, ela substitui a anterior. Com contrato assinado, a mudança vira aditivo.
+
+- Migração `20261028000004_budget_superseded_status.sql`: novo status `substituido` (sozinho porque o valor do enum só vale após o commit).
+- Migração `20261028000005_budget_reopen_revision.sql`: `budgets.superseded_by`; `guard_budget_locked` trava também `substituido` e só aceita aprovado → substituído vindo do gatilho (`jmg.budget_supersede`); `registry_guard` deixa trocar `linked_budget_id` só nesse gatilho e dentro da mesma família; gatilho `supersede_previous_budget` (ao aprovar) marca a versão anterior, religa obra e etapas (grupo de mesmo nome), registra `budget_history` e recusa se a obra tiver contrato assinado; `convert_budget` devolve a obra já ligada à família (nunca cria segunda obra).
+- Front: `isLockedStatus`, `openRevision`, `approvedVersion` (budget-status.ts, testados) e `budgetFamilyOptions` (budget-api.ts). Tela do orçamento: botão "Reabrir para edição" no aprovado (reaproveita revisão em aberto), aviso "Ao aprovar, esta revisão substitui a Rev. N" na revisão, e "Substituído pela Rev. N" com link na versão antiga.
+- Testado no banco (transação desfeita: edição direta bloqueada, substituição, obra e etapa religadas, contrato assinado bloqueia) e no navegador com orçamento nº 99990 (reabrir → remover serviço → aprovar com comprovante → Rev. 0 "Substituído", obra na Rev. 1); dados de teste apagados.
+
+**Limites:** serviços/custos das etapas da obra não são recalculados pela revisão (o valor do contrato na obra muda, pois vem do orçamento ligado); contrato "gerado" ainda não assinado guarda o texto antigo e precisa ser gerado de novo.
+
 ### 2026-10-27 — Valor da etapa e dos materiais digitados na obra (branch `feat/fundacao-tecnica`)
 
 **Pedido do Guilherme:** na obra feita do zero, digitar o valor da etapa (ex.: R$ 10.000) e o valor dos materiais, para calcular quanto já foi pago e quanto falta de cada um; "peso" passa a se chamar avanço.
