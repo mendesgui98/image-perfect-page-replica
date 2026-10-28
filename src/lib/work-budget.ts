@@ -122,6 +122,12 @@ export async function loadWorkBudget(workId: string) {
     approval_path: null,
     deleted_at: null,
     deleted_by: null,
+    responsible: w.responsible ?? null,
+    start_date: null,
+    estimated_weeks: null,
+    property_type: null,
+    property_area: null,
+    description: null,
   };
   return {
     budget,

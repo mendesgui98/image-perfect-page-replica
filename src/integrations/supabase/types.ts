@@ -178,6 +178,9 @@ export type Database = {
       };
       budget_sections: {
         Row: {
+          description: string | null;
+          start_week: number | null;
+          duration_weeks: number | null;
           budget_id: string;
           created_at: string;
           created_by: string | null;
@@ -190,6 +193,9 @@ export type Database = {
           updated_by: string | null;
         };
         Insert: {
+          description?: string | null;
+          start_week?: number | null;
+          duration_weeks?: number | null;
           budget_id: string;
           created_at?: string;
           created_by?: string | null;
@@ -202,6 +208,9 @@ export type Database = {
           updated_by?: string | null;
         };
         Update: {
+          description?: string | null;
+          start_week?: number | null;
+          duration_weeks?: number | null;
           budget_id?: string;
           created_at?: string;
           created_by?: string | null;
@@ -232,6 +241,12 @@ export type Database = {
       };
       budgets: {
         Row: {
+          responsible: string | null;
+          start_date: string | null;
+          estimated_weeks: number | null;
+          property_type: string | null;
+          property_area: number | null;
+          description: string | null;
           deleted_at: string | null;
           deleted_by: string | null;
 
@@ -268,6 +283,12 @@ export type Database = {
           validity_date: string | null;
         };
         Insert: {
+          responsible?: string | null;
+          start_date?: string | null;
+          estimated_weeks?: number | null;
+          property_type?: string | null;
+          property_area?: number | null;
+          description?: string | null;
           deleted_at?: string | null;
           deleted_by?: string | null;
 
@@ -304,6 +325,12 @@ export type Database = {
           validity_date?: string | null;
         };
         Update: {
+          responsible?: string | null;
+          start_date?: string | null;
+          estimated_weeks?: number | null;
+          property_type?: string | null;
+          property_area?: number | null;
+          description?: string | null;
           deleted_at?: string | null;
           deleted_by?: string | null;
 

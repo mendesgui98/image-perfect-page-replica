@@ -262,16 +262,97 @@ export function computeBudget(
   };
 }
 
-/** Distribui o valor total pelas condições de pagamento (%), ajustando centavos na última parcela. */
-export function splitPayments(total: number, terms: { label: string; pct: number }[]) {
-  const out = terms.map((t) => ({ ...t, value: r2((total * (Number(t.pct) || 0)) / 100) }));
-  const pctSum = terms.reduce((s, t) => s + (Number(t.pct) || 0), 0);
-  if (out.length && Math.abs(pctSum - 100) < 1e-9) {
-    const diff = r2(total - out.reduce((s, t) => s + t.value, 0));
-    const last = out[out.length - 1];
-    if (last) last.value = r2(last.value + diff);
+/**
+ * Distribui o valor total pelas condições de pagamento (%). A conta é feita em centavos inteiros:
+ * cada parcela é % × total arredondado ao centavo e a diferença vai para a última parcela.
+ */
+export function splitPayments<T extends { pct: number }>(total: number, terms: T[]) {
+  const totalCents = Math.round((Number(total) || 0) * 100);
+  const cents = terms.map((t) => Math.round((totalCents * (Number(t.pct) || 0)) / 100));
+  const pctSum = r2(terms.reduce((s, t) => s + (Number(t.pct) || 0), 0));
+  if (cents.length && Math.abs(pctSum - 100) < 1e-9) {
+    const others = cents.slice(0, -1).reduce((s, c) => s + c, 0);
+    cents[cents.length - 1] = totalCents - others;
   }
-  return { rows: out, pctSum };
+  return { rows: terms.map((t, i) => ({ ...t, value: (cents[i] ?? 0) / 100 })), pctSum };
+}
+
+export interface ClientMaterialLine {
+  name: string;
+  unit: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+/**
+ * Valores que o cliente vê na proposta, todos a preço de venda líquido (com acréscimo e descontos).
+ * Cada material recebe o fator venda ÷ custo de materiais do seu item; materiais iguais do mesmo
+ * grupo são somados. Valor unitário e total são arredondados ao centavo (total = unitário ×
+ * quantidade) e a diferença de centavos fica na mão de obra, para o total geral ser sempre o
+ * `saleNet` de computeBudget. Material fornecido pelo cliente não tem valor e não entra.
+ */
+export function clientPriceSheet(
+  items: (PricingItem & { group: string })[],
+  params: PricingParams,
+  generalDiscount = 0,
+) {
+  const result = computeBudget(items, params, generalDiscount);
+  const acc = new Map<
+    string,
+    { group: string; name: string; unit: string; qty: number; sale: number }
+  >();
+  items.forEach((it, i) => {
+    const r = result.items[i];
+    if (!r || !(r.materialsCost > 0)) return;
+    const factor = r.materialsNet / r.materialsCost;
+    const q = Number(it.quantity) || 0;
+    for (const m of it.materials || []) {
+      const cost = materialCost(m, q);
+      if (!(cost > 0)) continue;
+      const key = [it.group, m.material_id || m.name.trim().toLowerCase(), m.purchase_unit].join(
+        "|",
+      );
+      const row = acc.get(key) ?? {
+        group: it.group,
+        name: m.name,
+        unit: m.purchase_unit,
+        qty: 0,
+        sale: 0,
+      };
+      row.qty += materialPurchaseQty(m, q);
+      row.sale += cost * factor;
+      acc.set(key, row);
+    }
+  });
+  const groups = new Map<string, { lines: ClientMaterialLine[]; totalCents: number }>();
+  for (const row of acc.values()) {
+    const quantity = r2(row.qty);
+    if (!(quantity > 0)) continue;
+    const unitCents = Math.round((row.sale * 100) / quantity);
+    const totalCents = Math.round(unitCents * quantity);
+    const g = groups.get(row.group) ?? { lines: [], totalCents: 0 };
+    g.lines.push({
+      name: row.name,
+      unit: row.unit,
+      quantity,
+      unitPrice: unitCents / 100,
+      total: totalCents / 100,
+    });
+    g.totalCents += totalCents;
+    groups.set(row.group, g);
+  }
+  const materialsCents = [...groups.values()].reduce((s, g) => s + g.totalCents, 0);
+  const laborCents = Math.max(0, Math.round(result.saleNet * 100) - materialsCents);
+  return {
+    result,
+    materials: new Map(
+      [...groups].map(([k, g]) => [k, { lines: g.lines, total: g.totalCents / 100 }]),
+    ),
+    materialsTotal: materialsCents / 100,
+    laborTotal: laborCents / 100,
+    total: (laborCents + materialsCents) / 100,
+  };
 }
 
 /** Custo econômico não duplica parcelas nem pedidos já incluídos nos lançamentos. */
