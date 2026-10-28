@@ -188,7 +188,7 @@ export function KpiCard({
       src="/jmg-logo-white.png"
       alt=""
       aria-hidden
-      className="pointer-events-none absolute right-5 top-1/2 -z-10 h-20 w-20 -translate-y-1/2 select-none object-contain opacity-[0.1] sm:h-24 sm:w-24"
+      className="pointer-events-none absolute right-2 top-1/2 -z-10 h-36 w-36 -translate-y-1/2 select-none object-contain opacity-[0.1] sm:right-4 sm:h-44 sm:w-44"
     />
   );
   if (!onClick)
