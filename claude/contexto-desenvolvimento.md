@@ -4,6 +4,14 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Avanço da obra pelo valor das etapas (branch `feat/fundacao-tecnica`)
+
+**Decisão do Guilherme:** o "Avanço (% da obra)" das etapas vindas do orçamento é proporcional ao valor previsto de cada etapa.
+
+- `valueWeights` (work-progress.ts, testado): percentuais com duas casas somando 100% exatos (sobra do arredondamento na etapa de maior valor); sem valor nenhum não muda nada.
+- `applyValueWeights` (work-budget.ts): valor de cada etapa por `stageCosts(...).planned` (serviços ou valor digitado) e grava `work_stages.weight`. Roda ao converter o orçamento em obra e depois de a revisão aprovada atualizar as etapas; recalcula todas as etapas ativas da obra (etapa sem valor fica 0%).
+- Testado no navegador: R$ 3.000 / 5.000 / 2.000 → 30% / 50% / 20%; revisão sem o serviço de R$ 2.000 → 37,5% / 62,5% / 0%, "Avanço distribuído: 100%". Dados de teste apagados.
+
 ### 2026-10-28 — Revisão aprovada atualiza os serviços das etapas da obra (branch `feat/fundacao-tecnica`)
 
 **Decisão do Guilherme:** ao aprovar a revisão, as etapas da obra acompanham o orçamento novo.

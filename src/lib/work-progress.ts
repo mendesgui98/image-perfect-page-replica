@@ -57,3 +57,17 @@ export function statusForProgress(progress: number, current: string | null) {
   if (current === "pausado") return "pausado";
   return progress > 0 ? "andamento" : "nao_iniciado";
 }
+
+/** Avanço (% da obra) de cada etapa proporcional ao valor previsto dela, com duas casas e soma
+ * exata de 100% (a diferença do arredondamento vai para a etapa de maior valor). Sem valor
+ * nenhum devolve null: os percentuais atuais ficam como estão. */
+export function valueWeights(stages: { id: string; value: number }[]) {
+  const values = stages.map((s) => ({ id: s.id, value: Math.max(0, Number(s.value) || 0) }));
+  const total = values.reduce((t, s) => t + s.value, 0);
+  if (total <= 0) return null;
+  const weights = new Map(values.map((s) => [s.id, Math.round((s.value / total) * 10000) / 100]));
+  const largest = values.reduce((a, b) => (b.value > a.value ? b : a));
+  const rest = 100 - [...weights.values()].reduce((t, w) => t + w, 0);
+  weights.set(largest.id, Math.round((weights.get(largest.id)! + rest) * 100) / 100);
+  return weights;
+}

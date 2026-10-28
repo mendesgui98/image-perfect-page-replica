@@ -6,6 +6,7 @@ import {
   stageStatus,
   statusForProgress,
   workDeadline,
+  valueWeights,
 } from "./work-progress";
 describe("acompanhamento da obra", () => {
   it("pondera percentuais pelas etapas", () =>
@@ -59,5 +60,37 @@ describe("avanço da etapa pelos serviços", () => {
     expect(statusForProgress(30, "pausado")).toBe("pausado");
     expect(statusForProgress(30, null)).toBe("andamento");
     expect(statusForProgress(0, "andamento")).toBe("nao_iniciado");
+  });
+});
+
+describe("avanço da obra pelo valor das etapas", () => {
+  it("etapa de R$ 30.000 numa obra de R$ 100.000 vale 30%", () => {
+    const w = valueWeights([
+      { id: "a", value: 30000 },
+      { id: "b", value: 50000 },
+      { id: "c", value: 20000 },
+    ]);
+    expect(Object.fromEntries(w!)).toEqual({ a: 30, b: 50, c: 20 });
+  });
+  it("arredondamento fecha 100% exato", () => {
+    const w = valueWeights([
+      { id: "a", value: 1 },
+      { id: "b", value: 1 },
+      { id: "c", value: 1 },
+    ])!;
+    const sum = [...w.values()].reduce((t, x) => t + x, 0);
+    expect(Math.abs(sum - 100)).toBeLessThan(0.001);
+    expect([...w.values()].sort()).toEqual([33.33, 33.33, 33.34]);
+  });
+  it("etapa sem valor vale 0% e obra sem valor não muda", () => {
+    expect(
+      Object.fromEntries(
+        valueWeights([
+          { id: "a", value: 500 },
+          { id: "b", value: 0 },
+        ])!,
+      ),
+    ).toEqual({ a: 100, b: 0 });
+    expect(valueWeights([{ id: "a", value: 0 }])).toBeNull();
   });
 });

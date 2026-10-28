@@ -1,7 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { loadBudget, type Budget } from "./budget-data";
 import { emptyParams, computeBudget, directContractBase } from "./pricing";
-import { budgetStageServices } from "./operations";
+import { budgetStageServices, stageCosts } from "./operations";
+import { valueWeights } from "./work-progress";
 import { syncStageProgress } from "./stage-services-data";
 
 /** Converte orçamento aprovado em obra levando, para cada etapa, os serviços com o custo
@@ -14,6 +15,7 @@ export async function convertBudgetToWork(budgetId: string) {
     _services: budgetStageServices(result.items),
   });
   if (r.error) throw r.error;
+  await applyValueWeights(r.data);
   return r.data;
 }
 /** Revisão aprovada: atualiza os serviços das etapas da obra ligada (custo de MO e materiais por
@@ -39,7 +41,43 @@ export async function syncBudgetStages(budgetId: string) {
       st,
       services.data.filter((s) => s.stage_id === st.id),
     );
+  await applyValueWeights(workId);
   return workId;
+}
+
+/** Avanço (% da obra) de cada etapa proporcional ao valor previsto (serviços ou valor digitado).
+ * Usado quando o orçamento vira obra e quando uma revisão aprovada atualiza as etapas. */
+export async function applyValueWeights(workId: string) {
+  const [stages, services, values] = await Promise.all([
+    supabase.from("work_stages").select("id, weight").eq("work_id", workId).eq("removed", false),
+    supabase
+      .from("work_stage_services")
+      .select("stage_id, labor_planned, material_planned")
+      .eq("work_id", workId),
+    supabase.from("work_stage_values").select("*").eq("work_id", workId),
+  ]);
+  if (stages.error) throw stages.error;
+  if (services.error) throw services.error;
+  if (values.error) throw values.error;
+  const weights = valueWeights(
+    stages.data.map((st) => ({
+      id: st.id,
+      value: stageCosts(
+        st.id,
+        services.data,
+        [],
+        [],
+        values.data.find((v) => v.stage_id === st.id),
+      ).planned,
+    })),
+  );
+  if (!weights) return;
+  for (const st of stages.data) {
+    const weight = weights.get(st.id) ?? 0;
+    if (weight === Number(st.weight)) continue;
+    const r = await supabase.from("work_stages").update({ weight }).eq("id", st.id);
+    if (r.error) throw r.error;
+  }
 }
 
 export async function loadWorkBudget(workId: string) {
