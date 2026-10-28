@@ -17,7 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Tax } from "@/lib/pricing";
+import { priceBreakdown, priceFromCost } from "@/lib/pricing";
+import { fmtBRL } from "@/lib/format";
 import { apiConfigured } from "@/lib/api-client";
 import { UsersAdmin } from "@/components/admin/users-admin";
 import { MfaSettings } from "@/components/admin/mfa";
@@ -185,38 +186,21 @@ function Empresa({ ro }: { ro: boolean }) {
   );
 }
 
+/** Padrões do modelo de preço pelo custo direto (cada orçamento novo guarda uma cópia). */
 const PCT_FIELDS: [keyof Pricing, string, string][] = [
-  ["labor_markup", "Acréscimo sobre custo — mão de obra (%)", "Base: custo do terceiro"],
   [
-    "materials_markup",
-    "Acréscimo sobre custo — materiais (%)",
-    "Base: custo dos materiais fornecidos pela JMG",
-  ],
-  [
-    "negotiation_reserve",
-    "Reserva para negociação (%)",
-    "Acrescida ao preço para permitir descontos. Não é despesa.",
+    "structure_rate",
+    "Custo estrutural JMG (%)",
+    "Parte do preço que cobre a estrutura da empresa.",
   ],
   [
     "architect_commission",
-    "Comissão da arquiteta (%)",
-    "Base: preço de venda da mão de obra após descontos. Nunca materiais.",
+    "RT / comissão do arquiteto (%)",
+    "Pode ser desligada em cada orçamento.",
   ],
-  [
-    "desired_margin",
-    "Margem desejada sobre a venda (%)",
-    "Base: venda líquida. Usada só como referência/alerta.",
-  ],
-  [
-    "min_margin",
-    "Margem mínima sobre a venda (%)",
-    "Abaixo disso o sistema alerta e limita o desconto sugerido.",
-  ],
-  [
-    "reinvestment_share",
-    "Destinação do resultado para reinvestimento (%)",
-    "Base: resultado. É destinação, não é deduzido.",
-  ],
+  ["tax_rate", "Impostos (%)", "Parte do preço que vai para impostos."],
+  ["desired_margin", "Margem-alvo de lucro (%)", "Margem usada para calcular o preço."],
+  ["min_margin", "Margem mínima (%)", "Abaixo dela o orçamento mostra alerta e pede confirmação."],
 ];
 
 function Precos({ ro }: { ro: boolean }) {
@@ -229,11 +213,9 @@ function Precos({ ro }: { ro: boolean }) {
   useEffect(() => {
     if (data) setF(data);
   }, [data]);
-  const taxes = (f.taxes as unknown as Tax[]) ?? [];
-  const setTaxes = (t: Tax[]) => setF({ ...f, taxes: t as unknown as Pricing["taxes"] });
   const save = useMutation({
     mutationFn: async () => {
-      const payload: Record<string, unknown> = { configured: true, taxes: f.taxes ?? [] };
+      const payload: Record<string, unknown> = { configured: true };
       for (const [k] of PCT_FIELDS) payload[k] = Number(f[k]) || 0;
       const { error } = await supabase
         .from("pricing_settings")
@@ -242,12 +224,19 @@ function Precos({ ro }: { ro: boolean }) {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Regras salvas. Valem para novos orçamentos.");
+      toast.success("Padrões salvos. Valem para os próximos orçamentos.");
       qc.invalidateQueries({ queryKey: ["pricing"] });
       qc.invalidateQueries({ queryKey: ["painel"] });
     },
     onError: (e) => toast.error((e as Error).message),
   });
+  const rates = {
+    structure: Number(f.structure_rate) || 0,
+    rt: Number(f.architect_commission) || 0,
+    taxes: Number(f.tax_rate) || 0,
+    margin: Number(f.desired_margin) || 0,
+  };
+  const example = priceFromCost(12000, rates);
   return (
     <SubmitForm
       onSubmit={() => save.mutate()}
@@ -256,21 +245,21 @@ function Precos({ ro }: { ro: boolean }) {
     >
       <Card>
         <CardHeader className="p-4 sm:p-6">
-          <CardTitle>Percentuais padrão da JMG</CardTitle>
-          {!data?.configured && (
-            <p className="flex items-center gap-2 rounded-xl bg-alert-soft px-3 py-2 text-sm text-alert">
-              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-              Ainda não configurado — todos estão em 0%.
-            </p>
-          )}
+          <CardTitle>Formação de preço · padrões da JMG</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Preço = custo direto ÷ [1 − (estrutura + RT + impostos + margem)]. Mudar aqui não altera
+            orçamentos já criados.
+          </p>
         </CardHeader>
         <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
           {PCT_FIELDS.map(([k, l, h]) => (
             <div key={k} className="space-y-1">
-              <Label>{l}</Label>
+              <Label htmlFor={`pricing-${k}`}>{l}</Label>
               <Input
+                id={`pricing-${k}`}
                 type="number"
                 step="any"
+                min={0}
                 disabled={ro}
                 value={(f[k] as number) ?? 0}
                 onChange={(e) => setF({ ...f, [k]: e.target.value })}
@@ -282,83 +271,50 @@ function Precos({ ro }: { ro: boolean }) {
       </Card>
       <Card>
         <CardHeader className="p-4 sm:p-6">
-          <CardTitle>Tributos e despesas sobre a venda</CardTitle>
+          <CardTitle>Exemplo com estes padrões</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Cadastre conforme orientação do seu contador. O sistema não presume alíquotas.
+            Uma obra com custo direto de R$ 12.000,00 (mão de obra + materiais).
           </p>
         </CardHeader>
-        <CardContent className="space-y-3 p-4 pt-0 sm:p-6 sm:pt-0">
-          {taxes.map((t, i) => (
-            <div
-              key={i}
-              className="grid grid-cols-12 gap-2 rounded-xl bg-muted/40 p-2 sm:bg-transparent sm:p-0"
-            >
-              <Input
-                className="col-span-12 sm:col-span-5"
-                disabled={ro}
-                placeholder="Nome"
-                value={t.name}
-                onChange={(e) =>
-                  setTaxes(taxes.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))
-                }
-              />
-              <Input
-                className="col-span-3 sm:col-span-2"
-                type="number"
-                step="any"
-                disabled={ro}
-                value={t.rate}
-                onChange={(e) =>
-                  setTaxes(
-                    taxes.map((x, j) => (j === i ? { ...x, rate: Number(e.target.value) } : x)),
-                  )
-                }
-              />
-              <select
-                className={cn(selectClass, "col-span-7 px-2 sm:col-span-4")}
-                disabled={ro}
-                value={t.base}
-                onChange={(e) =>
-                  setTaxes(
-                    taxes.map((x, j) =>
-                      j === i ? { ...x, base: e.target.value as Tax["base"] } : x,
-                    ),
-                  )
-                }
-              >
-                <option value="venda">sobre venda total</option>
-                <option value="mao_de_obra">sobre mão de obra</option>
-              </select>
-              {!ro && (
-                <Button
-                  type="button"
-                  variant="danger"
-                  size="icon"
-                  className="col-span-2 justify-self-end sm:col-span-1"
-                  aria-label="Remover"
-                  onClick={() => setTaxes(taxes.filter((_, j) => j !== i))}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-          {!ro && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setTaxes([...taxes, { name: "", rate: 0, base: "venda" }])}
-            >
-              <Plus className="h-4 w-4" /> Adicionar
-            </Button>
+        <CardContent className="space-y-2 p-4 pt-0 text-sm sm:p-6 sm:pt-0">
+          {example === null ? (
+            <p className="flex items-center gap-2 rounded-xl bg-negative-soft px-3 py-2 text-negative">
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+              Os percentuais somam 100% ou mais; não existe preço possível.
+            </p>
+          ) : (
+            (() => {
+              const b = priceBreakdown(example, 12000, rates);
+              return (
+                <dl className="divide-y divide-border/60">
+                  {(
+                    [
+                      ["Custo direto", b.directCost],
+                      [`Estrutura JMG · ${rates.structure}%`, b.structure],
+                      [`RT · ${rates.rt}%`, b.rt],
+                      [`Impostos · ${rates.taxes}%`, b.taxes],
+                      [`Lucro · ${rates.margin}%`, b.profit],
+                    ] as const
+                  ).map(([l, v]) => (
+                    <div key={l} className="flex justify-between gap-3 py-2">
+                      <dt className="text-muted-foreground">{l}</dt>
+                      <dd className="font-medium num">{fmtBRL(v)}</dd>
+                    </div>
+                  ))}
+                  <div className="flex justify-between gap-3 py-2 text-base font-bold">
+                    <dt>Preço de venda</dt>
+                    <dd className="num">{fmtBRL(b.price)}</dd>
+                  </div>
+                </dl>
+              );
+            })()
           )}
         </CardContent>
       </Card>
       {!ro && (
         <div className="lg:col-span-2">
           <Button type="submit" disabled={save.isPending}>
-            Salvar regras de precificação
+            Salvar padrões de precificação
           </Button>
         </div>
       )}

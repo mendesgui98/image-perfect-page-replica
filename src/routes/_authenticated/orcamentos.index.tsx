@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { loadBudget } from "@/lib/budget-data";
 import { computeBudget } from "@/lib/pricing";
+import { DEFAULT_NOTES, DEFAULT_TERMS } from "@/lib/proposal";
 import { Input } from "@/components/ui/input";
 import { fmtDate } from "@/lib/format";
 import { STATUS_LABEL } from "@/lib/budget-status";
@@ -36,15 +37,6 @@ export const Route = createFileRoute("/_authenticated/orcamentos/")({
   head: () => pageMeta("Orçamentos", "Propostas e revisões comerciais da JMG."),
   component: Lista,
 });
-
-const DEFAULT_TERMS = [
-  { label: "ÍNICIO (ASSINATURA DO CONTRATO)", pct: 30 },
-  { label: "AO INICIAR ETAPA FORRO", pct: 12.5 },
-  { label: "AO INICIAR ETAPA REVESTIMENTOS", pct: 12.5 },
-  { label: "AO INICIAR ETAPA PINTURA", pct: 12.5 },
-  { label: "AO INICIAR ETAPA INSTALAÇÕES", pct: 12.5 },
-  { label: "ENTREGA E FINALIZAÇÃO", pct: 20 },
-];
 
 function Lista() {
   const { data: me } = useMe();
@@ -116,8 +108,6 @@ function Lista() {
             taxes: pricing.taxes,
           }
         : {};
-      const validity = new Date();
-      validity.setDate(validity.getDate() + 15);
       const { data, error } = await supabase
         .from("budgets")
         .insert({
@@ -131,8 +121,8 @@ function Lista() {
           cep: c.cep,
           params,
           payment_terms: DEFAULT_TERMS,
+          notes: DEFAULT_NOTES,
           closing_text: company?.texto_fechamento ?? null,
-          validity_date: validity.toISOString().slice(0, 10),
         })
         .select("id")
         .single();

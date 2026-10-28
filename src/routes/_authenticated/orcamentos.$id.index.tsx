@@ -7,6 +7,7 @@ import {
   ArrowDown,
   Copy,
   FileDown,
+  FileSignature,
   FileSpreadsheet,
   GitBranch,
   Lock,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMe } from "@/hooks/use-me";
+import { supabase } from "@/integrations/supabase/client";
 import { NoAccess } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,10 +31,12 @@ import { ItemsEditor } from "@/components/budgets/items-editor";
 import { DadosEditor } from "@/components/budgets/budget-details";
 import { MaterialsSummary } from "@/components/budgets/materials-summary";
 import { PricingPanel } from "@/components/budgets/pricing-panel";
+import { ScheduleEditor } from "@/components/budgets/schedule-editor";
+import { buildProposal, contractIssues, proposalIssues } from "@/lib/proposal";
 import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { BUDGET_STATUS_VARIANT } from "@/lib/status-badges";
-import { KpiCard, Money } from "@/components/kpi";
+import { KpiCard, Money, Notice } from "@/components/kpi";
 import { fmtPct } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/orcamentos/$id/")({
@@ -54,6 +58,18 @@ function Editor() {
     ...budgetFamilyOptions(data?.budget.number ?? 0),
     enabled: !!data,
   });
+  const { data: creator } = useQuery({
+    queryKey: ["profile-name", data?.budget.created_by],
+    enabled: !!data?.budget.created_by,
+    queryFn: async () =>
+      (
+        await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", data!.budget.created_by!)
+          .maybeSingle()
+      ).data?.full_name ?? null,
+  });
   const refresh = () => {
     qc.invalidateQueries({ queryKey: budgetKey(id) });
     qc.invalidateQueries({ queryKey: ["budget-family"] });
@@ -61,6 +77,21 @@ function Editor() {
 
   const result = useMemo(
     () => (data ? computeBudget(data.items, data.params, data.budget.general_discount) : null),
+    [data],
+  );
+
+  // Pendências do PDF calculadas com o mesmo módulo que a API usa para gerar o documento.
+  const proposal = useMemo(
+    () =>
+      data
+        ? buildProposal({
+            budget: { ...data.budget, params: data.params, payment_terms: data.terms },
+            sections: data.sections,
+            items: data.items,
+            client: null,
+            today: new Date().toISOString().slice(0, 10),
+          })
+        : null,
     [data],
   );
 
@@ -86,7 +117,7 @@ function Editor() {
   });
 
   if (me && !me.canSeeCosts) return <NoAccess />;
-  if (!data || !result) return <PageSkeleton cards={3} />;
+  if (!data || !result || !proposal) return <PageSkeleton cards={3} />;
   const { budget } = data;
   if (budget.deleted_at)
     return <DeletedRecordNotice entity="budgets" id={id} name={`Orçamento nº ${budget.number}`} />;
@@ -182,11 +213,29 @@ function Editor() {
               </Button>
             )
           )}
-          <Button asChild>
-            <Link to="/orcamentos/$id/pdf" params={{ id }}>
-              <FileDown className="h-4 w-4" /> Revisar PDF
-            </Link>
-          </Button>
+          {budget.status === "aprovado" &&
+            (contractIssues(proposal).length ? (
+              <Button variant="outline" disabled title={contractIssues(proposal).join(" ")}>
+                <FileSignature className="h-4 w-4" /> Gerar contrato
+              </Button>
+            ) : (
+              <Button variant="outline" asChild>
+                <Link to="/orcamentos/$id/pdf" params={{ id }} search={{ doc: "contrato" }}>
+                  <FileSignature className="h-4 w-4" /> Gerar contrato
+                </Link>
+              </Button>
+            ))}
+          {proposalIssues(proposal).length ? (
+            <Button disabled title={proposalIssues(proposal).join(" ")}>
+              <FileDown className="h-4 w-4" /> Gerar PDF
+            </Button>
+          ) : (
+            <Button asChild>
+              <Link to="/orcamentos/$id/pdf" params={{ id }}>
+                <FileDown className="h-4 w-4" /> Gerar PDF
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -259,11 +308,16 @@ function Editor() {
         </span>
       </div>
 
+      {proposalIssues(proposal).length > 0 && (
+        <Notice className="mb-6">Para gerar o PDF: {proposalIssues(proposal).join(" ")}</Notice>
+      )}
+
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <Tabs defaultValue="itens">
           <TabsList>
             <TabsTrigger value="itens">Serviços</TabsTrigger>
             <TabsTrigger value="dados">Dados e condições</TabsTrigger>
+            <TabsTrigger value="cronograma">Cronograma</TabsTrigger>
             <TabsTrigger value="materiais">Materiais</TabsTrigger>
           </TabsList>
           <TabsContent value="itens">
@@ -281,10 +335,15 @@ function Editor() {
             <DadosEditor
               budget={budget}
               terms={data.terms}
-              total={result.saleNet}
+              total={proposal.totals.total}
+              scheduleWeeks={proposal.scheduleWeeks.length}
+              creatorName={creator ?? ""}
               locked={locked}
               onSave={(p) => updBudget.mutateAsync(p).then(() => toast.success("Salvo."))}
             />
+          </TabsContent>
+          <TabsContent value="cronograma">
+            <ScheduleEditor sections={data.sections} locked={locked} onChange={refresh} />
           </TabsContent>
           <TabsContent value="materiais">
             <MaterialsSummary items={data.items} />

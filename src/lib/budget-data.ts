@@ -1,13 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { emptyParams, type ItemMaterial, type PricingParams } from "./pricing";
+import type { ProposalTerm } from "./proposal";
 
 export type Budget = Database["public"]["Tables"]["budgets"]["Row"];
 export type Section = Database["public"]["Tables"]["budget_sections"]["Row"];
 export type Item = Omit<Database["public"]["Tables"]["budget_items"]["Row"], "materials"> & {
   materials: ItemMaterial[];
 };
-export type Term = { label: string; pct: number };
+export type Term = ProposalTerm;
 
 export async function loadBudget(id: string) {
   const [b, s, i] = await Promise.all([

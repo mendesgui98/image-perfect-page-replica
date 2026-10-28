@@ -1066,6 +1066,8 @@ export type Database = {
           min_margin: number;
           negotiation_reserve: number;
           reinvestment_share: number;
+          structure_rate: number;
+          tax_rate: number;
           taxes: Json;
           updated_at: string;
           updated_by: string | null;
@@ -1082,6 +1084,8 @@ export type Database = {
           min_margin?: number;
           negotiation_reserve?: number;
           reinvestment_share?: number;
+          structure_rate?: number;
+          tax_rate?: number;
           taxes?: Json;
           updated_at?: string;
           updated_by?: string | null;
@@ -1098,6 +1102,8 @@ export type Database = {
           min_margin?: number;
           negotiation_reserve?: number;
           reinvestment_share?: number;
+          structure_rate?: number;
+          tax_rate?: number;
           taxes?: Json;
           updated_at?: string;
           updated_by?: string | null;
