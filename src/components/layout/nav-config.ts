@@ -19,11 +19,10 @@ export type NavItem = {
   icon: LucideIcon;
   /** Só administrador e financeiro (custos e preços). */
   costs?: boolean;
-  /** Cor de identidade do módulo no menu (só aparência). */
+  /** Tom de azul do módulo no menu, por grupo (só aparência). */
   color?: NavColor;
 };
-export type NavColor =
-  "blue" | "indigo" | "violet" | "orange" | "teal" | "emerald" | "pink" | "sky" | "amber" | "slate";
+export type NavColor = "blue" | "indigo" | "sky" | "slate";
 export type NavGroup = { label: string; items: NavItem[] };
 
 export const NAV_GROUPS: NavGroup[] = [
@@ -35,28 +34,28 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Comercial",
     items: [
       { to: "/orcamentos", label: "Orçamentos", icon: FileText, costs: true, color: "indigo" },
-      { to: "/contratos", label: "Contratos", icon: FileSignature, costs: true, color: "violet" },
+      { to: "/contratos", label: "Contratos", icon: FileSignature, costs: true, color: "indigo" },
     ],
   },
   {
     label: "Execução",
     items: [
-      { to: "/obras", label: "Obras", icon: HardHat, color: "orange" },
-      { to: "/cronogramas", label: "Cronogramas", icon: CalendarDays, color: "teal" },
+      { to: "/obras", label: "Obras", icon: HardHat, color: "sky" },
+      { to: "/cronogramas", label: "Cronogramas", icon: CalendarDays, color: "sky" },
     ],
   },
   {
     label: "Gestão",
     items: [
-      { to: "/financeiro", label: "Financeiro", icon: Wallet, costs: true, color: "emerald" },
-      { to: "/cadastros", label: "Cadastros", icon: Users, color: "pink" },
+      { to: "/financeiro", label: "Financeiro", icon: Wallet, costs: true, color: "blue" },
+      { to: "/cadastros", label: "Cadastros", icon: Users, color: "blue" },
     ],
   },
   {
     label: "Catálogo",
     items: [
-      { to: "/servicos", label: "Serviços", icon: Wrench, costs: true, color: "sky" },
-      { to: "/materiais", label: "Materiais", icon: Package, costs: true, color: "amber" },
+      { to: "/servicos", label: "Serviços", icon: Wrench, costs: true, color: "slate" },
+      { to: "/materiais", label: "Materiais", icon: Package, costs: true, color: "slate" },
       { to: "/etapas", label: "Etapas e categorias", icon: Layers, color: "slate" },
     ],
   },

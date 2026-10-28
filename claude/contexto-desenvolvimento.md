@@ -11,10 +11,10 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 **Decisões:**
 
 - Tokens `--sidebar*` em `src/styles.css`: fundo azul JMG bem claro (claro) e azul escuro (escuro); item ativo em card branco com sombra.
-- Cada módulo tem uma cor de identidade (`color` em `nav-config.ts`): o ícone fica num quadradinho com fundo suave da cor (`NAV_CHIP` em `app-sidebar.tsx`). Essas cores são só do menu; as cores financeiras (verde/vermelho/laranja) continuam com significado nas telas.
+- Menu só em tons de azul (pedido do Guilherme: nada de várias cores misturadas): cada grupo tem um tom (`color` em `nav-config.ts`: azul em Visão geral/Gestão, anil em Comercial, azul-céu em Execução, azul-acinzentado em Catálogo) no quadradinho do ícone (`NAV_CHIP` em `app-sidebar.tsx`); o fundo é um degradê azul suave (`--sidebar` → `--sidebar-end`) e o item ativo é uma pílula azul JMG cheia (mesmo degradê do card de destaque). As cores financeiras (verde/vermelho/laranja) continuam com significado nas telas.
 - Painel: o saldo em caixa ocupa duas colunas e uma linha (antes duas linhas), com valor em 32px; resultado previsto e aditivos ocupam duas colunas cada em tela larga.
 
-**Conferência:** lint, formatação, typecheck e 169 testes passando; navegador em 1440px claro e escuro.
+**Conferência:** lint, formatação, typecheck e 169 testes passando; navegador em 1440px claro e escuro e menu "Mais" em 375px.
 
 ### 2026-10-28 — Cards das obras no Painel (branch `feat/fundacao-tecnica`)
 
