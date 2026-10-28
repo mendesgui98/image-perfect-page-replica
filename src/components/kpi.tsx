@@ -155,7 +155,7 @@ export function KpiCard({
         className={cn(
           "block font-bold tracking-tight",
           hero
-            ? "text-[28px] leading-tight sm:text-4xl xl:text-[44px]"
+            ? "text-[28px] leading-tight sm:text-[32px]"
             : cn("text-base leading-snug @[10rem]:text-lg @[14rem]:text-2xl", textTone[tone]),
         )}
       >

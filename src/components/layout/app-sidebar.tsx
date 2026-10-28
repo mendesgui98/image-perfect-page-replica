@@ -4,8 +4,22 @@ import { useMe } from "@/hooks/use-me";
 import { isMac, openSearch } from "@/lib/command-palette";
 import { cn } from "@/lib/utils";
 import { Brand } from "./brand";
-import { SETTINGS_ITEM, isActive, visibleGroups, type NavItem } from "./nav-config";
+import { SETTINGS_ITEM, isActive, visibleGroups, type NavColor, type NavItem } from "./nav-config";
 import { UserMenu } from "./user-menu";
+
+/** Ícone de cada módulo num quadradinho com a sua cor (fundo suave, ícone forte). */
+const NAV_CHIP: Record<NavColor, string> = {
+  blue: "bg-blue-500/12 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300",
+  indigo: "bg-indigo-500/12 text-indigo-600 dark:bg-indigo-400/15 dark:text-indigo-300",
+  violet: "bg-violet-500/12 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300",
+  orange: "bg-orange-500/12 text-orange-600 dark:bg-orange-400/15 dark:text-orange-300",
+  teal: "bg-teal-500/12 text-teal-600 dark:bg-teal-400/15 dark:text-teal-300",
+  emerald: "bg-emerald-500/12 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300",
+  pink: "bg-pink-500/12 text-pink-600 dark:bg-pink-400/15 dark:text-pink-300",
+  sky: "bg-sky-500/12 text-sky-600 dark:bg-sky-400/15 dark:text-sky-300",
+  amber: "bg-amber-500/15 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
+  slate: "bg-slate-500/12 text-slate-600 dark:bg-slate-400/15 dark:text-slate-300",
+};
 
 export function NavLink({
   item,
@@ -22,20 +36,20 @@ export function NavLink({
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+        "group flex h-10 items-center gap-3 rounded-xl px-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         active
-          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-          : "text-sidebar-foreground hover:bg-muted hover:text-foreground",
+          ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground shadow-sm"
+          : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
       )}
     >
-      <item.icon
+      <span
         className={cn(
-          "h-4 w-4 shrink-0",
-          active
-            ? "text-sidebar-accent-foreground"
-            : "text-muted-foreground group-hover:text-foreground",
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105",
+          NAV_CHIP[item.color ?? "slate"],
         )}
-      />
+      >
+        <item.icon className="h-4 w-4" />
+      </span>
       {item.label}
     </Link>
   );
@@ -48,10 +62,10 @@ export function NavGroups({ onNavigate }: { onNavigate?: (() => void) | undefine
     <nav className="space-y-5" aria-label="Navegação principal">
       {visibleGroups(!!me?.canSeeCosts).map((g) => (
         <div key={g.label}>
-          <p className="mb-1 px-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">
+          <p className="mb-1.5 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/60">
             {g.label}
           </p>
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {g.items.map((item) => (
               <NavLink key={item.to} item={item} onNavigate={onNavigate} />
             ))}
@@ -68,7 +82,7 @@ export function SearchButton({ className }: { className?: string }) {
       type="button"
       onClick={openSearch}
       className={cn(
-        "flex h-9 w-full items-center gap-2 rounded-md border bg-background px-2.5 text-sm text-muted-foreground shadow-xs transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring outline-none",
+        "flex h-10 w-full items-center gap-2 rounded-xl border border-sidebar-border bg-card px-3 text-sm text-muted-foreground shadow-xs transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring outline-none",
         className,
       )}
     >

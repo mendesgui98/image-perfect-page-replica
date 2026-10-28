@@ -19,38 +19,45 @@ export type NavItem = {
   icon: LucideIcon;
   /** Só administrador e financeiro (custos e preços). */
   costs?: boolean;
+  /** Cor de identidade do módulo no menu (só aparência). */
+  color?: NavColor;
 };
+export type NavColor =
+  "blue" | "indigo" | "violet" | "orange" | "teal" | "emerald" | "pink" | "sky" | "amber" | "slate";
 export type NavGroup = { label: string; items: NavItem[] };
 
 export const NAV_GROUPS: NavGroup[] = [
-  { label: "Visão geral", items: [{ to: "/painel", label: "Painel", icon: LayoutDashboard }] },
+  {
+    label: "Visão geral",
+    items: [{ to: "/painel", label: "Painel", icon: LayoutDashboard, color: "blue" }],
+  },
   {
     label: "Comercial",
     items: [
-      { to: "/orcamentos", label: "Orçamentos", icon: FileText, costs: true },
-      { to: "/contratos", label: "Contratos", icon: FileSignature, costs: true },
+      { to: "/orcamentos", label: "Orçamentos", icon: FileText, costs: true, color: "indigo" },
+      { to: "/contratos", label: "Contratos", icon: FileSignature, costs: true, color: "violet" },
     ],
   },
   {
     label: "Execução",
     items: [
-      { to: "/obras", label: "Obras", icon: HardHat },
-      { to: "/cronogramas", label: "Cronogramas", icon: CalendarDays },
+      { to: "/obras", label: "Obras", icon: HardHat, color: "orange" },
+      { to: "/cronogramas", label: "Cronogramas", icon: CalendarDays, color: "teal" },
     ],
   },
   {
     label: "Gestão",
     items: [
-      { to: "/financeiro", label: "Financeiro", icon: Wallet, costs: true },
-      { to: "/cadastros", label: "Cadastros", icon: Users },
+      { to: "/financeiro", label: "Financeiro", icon: Wallet, costs: true, color: "emerald" },
+      { to: "/cadastros", label: "Cadastros", icon: Users, color: "pink" },
     ],
   },
   {
     label: "Catálogo",
     items: [
-      { to: "/servicos", label: "Serviços", icon: Wrench, costs: true },
-      { to: "/materiais", label: "Materiais", icon: Package, costs: true },
-      { to: "/etapas", label: "Etapas e categorias", icon: Layers },
+      { to: "/servicos", label: "Serviços", icon: Wrench, costs: true, color: "sky" },
+      { to: "/materiais", label: "Materiais", icon: Package, costs: true, color: "amber" },
+      { to: "/etapas", label: "Etapas e categorias", icon: Layers, color: "slate" },
     ],
   },
 ];
@@ -59,6 +66,7 @@ export const SETTINGS_ITEM: NavItem = {
   to: "/configuracoes",
   label: "Configurações",
   icon: Settings,
+  color: "slate",
 };
 
 export const ROLE_LABEL: Record<string, string> = {

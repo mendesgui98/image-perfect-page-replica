@@ -47,7 +47,7 @@ const indicators: {
     label: "Saldo em caixa",
     icon: Wallet,
     tone: "brand",
-    span: "col-span-2 xl:row-span-2",
+    span: "col-span-2",
   },
   { id: "received", label: "Entradas recebidas", icon: ArrowUp, tone: "positive" },
   { id: "spent", label: "Saídas pagas", icon: ArrowDown, tone: "negative" },
@@ -55,8 +55,20 @@ const indicators: {
   { id: "payable", label: "Contas a pagar", icon: Receipt, tone: "negative", filled: true },
   { id: "active", label: "Obras ativas", icon: HardHat, tone: "neutral" },
   { id: "value", label: "Valor em obras ativas", icon: Building2, tone: "neutral" },
-  { id: "result", label: "Resultado previsto das obras", icon: TrendingUp, tone: "brand" },
-  { id: "extras", label: "Aditivos aprovados", icon: FilePlus2, tone: "extra" },
+  {
+    id: "result",
+    label: "Resultado previsto das obras",
+    icon: TrendingUp,
+    tone: "brand",
+    span: "xl:col-span-2",
+  },
+  {
+    id: "extras",
+    label: "Aditivos aprovados",
+    icon: FilePlus2,
+    tone: "extra",
+    span: "xl:col-span-2",
+  },
 ];
 export function ManagementFilters({
   works,
@@ -347,7 +359,7 @@ export function ExecutivePanel() {
               tone={tone}
               filled={!!filled}
               hero={id === "cash"}
-              className={cn(span, id === "cash" && "xl:[&>button]:justify-between")}
+              className={span}
               value={
                 value === null ? (
                   <span className="text-base font-semibold text-muted-foreground">
