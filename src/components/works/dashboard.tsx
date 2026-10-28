@@ -16,7 +16,8 @@ import {
 import { dashboardOptions } from "@/lib/dashboard-data";
 import type { DashboardSearch } from "@/lib/dashboard-search";
 import { periodRange, periodCash, monthlyCash, entryState, inPeriod } from "@/lib/dashboard-math";
-import { fmtBRL, fmtNum, fmtDate } from "@/lib/format";
+import { fmtNum, fmtDate } from "@/lib/format";
+import { useBRL, useValuesHidden } from "@/lib/hidden-values";
 import { accountBalances } from "@/lib/operations";
 import { Metrics } from "./summary";
 import { selectClass } from "./fields";
@@ -46,6 +47,8 @@ function Graph({
   keys: { key: keyof typeof chartColors; name: string }[];
   line?: boolean;
 }) {
+  const brl = useBRL();
+  const hidden = useValuesHidden();
   return (
     <section className={cn(panelClass, "min-w-0 p-4 sm:p-5")}>
       <h3 className="mb-4 text-base font-semibold">{title}</h3>
@@ -56,9 +59,12 @@ function Graph({
               <LineChart data={rows}>
                 <CartesianGrid stroke="var(--border)" vertical={false} />
                 <XAxis dataKey={x} fontSize={10} />
-                <YAxis fontSize={10} tickFormatter={(v) => `${Math.round(Number(v) / 1000)} mil`} />
+                <YAxis
+                  fontSize={10}
+                  tickFormatter={(v) => (hidden ? "" : `${Math.round(Number(v) / 1000)} mil`)}
+                />
                 <Tooltip
-                  formatter={(v) => fmtBRL(Number(v))}
+                  formatter={(v) => brl(Number(v))}
                   contentStyle={{ background: "var(--card)", borderColor: "var(--border)" }}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -77,9 +83,12 @@ function Graph({
               <BarChart data={rows}>
                 <CartesianGrid stroke="var(--border)" vertical={false} />
                 <XAxis dataKey={x} fontSize={10} />
-                <YAxis fontSize={10} tickFormatter={(v) => `${Math.round(Number(v) / 1000)} mil`} />
+                <YAxis
+                  fontSize={10}
+                  tickFormatter={(v) => (hidden ? "" : `${Math.round(Number(v) / 1000)} mil`)}
+                />
                 <Tooltip
-                  formatter={(v) => fmtBRL(Number(v))}
+                  formatter={(v) => brl(Number(v))}
                   contentStyle={{ background: "var(--card)", borderColor: "var(--border)" }}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -105,6 +114,7 @@ function Graph({
   );
 }
 export function FinancialDashboard() {
+  const brl = useBRL();
   const { data, error } = useQuery(dashboardOptions);
   const search = useSearch({ strict: false }) as DashboardSearch;
   const navigate = useNavigate();
@@ -538,7 +548,7 @@ export function FinancialDashboard() {
               {s.overdue > 0 && (
                 <p className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-alert">
                   <AlertTriangle className="h-3.5 w-3.5" />
-                  Vencidos {fmtBRL(s.overdue)}
+                  Vencidos {brl(s.overdue)}
                 </p>
               )}
             </article>

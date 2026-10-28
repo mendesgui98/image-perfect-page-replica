@@ -4,6 +4,14 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Olhinho para ocultar valores no Painel e no Financeiro (branch `feat/fundacao-tecnica`)
+
+**Pedido:** o Guilherme quer um ícone de olho no Painel e no Financeiro para esconder os valores (ex.: com alguém olhando a tela) e mostrar de novo.
+
+**Decisões:** `src/lib/hidden-values.ts` guarda a escolha neste aparelho (localStorage, com try/catch) e oferece `useValuesHidden`/`useBRL`; `src/components/hidden-values.tsx` tem `HideValuesScope` (liga a ocultação só no conteúdo do Painel e do Financeiro) e `HideValuesToggle` (olho aberto/fechado no topo das duas telas). `Money` mostra "R$ •••••" quando oculto; os valores escritos com `fmtBRL` no Painel, Fluxo de Caixa, Recebimentos e Análises usam `useBRL` (gráficos escondem eixo e dica). Fora dessas telas, e nos formulários de lançamento, os valores aparecem sempre. Só aparência: nenhum cálculo mudou.
+
+**Conferência:** navegador: ocultar no Painel, Financeiro abre já oculto, mostrar de novo; checagens passando.
+
 ### 2026-10-28 — Menos branco: fundo azulado e faixa de topo nas páginas (branch `feat/fundacao-tecnica`)
 
 **Pedido:** o Guilherme achou o fundo das páginas claro/branco demais e pediu levar a paleta para todo o contexto (Serviços, Orçamentos etc.), não só o menu.

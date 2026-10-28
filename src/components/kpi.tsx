@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { AlertTriangle, ChevronRight } from "lucide-react";
 import { fmtBRL, fmtNum } from "@/lib/format";
+import { useValuesHidden } from "@/lib/hidden-values";
 import { cn } from "@/lib/utils";
 
 /**
@@ -79,9 +80,10 @@ export function Money({
   signed?: "+" | "−" | undefined;
   className?: string | undefined;
 }) {
+  const hidden = useValuesHidden();
   const negative = value < 0;
-  const digits = fmtBRL(Math.abs(value)).replace(/^R\$\s?/, "");
-  const sign = signed ?? (negative ? "−" : "");
+  const digits = hidden ? "•••••" : fmtBRL(Math.abs(value)).replace(/^R\$\s?/, "");
+  const sign = hidden ? "" : (signed ?? (negative ? "−" : ""));
   const color =
     tone === "inherit" ? "" : tone === "auto" ? (negative ? "text-negative" : "") : textTone[tone];
   return (

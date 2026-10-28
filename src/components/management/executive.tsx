@@ -25,7 +25,8 @@ import {
   type ExecutiveFilter,
   type CompositionRow,
 } from "@/lib/executive";
-import { fmtBRL, fmtDate, fmtNum } from "@/lib/format";
+import { fmtDate, fmtNum } from "@/lib/format";
+import { useBRL } from "@/lib/hidden-values";
 import { Button } from "@/components/ui/button";
 import { selectClass } from "@/components/works/fields";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -244,6 +245,7 @@ export function CompositionTable({
   rows: CompositionRow[];
   indicator: Indicator;
 }) {
+  const brl = useBRL();
   return (
     <div className={cn(panelClass, "overflow-x-auto shadow-none")}>
       <table className="w-full text-left text-sm">
@@ -284,8 +286,8 @@ export function CompositionTable({
                 {r.method && <p className="mt-1 text-xs text-muted-foreground">{r.method}</p>}
                 {indicator === "extras" && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Recebido / saldo: {r.paid === null ? "sem vínculo individual" : fmtBRL(r.paid)}
-                    {r.pending != null ? " / " + fmtBRL(r.pending) : ""}
+                    Recebido / saldo: {r.paid === null ? "sem vínculo individual" : brl(r.paid)}
+                    {r.pending != null ? " / " + brl(r.pending) : ""}
                   </p>
                 )}
               </td>
@@ -295,7 +297,7 @@ export function CompositionTable({
                   <span className="block text-muted-foreground">Parcela {r.installment}</span>
                 )}
                 {r.paid != null && (
-                  <span className="block text-muted-foreground">Baixado {fmtBRL(r.paid)}</span>
+                  <span className="block text-muted-foreground">Baixado {brl(r.paid)}</span>
                 )}
               </td>
               <td className="whitespace-nowrap p-3 text-right font-semibold num">
@@ -303,7 +305,7 @@ export function CompositionTable({
                   ? "Não conferido"
                   : indicator === "active"
                     ? fmtNum(r.amount)
-                    : fmtBRL(r.amount)}
+                    : brl(r.amount)}
               </td>
             </tr>
           ))}
@@ -318,6 +320,7 @@ export function CompositionTable({
   );
 }
 export function ExecutivePanel() {
+  const brl = useBRL();
   const { data, error } = useQuery(dashboardOptions);
   const search = useSearch({ strict: false }) as ExecutiveFilter & { detail?: Indicator };
   const navigate = useNavigate();
@@ -440,7 +443,7 @@ export function ExecutivePanel() {
                 ? "Não conferido"
                 : detail?.id === "active"
                   ? fmtNum(total)
-                  : fmtBRL(total)}
+                  : brl(total)}
             </span>
           </div>
           {detail?.id === "result" && (

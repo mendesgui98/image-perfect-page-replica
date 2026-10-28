@@ -26,6 +26,7 @@ import {
   type AccountStatus,
 } from "@/lib/operations";
 import { fmtBRL, fmtDate } from "@/lib/format";
+import { useBRL } from "@/lib/hidden-values";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
 import { Field, selectClass, Attachment } from "./fields";
@@ -67,6 +68,7 @@ const STATUS_VARIANT: Record<AccountStatus, BadgeProps["variant"]> = {
 };
 
 export function Finance({ workId }: { workId?: string }) {
+  const brl = useBRL();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { work?: string; entry?: string };
@@ -514,8 +516,8 @@ export function Finance({ workId }: { workId?: string }) {
       )}
       {opening && (
         <p className="text-xs text-muted-foreground">
-          Posição inicial em {fmtDate(opening.reference_date)}: recebido {fmtBRL(opening.received)},
-          despesas {fmtBRL(opening.paid)}, pendências a pagar {fmtBRL(opening.pending_payable)} (já
+          Posição inicial em {fmtDate(opening.reference_date)}: recebido {brl(opening.received)},
+          despesas {brl(opening.paid)}, pendências a pagar {brl(opening.pending_payable)} (já
           incluídas nos cards).
         </p>
       )}
@@ -832,13 +834,11 @@ export function Finance({ workId }: { workId?: string }) {
                     </p>
                     {st.paid > 0 && (
                       <p className="text-xs text-muted-foreground">
-                        {e.direction === "entrada" ? "Recebido" : "Pago"} {fmtBRL(st.paid)}
+                        {e.direction === "entrada" ? "Recebido" : "Pago"} {brl(st.paid)}
                       </p>
                     )}
                     {st.pending > 0 && st.paid > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Em aberto {fmtBRL(st.pending)}
-                      </p>
+                      <p className="text-xs text-muted-foreground">Em aberto {brl(st.pending)}</p>
                     )}
                   </div>
                   <div className="flex w-full flex-wrap gap-2 pl-12 sm:w-auto sm:pl-0">
@@ -892,7 +892,7 @@ export function Finance({ workId }: { workId?: string }) {
                     className="mt-2 ml-12 flex flex-wrap items-center gap-2 rounded-lg bg-muted/60 px-3 py-1.5 text-xs text-muted-foreground"
                   >
                     {e.direction === "entrada" ? "Recebido" : "Pago"} em {fmtDate(s.paid_date)} ·{" "}
-                    {fmtBRL(s.amount)} · {s.payment_method || "Forma não informada"}
+                    {brl(s.amount)} · {s.payment_method || "Forma não informada"}
                     {s.account_id &&
                       ` · ${data?.accounts.find((a) => a.id === s.account_id)?.name ?? "Conta"}`}
                     <Attachment path={s.file_path} />
@@ -909,8 +909,8 @@ export function Finance({ workId }: { workId?: string }) {
                   .filter((a) => a.entry_id === e.id)
                   .map((a) => (
                     <p key={a.id} className="mt-1 ml-12 text-xs text-muted-foreground">
-                      Rateio: {data.works.find((w) => w.id === a.work_id)?.name} ·{" "}
-                      {fmtBRL(a.amount)} · {a.rule}
+                      Rateio: {data.works.find((w) => w.id === a.work_id)?.name} · {brl(a.amount)} ·{" "}
+                      {a.rule}
                     </p>
                   ))}
               </article>
@@ -1100,10 +1100,11 @@ export function Finance({ workId }: { workId?: string }) {
 }
 
 function OverdueHint({ value }: { value: number }) {
+  const brl = useBRL();
   return value > 0 ? (
     <span className="inline-flex items-center gap-1 font-medium text-alert">
       <AlertTriangle className="h-3.5 w-3.5" />
-      {fmtBRL(value)} vencido
+      {brl(value)} vencido
     </span>
   ) : (
     "Nada vencido"

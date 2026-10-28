@@ -8,6 +8,7 @@ import { FinancialComposition } from "@/components/management/executive";
 import { Segmented } from "@/components/kpi";
 import { segmentClass } from "@/lib/surface";
 import { pageMeta } from "@/lib/page-meta";
+import { HideValuesScope, HideValuesToggle } from "@/components/hidden-values";
 export const Route = createFileRoute("/_authenticated/financeiro")({
   validateSearch: (
     s: Record<string, unknown>,
@@ -27,7 +28,11 @@ function Page() {
   if (!me.canSeeCosts) return <NoAccess />;
   return (
     <div>
-      <PageHeader title="Financeiro" subtitle="Fluxo de caixa, contas a receber e a pagar" />
+      <PageHeader
+        title="Financeiro"
+        subtitle="Fluxo de caixa, contas a receber e a pagar"
+        actions={<HideValuesToggle />}
+      />
       <nav aria-label="Visões do financeiro" className="mb-6">
         <Segmented>
           {[
@@ -48,13 +53,15 @@ function Page() {
           ))}
         </Segmented>
       </nav>
-      {search.view === "analise" ? (
-        <FinancialDashboard />
-      ) : search.view === "composicao" ? (
-        <FinancialComposition />
-      ) : (
-        <Finance />
-      )}
+      <HideValuesScope>
+        {search.view === "analise" ? (
+          <FinancialDashboard />
+        ) : search.view === "composicao" ? (
+          <FinancialComposition />
+        ) : (
+          <Finance />
+        )}
+      </HideValuesScope>
     </div>
   );
 }

@@ -3,7 +3,8 @@ import { ArrowUpRight, HardHat, MapPin, User } from "lucide-react";
 import type { WorkSummary } from "@/lib/dashboard-data";
 import { progressAttention } from "@/lib/work-progress";
 import { WORK_STATUS_VARIANT } from "@/lib/status-badges";
-import { fmtBRL, fmtNum } from "@/lib/format";
+import { fmtNum } from "@/lib/format";
+import { useBRL } from "@/lib/hidden-values";
 import { Badge } from "@/components/ui/badge";
 import { Meter, Money } from "@/components/kpi";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ const STATUS_BAND: Record<string, string> = {
  * dashboard-data; os percentuais vêm de balance.financialProgress e progressAttention.
  */
 export function WorkCard({ s }: { s: WorkSummary }) {
+  const brl = useBRL();
   const unconfirmed = s.work.origin === "direto" && !s.result.estimateConfirmed;
   const { consumed } = progressAttention(
     s.progress,
@@ -98,7 +100,7 @@ export function WorkCard({ s }: { s: WorkSummary }) {
           <Meter size="sm" showValue={false} value={s.balance.financialProgress} tone="positive" />
           <div className="flex justify-between gap-3 text-xs text-muted-foreground">
             <span className="num">{fmtNum(s.balance.financialProgress)}% recebido</span>
-            <span className="num">{fmtBRL(s.balance.receivable)} a receber</span>
+            <span className="num">{brl(s.balance.receivable)} a receber</span>
           </div>
         </div>
 
