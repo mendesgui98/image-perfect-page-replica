@@ -4,6 +4,38 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Precificação pelo custo direto, negociação e orçado × realizado (branch `feat/fundacao-tecnica`)
+
+**Pedido:** documento do Guilherme "Precificação no módulo de Orçamentos": preço formado só pelo custo direto e 4 percentuais (estrutura 12,5%, RT 10% com chave Sim/Não, impostos 8%, margem 15%), preço sugerido na centena, abertura interna, negociação com margem real, alertas, simulador, padrões nas Configurações, PDF com o preço final e orçado × realizado na obra.
+
+**Decisões:**
+
+- `src/lib/pricing.ts` é a função única (usada pela tela, pelo PDF da API via `proposal.ts`/`clientPriceSheet` e pela obra). `computeBudget` escolhe o modelo por `params.model`: sem `model` = cálculo antigo (orçamentos existentes não mudam de valor); `"custo_direto"` = novo. Preço = custo direto ÷ [1 − soma dos %]; preço final = `negotiated_price` ou o calculado; estrutura, RT e impostos são % do preço final e o lucro é a sobra (bate centavo a centavo: 12.000 → 22.018,35; 2.752,29 / 2.201,83 / 1.761,47 / 3.302,76; negociado 20.000 → lucro 1.900, 9,5%). Erro quando os % somam 100%+.
+- Materiais vão ao cliente a custo (sem acréscimo); a mão de obra do PDF é preço final − materiais. Desconto da negociação sai do lucro.
+- `pricing_settings` ganhou `structure_rate` e `tax_rate` (migração `20261028000020_pricing_direct_cost.sql`); RT padrão = `architect_commission`, margem-alvo = `desired_margin`, mínima = `min_margin`. Valores ajustados para 10/15/10. Configurações > Precificação mostra só os 5 percentuais com um exemplo de R$ 12.000; os campos antigos (acréscimos, reserva, tributos por base) saíram da tela.
+- Orçamento novo copia os padrões em `params` (com `model: "custo_direto"`); RT nasce ligada quando há arquiteto.
+- Painel do orçamento (`pricing-panel.tsx`): custo direto por etapa, Formação de preço (4 % + chave de RT, preço calculado, sugerido com "Usar sugerido", abertura), Negociação (preço proposto, desconto R$ e %, lucro, margem inicial → após negociação com selo saudável/atenção/alerta/prejuízo; abaixo da mínima pede "Confirmar mesmo assim"), Simulador 5–20%. Orçamentos antigos mantêm o painel anterior. No editor de itens, acréscimos e desconto por item só aparecem no modelo antigo.
+- Custo estrutural entra no custo econômico da obra (`computeWorkResult`).
+- Obra, Visão Geral: "Orçado × realizado" (`budget-vs-actual.tsx`) com valor contratado, custo direto orçado/realizado, diferença e tabela por etapa (orçado = `stageCosts`, realizado = saídas pagas da etapa, mais linha "Sem etapa vinculada"); helpers `costVariance`/`unassignedStageSpent` em operations.ts.
+
+**Conferência:** testes com todos os exemplos do documento (pricing.test.ts) e do orçado × realizado; lint, typecheck e 194 testes passando. Navegador: orçamento de teste com custo de R$ 12.000 (preço, abertura, negociação a R$ 20.000 com aviso e confirmação, simulador) e a obra de teste; o orçamento de teste foi excluído depois.
+
+**Observação:** esta sessão e a do novo PDF trabalham no mesmo checkout; parte das mudanças de `types.ts` e `configuracoes.tsx` entrou no commit `eb1e942` daquela sessão.
+
+### 2026-10-28 — Cláusulas do contrato configuráveis (branch `feat/fundacao-tecnica`)
+
+**Pedido:** o Guilherme mandou o contrato antigo (`CONTRATO.ELIANA.pdf`) para aproveitar todas as cláusulas e quer poder configurar as cláusulas no sistema. Também relatou que o PDF do orçamento ainda saía no modelo antigo.
+
+**Decisões:**
+
+- PDF do orçamento: o botão "Gerar PDF" e a rota `/orcamentos/$id/pdf` já usavam a API desde o commit `eb1e942`; o teste dele foi antes disso ou numa aba aberta antes. A página ganhou "Abrir em nova aba" para quando o navegador não mostrar o PDF dentro da página.
+- Tabela `contract_clauses` (migração `20261028000021_contract_clauses.sql`) com título, texto, ordem e ativa; RLS: admin edita, admin/financeiro leem. Carregada com as 10 cláusulas do contrato da Eliana (texto jurídico mantido, com os ajustes já combinados em 4.1, 5.3 e 7.2). O número da cláusula é `{{N}}`, então reordenar renumera tudo.
+- `src/lib/contract-clauses.ts` (puro, API e tela): troca marcadores, escapa o texto e recua subitens ("5.1.1." e incisos romanos); `unknownTokens` avisa marcador desconhecido.
+- API: o contrato lê as cláusulas ativas na ordem; sem cláusulas, devolve 422 pedindo para cadastrar.
+- Configurações → aba "Contrato": editar título e texto, ligar/desligar, subir/descer, incluir e remover, com a lista de marcadores. Editar só afeta contratos gerados depois.
+
+**Conferência:** testes do app e da API, lint, formatação e typecheck passando. Contrato gerado com as cláusulas do banco igual ao anterior. Navegador: aba Contrato, reordenar (e voltar), editar e salvar título (conferido no banco e revertido).
+
 ### 2026-10-28 — Modelo oficial de orçamento e contrato em PDF (branch `feat/fundacao-tecnica`)
 
 **Pedido:** integrar o novo modelo oficial de orçamento da JMG Reformas (PDF aprovado `Orcamento-JMG-modelo.pdf`) para todo orçamento gerar esse PDF automaticamente, e gerar o contrato no mesmo visual a partir do orçamento aprovado. O zip com o código do modelo não veio; o Guilherme mandou seguir refazendo a partir do PDF aprovado. Contrato antigo escolhido como base: `CONTRATO.ELIANA.pdf`.
