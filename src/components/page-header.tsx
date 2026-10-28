@@ -4,9 +4,9 @@ import { EmptyState } from "@/components/feedback";
 import { cn } from "@/lib/utils";
 
 /**
- * Faixa de topo no estilo da capa do orçamento: azul da marca → azul-marinho, detalhe dourado e
- * logo como marca d'água. Textos e botões de dentro são ajustados para o fundo escuro: a ação
- * principal fica dourada e as secundárias claras.
+ * Faixa de topo no estilo da capa do orçamento: azul da marca → azul-marinho e detalhe dourado.
+ * Textos e botões de dentro são ajustados para o fundo escuro: a ação principal fica dourada e
+ * as secundárias claras.
  */
 export function PageBand({ children, className }: { children: ReactNode; className?: string }) {
   return (
@@ -18,12 +18,6 @@ export function PageBand({ children, className }: { children: ReactNode; classNa
         "[&_.bg-card]:border-white/25 [&_.bg-card]:bg-white/10 [&_.bg-card]:text-hero-foreground [&_.bg-card]:hover:bg-white/20",
       )}
     >
-      <img
-        src="/jmg-logo-white.png"
-        alt=""
-        aria-hidden
-        className="pointer-events-none absolute right-2 top-1/2 -z-10 h-40 w-40 -translate-y-1/2 select-none object-contain opacity-[0.1] md:right-6 md:h-52 md:w-52"
-      />
       <span
         aria-hidden
         className="absolute left-5 top-0 h-1 w-12 rounded-b-full bg-gold md:left-8"

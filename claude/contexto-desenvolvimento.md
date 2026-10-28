@@ -16,7 +16,7 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 **Pedido:** o Guilherme achou o fundo das páginas claro/branco demais e pediu levar a paleta para todo o contexto (Serviços, Orçamentos etc.), não só o menu.
 
-**Decisões:** tokens claros em `src/styles.css` com o azul da paleta (`--background`, `--muted`, `--secondary`, `--accent`, `--border`, `--input`, `--neutral-soft`, `--primary-soft`, sombra dos cards); cards continuam brancos e se destacam. Novo `PageBand` em `page-header.tsx`: faixa azul → azul-marinho com detalhe dourado e logo em marca d'água, usada por todo `PageHeader` (todas as páginas de lista e a da obra) e pelo cabeçalho do orçamento; dentro dela a ação principal fica dourada, as secundárias claras e textos/links ajustados ao fundo escuro.
+**Decisões:** tokens claros em `src/styles.css` com o azul da paleta (`--background`, `--muted`, `--secondary`, `--accent`, `--border`, `--input`, `--neutral-soft`, `--primary-soft`, sombra dos cards); cards continuam brancos e se destacam. Novo `PageBand` em `page-header.tsx`: faixa azul → azul-marinho com detalhe dourado (a marca d'água da logo foi retirada a pedido do Guilherme), usada por todo `PageHeader` (todas as páginas de lista e a da obra) e pelo cabeçalho do orçamento; dentro dela a ação principal fica dourada, as secundárias claras e textos/links ajustados ao fundo escuro.
 
 **Conferência:** Serviços, orçamento (rascunho de teste criado e excluído), obra e lista de orçamentos no celular; checagens passando.
 

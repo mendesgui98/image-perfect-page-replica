@@ -184,26 +184,15 @@ export function KpiCard({
         : "border border-border/70 bg-card shadow-card",
     className,
   );
-  /** Logo da JMG como marca d'água, como na capa do orçamento. */
-  const watermark = hero && (
-    <img
-      src="/jmg-logo-white.png"
-      alt=""
-      aria-hidden
-      className="pointer-events-none absolute right-2 top-1/2 -z-10 h-36 w-36 -translate-y-1/2 select-none object-contain opacity-[0.1] sm:right-4 sm:h-44 sm:w-44"
-    />
-  );
   if (!onClick)
     return (
       <div className={shell}>
-        {watermark}
         {body}
         {children}
       </div>
     );
   return (
     <div className={cn(shell, "p-0 sm:p-0")}>
-      {watermark}
       <button
         type="button"
         aria-label={ariaLabel}
