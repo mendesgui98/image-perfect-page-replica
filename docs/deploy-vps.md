@@ -120,6 +120,38 @@ Entre em `https://app.jmgreformas.com.br`. Os demais usuários entram por convit
 - **Painel do banco (Studio):** `ssh -i ~/.ssh/jmg-deploy -L 3001:127.0.0.1:3001 deploy@IP_DA_VPS`
   e abra `http://localhost:3001`.
 
+## Levar os dados locais para a produção
+
+Copia tudo da stack local (`bun run stack:up`) para a VPS: dados, usuários (com as mesmas senhas,
+papéis e 2FA) e arquivos. **Substitui** o que houver em produção; um backup é feito antes.
+
+1. No seu computador, com a `main` atualizada e a stack local no ar (aplica as migrações novas):
+
+   ```sh
+   git checkout main && git pull
+   bun run stack:up
+   bash scripts/export-data.sh
+   ```
+
+2. Enviar para a VPS:
+
+   ```sh
+   ssh root@IP_DA_VPS mkdir -p /opt/jmg/import
+   scp jmg-export/* root@IP_DA_VPS:/opt/jmg/import/
+   ```
+
+3. Na VPS, como root (pede para digitar `SUBSTITUIR`):
+
+   ```sh
+   bash /opt/jmg/infra/vps/import-data.sh
+   ```
+
+4. Entre com o e-mail e a senha do sistema local. Depois apague as cópias:
+   `rm -rf /opt/jmg/import` na VPS e `jmg-export/` no computador (têm dados e senhas criptografadas).
+
+O script recusa a importação se o banco local e o de produção estiverem em versões diferentes de
+migração. Se der errado, o backup feito antes fica em `/opt/jmg/backups`.
+
 ## Segurança extra (recomendado, depois que o acesso por chave funcionar)
 
 Desligue login por senha no SSH: na VPS, como root, em `/etc/ssh/sshd_config` deixe
