@@ -19,6 +19,8 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 **Conferência:** lint, typecheck, formatação, 198 testes do app, testes do banco e da API passando; `docker compose --profile prod config` validado com o `.env` gerado pelo próprio passo do workflow (inclusive senha SMTP com `#` e espaço). Não verificado aqui: build das imagens e execução de `deploy.sh`/`backup.sh`/`create-admin.sh` contra a stack, porque o Docker Hub limitou os downloads nesta sandbox. O build das imagens roda no CI do PR.
 
+**Primeiro deploy (correção):** o `migrate` falhou na VPS em `20261016000001` (`storage.objects.owner_id` não existe): esperava só a tabela `storage.objects`, que o Storage cria antes das próprias migrações terminarem. `scripts/migrate.mjs` agora espera `GET auth:9999/health` e `storage:5000/status` (os serviços só respondem depois de migrar). Reproduzido localmente com as imagens do Supabase (falha com o script antigo, 36 migrações aplicadas com o novo); `create-admin.sh` (conta criada, papel admin, login 200) e `backup.sh` testados na mesma stack.
+
 ### 2026-10-28 — Olhinho para ocultar valores no Painel e no Financeiro (branch `feat/fundacao-tecnica`)
 
 **Pedido:** o Guilherme quer um ícone de olho no Painel e no Financeiro para esconder os valores (ex.: com alguém olhando a tela) e mostrar de novo.

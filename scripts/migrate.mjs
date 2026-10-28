@@ -31,11 +31,29 @@ async function waitFor(check, label) {
   throw new Error(`Tempo esgotado aguardando ${label}`);
 }
 
+async function waitForHttp(target, label) {
+  for (let i = 0; i < 90; i++) {
+    try {
+      const res = await fetch(target, { signal: AbortSignal.timeout(3000) });
+      if (res.ok) return;
+    } catch {
+      // serviço ainda subindo
+    }
+    if (i % 10 === 0) console.log(`aguardando ${label}...`);
+    await sleep(2000);
+  }
+  throw new Error(`Tempo esgotado aguardando ${label} (${target})`);
+}
+
 let current = "";
 try {
   await waitFor("select true as ok", "banco");
   if (process.env.WAIT_FOR_SERVICES === "1") {
-    // auth.users é criada pelo serviço de Auth e storage.objects pelo Storage.
+    // Auth e Storage criam os schemas auth/storage com migrações próprias e só respondem
+    // depois de terminá-las. Esperar só a tabela existir não basta: storage.objects nasce
+    // antes de colunas como owner_id, usadas pelas nossas políticas.
+    await waitForHttp(`${process.env.AUTH_URL ?? "http://auth:9999"}/health`, "Auth");
+    await waitForHttp(`${process.env.STORAGE_URL ?? "http://storage:5000"}/status`, "Storage");
     await waitFor("select to_regclass('auth.users') is not null as ok", "schema auth");
     await waitFor("select to_regclass('storage.objects') is not null as ok", "schema storage");
   }
