@@ -238,12 +238,12 @@ export function Schedule({
           </Button>
         </div>
       </div>
-      <div className="divide-y">
+      <div className="space-y-3">
         {stages.map((s) => (
           <article
             key={s.id}
             id={`record-${s.id}`}
-            className={`scroll-mt-6 py-4 ${selected === s.id ? "border-l-4 border-primary bg-accent/40 pl-3" : ""}`}
+            className={`scroll-mt-6 rounded-lg border bg-card p-4 ${selected === s.id ? "border-primary bg-accent/40" : ""}`}
           >
             <div className="flex flex-wrap items-start gap-3">
               <div className="min-w-0 flex-1">
@@ -346,9 +346,10 @@ export function Schedule({
                 </>
               )}
             </div>
-            <progress max="100" value={s.progress} className="mt-3 h-2 w-full accent-primary" />
-            {mode === "etapas" && me?.canSeeCosts && (
+            {mode === "etapas" && me?.canSeeCosts ? (
               <StageServicesPanel workId={workId} stage={s} onChange={refresh} />
+            ) : (
+              <progress max="100" value={s.progress} className="mt-3 h-2 w-full accent-primary" />
             )}
             {s.scope_services && (
               <p className="mt-2 whitespace-pre-wrap text-xs text-muted-foreground">

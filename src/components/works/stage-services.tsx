@@ -94,51 +94,42 @@ export function StageServicesPanel({
     }
   }
 
-  const usedPct = costs.planned > 0 ? Math.min(100, (costs.spent / costs.planned) * 100) : 0;
+  const usedPct = costs.planned > 0 ? (costs.spent / costs.planned) * 100 : 0;
   return (
-    <div className="mt-3 rounded-md border bg-muted/30 p-3 text-sm">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="mt-4 border-t pt-4 text-sm">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
         <div>
-          <p className="text-xs text-muted-foreground">Previsto</p>
-          <p className="font-semibold num">{fmtBRL(costs.planned)}</p>
-          <p className="text-xs text-muted-foreground">
+          <dt className="text-xs text-muted-foreground">Valor previsto</dt>
+          <dd className="font-semibold num">{fmtBRL(costs.planned)}</dd>
+          <dd className="text-xs text-muted-foreground">
             MO {fmtBRL(costs.laborPlanned)} · Mat. {fmtBRL(costs.materialPlanned)}
-          </p>
+          </dd>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Gasto real (pago)</p>
-          <p className="font-semibold num">{fmtBRL(costs.spent)}</p>
-          <p className="text-xs text-muted-foreground">
-            MO {fmtBRL(costs.laborSpent)} · Mat. {fmtBRL(costs.materialSpent)}
+          <dt className="text-xs text-muted-foreground">Já pago</dt>
+          <dd className="font-semibold num">{fmtBRL(costs.spent)}</dd>
+          <dd className="text-xs text-muted-foreground">
+            {costs.planned > 0
+              ? `${fmtNum(usedPct, 0)}% do previsto`
+              : `MO ${fmtBRL(costs.laborSpent)} · Mat. ${fmtBRL(costs.materialSpent)}`}
             {costs.otherSpent > 0 && ` · Outros ${fmtBRL(costs.otherSpent)}`}
-          </p>
+          </dd>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Saldo da etapa</p>
-          <p className={`font-semibold num ${costs.balance < 0 ? "text-destructive" : ""}`}>
+          <dt className="text-xs text-muted-foreground">Restante a pagar</dt>
+          <dd className={`font-semibold num ${costs.balance < 0 ? "text-destructive" : ""}`}>
             {fmtBRL(costs.balance)}
-          </p>
-          <p className="text-xs text-muted-foreground">Previsto − gasto</p>
+          </dd>
+          <dd className="text-xs text-muted-foreground">
+            {costs.balance < 0 ? "Acima do previsto" : "Previsto − já pago"}
+          </dd>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">A pagar (comprometido)</p>
-          <p className="font-semibold num">{fmtBRL(costs.committed)}</p>
-          <p className="text-xs text-muted-foreground">Contas da etapa em aberto</p>
+          <dt className="text-xs text-muted-foreground">Contas em aberto</dt>
+          <dd className="font-semibold num">{fmtBRL(costs.committed)}</dd>
+          <dd className="text-xs text-muted-foreground">Lançadas, ainda não pagas</dd>
         </div>
-      </div>
-      {costs.planned > 0 && (
-        <div className="mt-2">
-          <div className="h-1.5 w-full overflow-hidden rounded bg-muted">
-            <div
-              className={`h-full ${costs.balance < 0 ? "bg-destructive" : "bg-primary"}`}
-              style={{ width: `${usedPct}%` }}
-            />
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {fmtNum(usedPct, 0)}% do previsto já gasto
-          </p>
-        </div>
-      )}
+      </dl>
 
       <button
         type="button"

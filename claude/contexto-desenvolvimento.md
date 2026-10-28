@@ -4,6 +4,14 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-27 — Etapas da obra num card só (branch `feat/fundacao-tecnica`)
+
+**Pedido do Guilherme:** os valores ficavam num quadro separado embaixo da etapa, com uma barra de avanço no meio; juntar tudo e tirar a barra.
+
+- `schedule.tsx`: cada etapa virou um card (borda, fundo `bg-card`, espaço entre cards). A barra de avanço só aparece quando o quadro de valores não aparece (cronograma ou usuário sem acesso a custos).
+- `stage-services.tsx`: valores dentro do card, separados por uma linha: "Valor previsto", "Já pago" (com % do previsto), "Restante a pagar" (previsto − pago, em vermelho quando estoura) e "Contas em aberto". Barra de gasto removida; cálculos continuam em `stageCosts`.
+- Conferido no navegador com um serviço de teste (apagado depois): R$ 1.500 MO + R$ 800 material → previsto e restante R$ 2.300.
+
 ### 2026-10-28 — Serviços, avanço e valores por etapa da obra (branch `feat/fundacao-tecnica`)
 
 **Decisões do Guilherme:** gasto real vem do financeiro (saídas com etapa); avanço da etapa ponderado pelo valor dos serviços.
