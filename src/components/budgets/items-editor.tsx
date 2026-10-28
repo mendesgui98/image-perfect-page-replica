@@ -2,7 +2,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { activeServicesOptions, budgetApi, stagesOptions } from "@/lib/budget-api";
+import {
+  activeMaterialsOptions,
+  activeServicesOptions,
+  budgetApi,
+  stagesOptions,
+} from "@/lib/budget-api";
+import {
+  customItemFields,
+  emptyCustomItem,
+  snapshotMaterial,
+  type CustomItemDraft,
+} from "@/lib/item-materials";
 import { Button } from "@/components/ui/button";
 import { SubmitForm } from "@/components/enter-submit";
 import { commitOnEnter } from "@/lib/enter-submit";
@@ -18,6 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { type Item, type Section } from "@/lib/budget-data";
+import type { Database } from "@/integrations/supabase/types";
 import {
   materialPackages,
   materialQty,
@@ -27,6 +39,8 @@ import {
 } from "@/lib/pricing";
 import { fmtBRL, fmtNum, UNIT_LABEL } from "@/lib/format";
 import { selectClass } from "@/components/works/fields";
+
+type CatalogMaterial = Database["public"]["Tables"]["materials"]["Row"];
 
 export function ItemsEditor({
   budgetId,
@@ -47,9 +61,11 @@ export function ItemsEditor({
 }) {
   const { data: stages = [] } = useQuery(stagesOptions);
   const { data: services = [] } = useQuery(activeServicesOptions);
+  const { data: catalog = [] } = useQuery(activeMaterialsOptions);
   const [stageId, setStageId] = useState("");
   const [picker, setPicker] = useState<Section | null>(null);
   const [svcId, setSvcId] = useState("");
+  const [custom, setCustom] = useState<CustomItemDraft>(emptyCustomItem);
   const [adding, setAdding] = useState(false);
 
   const run = async (p: Promise<unknown>) => {
@@ -76,37 +92,42 @@ export function ItemsEditor({
 
   async function addItem(section: Section, serviceId: string) {
     const svc = services.find((s) => s.id === serviceId);
-    const materials: ItemMaterial[] =
-      svc?.service_materials.map((c) => ({
-        material_id: c.material_id,
-        name: c.materials?.name ?? "",
-        consumption_unit: c.materials?.consumption_unit ?? "",
-        purchase_unit: c.materials?.purchase_unit ?? "",
-        conversion: c.materials?.conversion ?? 1,
-        package_yield: c.materials?.rendimento_embalagem ?? null,
-        yield_unit: c.materials?.unidade_rendimento ?? null,
-        consumption: c.consumption,
-        loss_pct: c.loss_pct,
-        price: c.materials?.price ?? 0,
-        supplied_by: "jmg",
-      })) ?? [];
+    const sort = items.filter((i) => i.section_id === section.id).length + 1;
+    let fields;
+    if (svc) {
+      fields = {
+        service_id: svc.id,
+        description: svc.description,
+        unit: svc.unit,
+        quantity: 1,
+        labor_cost_unit: svc.labor_cost,
+        materials: svc.service_materials.flatMap((c) =>
+          c.materials ? [snapshotMaterial(c.materials, c.consumption, c.loss_pct)] : [],
+        ),
+      };
+    } else {
+      // Serviço avulso: vale só para este orçamento, não entra no catálogo.
+      try {
+        fields = customItemFields(custom, catalog);
+      } catch (error) {
+        toast.error((error as Error).message);
+        return;
+      }
+    }
     setAdding(true);
     await run(
       budgetApi.addItem({
         budget_id: budgetId,
         section_id: section.id,
-        service_id: svc?.id ?? null,
-        description: svc?.description ?? "Novo serviço",
-        unit: svc?.unit ?? "un",
-        quantity: 1,
-        labor_cost_unit: svc?.labor_cost ?? 0,
-        materials: materials as never,
-        sort: items.filter((i) => i.section_id === section.id).length + 1,
+        ...fields,
+        materials: fields.materials as never,
+        sort,
       }),
     );
     setAdding(false);
     setPicker(null);
     setSvcId("");
+    setCustom(emptyCustomItem());
   }
 
   return (
@@ -125,6 +146,7 @@ export function ItemsEditor({
           result={result}
           params={params}
           locked={locked}
+          catalog={catalog}
           run={run}
           onAdd={() => setPicker(s)}
         />
@@ -152,7 +174,7 @@ export function ItemsEditor({
       )}
 
       <Dialog open={!!picker} onOpenChange={(o) => !o && setPicker(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <SubmitForm onSubmit={() => picker && addItem(picker, svcId)} pending={adding}>
             <DialogHeader>
               <DialogTitle>Adicionar serviço</DialogTitle>
@@ -162,7 +184,7 @@ export function ItemsEditor({
               value={svcId}
               onChange={(e) => setSvcId(e.target.value)}
             >
-              <option value="">Item manual (sem catálogo)</option>
+              <option value="">Serviço avulso (só neste orçamento)</option>
               {services
                 .filter((s) => !picker?.stage_id || s.stage_id === picker.stage_id)
                 .map((s) => (
@@ -171,9 +193,11 @@ export function ItemsEditor({
                   </option>
                 ))}
             </select>
+            {!svcId && <CustomItemFields draft={custom} setDraft={setCustom} catalog={catalog} />}
             <p className="text-xs text-muted-foreground">
-              Os custos e a composição são copiados para o orçamento. Mudanças futuras no catálogo
-              não alteram este item.
+              {svcId
+                ? "Os custos e a composição são copiados para o orçamento. Mudanças futuras no catálogo não alteram este item."
+                : "O serviço avulso fica só neste orçamento e não é cadastrado na tela de Serviços. Os materiais vêm do catálogo."}
             </p>
             <DialogFooter>
               <Button type="submit" disabled={adding}>
@@ -194,6 +218,7 @@ function SectionCard({
   result,
   params,
   locked,
+  catalog,
   run,
   onAdd,
 }: {
@@ -203,6 +228,7 @@ function SectionCard({
   result: BudgetResult;
   params: PricingParams;
   locked: boolean;
+  catalog: CatalogMaterial[];
   run: (p: Promise<unknown>) => Promise<void>;
   onAdd: () => void;
 }) {
@@ -261,6 +287,7 @@ function SectionCard({
             r={result.items.find((x) => x.id === it.id)}
             params={params}
             locked={locked}
+            catalog={catalog}
             run={run}
           />
         ))}
@@ -299,15 +326,18 @@ function ItemRow({
   r,
   params,
   locked,
+  catalog,
   run,
 }: {
   item: Item;
   r?: BudgetResult["items"][number] | undefined;
   params: PricingParams;
   locked: boolean;
+  catalog: CatalogMaterial[];
   run: (p: Promise<unknown>) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
+  const [newMaterial, setNewMaterial] = useState("");
   const upd = (p: Record<string, unknown>) => run(budgetApi.updateItem(item.id, p));
   const num = (v: string) => (v === "" ? null : Number(v));
   const setMat = (i: number, p: Partial<ItemMaterial>) =>
@@ -503,8 +533,49 @@ function ItemRow({
                   <option value="cliente">Cliente</option>
                 </select>
               </div>
+              {!locked && (
+                <button
+                  type="button"
+                  className="col-span-12 justify-self-end text-xs text-destructive hover:underline"
+                  onClick={() => upd({ materials: item.materials.filter((_, j) => j !== i) })}
+                >
+                  Remover material
+                </button>
+              )}
             </div>
           ))}
+          {!locked && (
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                className={`${selectClass} max-w-sm`}
+                aria-label="Material do catálogo"
+                value={newMaterial}
+                onChange={(e) => setNewMaterial(e.target.value)}
+              >
+                <option value="">Escolha um material do catálogo</option>
+                {catalog.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                    {m.purchase_unit ? ` (${m.purchase_unit})` : ""}
+                  </option>
+                ))}
+              </select>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={!newMaterial}
+                onClick={() => {
+                  const m = catalog.find((x) => x.id === newMaterial);
+                  if (!m) return;
+                  setNewMaterial("");
+                  upd({ materials: [...item.materials, snapshotMaterial(m)] });
+                }}
+              >
+                <Plus className="h-4 w-4" /> Material
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -536,5 +607,148 @@ function MaterialConsumption({
         (embalagem de {fmtNum(m.package_yield)} {m.yield_unit || m.consumption_unit})
       </span>
     </>
+  );
+}
+
+function CustomItemFields({
+  draft,
+  setDraft,
+  catalog,
+}: {
+  draft: CustomItemDraft;
+  setDraft: (d: CustomItemDraft) => void;
+  catalog: CatalogMaterial[];
+}) {
+  const setRow = (i: number, p: Partial<CustomItemDraft["materials"][number]>) =>
+    setDraft({
+      ...draft,
+      materials: draft.materials.map((row, j) => (j === i ? { ...row, ...p } : row)),
+    });
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-4">
+        <div className="space-y-1 sm:col-span-4">
+          <Label>Descrição do serviço</Label>
+          <Input
+            autoFocus
+            placeholder="ex.: Instalação de prateleira de vidro"
+            value={draft.description}
+            onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label>Unidade</Label>
+          <select
+            className={selectClass}
+            value={draft.unit}
+            onChange={(e) =>
+              setDraft({ ...draft, unit: e.target.value as CustomItemDraft["unit"] })
+            }
+          >
+            {Object.entries(UNIT_LABEL).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label>Quantidade</Label>
+          <Input
+            type="number"
+            step="any"
+            min="0"
+            value={draft.quantity}
+            onChange={(e) => setDraft({ ...draft, quantity: e.target.value })}
+          />
+        </div>
+        <div className="space-y-1 sm:col-span-2">
+          <Label>Custo MO / unidade (R$)</Label>
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={draft.labor_cost_unit}
+            onChange={(e) => setDraft({ ...draft, labor_cost_unit: e.target.value })}
+          />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label>Materiais por unidade do serviço</Label>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              setDraft({
+                ...draft,
+                materials: [...draft.materials, { material_id: "", consumption: 1, loss_pct: 0 }],
+              })
+            }
+          >
+            <Plus className="h-4 w-4" /> Material
+          </Button>
+        </div>
+        {draft.materials.length === 0 && (
+          <p className="text-xs text-muted-foreground">Sem materiais.</p>
+        )}
+        {draft.materials.map((row, i) => {
+          const m = catalog.find((x) => x.id === row.material_id);
+          return (
+            <div key={i} className="grid grid-cols-12 items-end gap-2">
+              <div className="col-span-12 sm:col-span-6">
+                <select
+                  className={selectClass}
+                  aria-label="Material"
+                  value={row.material_id}
+                  onChange={(e) => setRow(i, { material_id: e.target.value })}
+                >
+                  <option value="">Selecione</option>
+                  {catalog.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.name}
+                      {x.purchase_unit ? ` (${x.purchase_unit})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-5 sm:col-span-3">
+                <Label className="text-xs">
+                  Consumo {m?.consumption_unit ? `(${m.consumption_unit})` : ""}
+                </Label>
+                <Input
+                  type="number"
+                  step="any"
+                  value={row.consumption}
+                  onChange={(e) => setRow(i, { consumption: e.target.value })}
+                />
+              </div>
+              <div className="col-span-5 sm:col-span-2">
+                <Label className="text-xs">Perda %</Label>
+                <Input
+                  type="number"
+                  step="any"
+                  value={row.loss_pct}
+                  onChange={(e) => setRow(i, { loss_pct: e.target.value })}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="col-span-2 sm:col-span-1"
+                aria-label="Remover material"
+                onClick={() =>
+                  setDraft({ ...draft, materials: draft.materials.filter((_, j) => j !== i) })
+                }
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

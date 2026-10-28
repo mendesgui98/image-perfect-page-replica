@@ -35,6 +35,12 @@ export const activeServicesOptions = {
     )) ?? [],
 };
 
+export const activeMaterialsOptions = {
+  queryKey: ["materials", "active"],
+  queryFn: async () =>
+    (await check(supabase.from("materials").select("*").eq("active", true).order("name"))) ?? [],
+};
+
 export const budgetApi = {
   update: (id: string, patch: BudgetUpdate | Record<string, unknown>) =>
     check(

@@ -4,6 +4,18 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-27 — Serviço avulso no orçamento (branch `feat/fundacao-tecnica`)
+
+**Problema:** serviços usados só numa obra precisavam ser cadastrados no catálogo; o "Item manual" criava um item vazio e não havia como colocar materiais do catálogo em um item.
+
+**Decisões:**
+
+- "Serviço avulso (só neste orçamento)" no diálogo Adicionar serviço: descrição, unidade, quantidade, custo MO/un e materiais do catálogo (consumo e perda). Vira um `budget_items` com `service_id` nulo; nada entra na tela de Serviços. Sem migração.
+- Materiais são snapshots do catálogo via `snapshotMaterial` (`src/lib/item-materials.ts`), o mesmo helper usado ao adicionar serviço do catálogo, com rendimento de embalagem incluído. O cálculo continua em `computeBudget`.
+- Qualquer item do orçamento (avulso ou do catálogo) ganhou "+ Material" do catálogo e "Remover material".
+
+**Onde está:** `src/lib/item-materials.ts` (+ `.test.ts`), `src/components/budgets/items-editor.tsx`, `activeMaterialsOptions` em `src/lib/budget-api.ts`. Testado no navegador com orçamento de teste (apagado depois): 30 m² com salva-piso → 2 rolos, custo R$ 800.
+
 ### 2026-10-26 — Enter salva formulários (branch `feat/fundacao-tecnica`)
 
 **Problema:** vários diálogos (material, serviço, cadastros, novo orçamento, configurações) tinham `Input`s soltos e o botão Salvar com `onClick`, sem `<form>`; o Enter não fazia nada.
