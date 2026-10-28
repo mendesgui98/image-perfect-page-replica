@@ -128,7 +128,7 @@ export function KpiCard({
         <span className="flex min-w-0 items-center gap-2.5">
           {Icon &&
             (hero ? (
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold/20 text-gold">
                 <Icon className="h-[18px] w-[18px]" />
               </span>
             ) : (
@@ -176,21 +176,32 @@ export function KpiCard({
   const shell = cn(
     "group @container flex w-full min-w-0 flex-col gap-3 rounded-2xl p-4 text-left sm:p-5",
     hero
-      ? "bg-gradient-to-br from-hero to-hero-end text-hero-foreground shadow-hero"
+      ? "relative isolate overflow-hidden bg-gradient-to-br from-hero to-hero-end text-hero-foreground shadow-hero"
       : filled
         ? cn("border border-transparent", softBg[tone])
         : "border border-border/70 bg-card shadow-card",
     className,
   );
+  /** Logo da JMG como marca d'água, como na capa do orçamento. */
+  const watermark = hero && (
+    <img
+      src="/jmg-logo-white.png"
+      alt=""
+      aria-hidden
+      className="pointer-events-none absolute -right-8 -bottom-12 -z-10 h-44 w-44 select-none object-contain opacity-[0.08]"
+    />
+  );
   if (!onClick)
     return (
       <div className={shell}>
+        {watermark}
         {body}
         {children}
       </div>
     );
   return (
     <div className={cn(shell, "p-0 sm:p-0")}>
+      {watermark}
       <button
         type="button"
         aria-label={ariaLabel}

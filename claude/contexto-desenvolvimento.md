@@ -4,6 +4,19 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Paleta do modelo de orçamento em toda a plataforma (branch `feat/fundacao-tecnica`)
+
+**Pedido:** o Guilherme quer a plataforma inteira com a mesma paleta do novo modelo de orçamento (azul da marca #004AAD, azul-marinho #112440, dourado #E8A33D), sem mexer no verde/vermelho de entradas e saídas.
+
+**Decisões:**
+
+- `src/styles.css`: `--primary`, `--ring`, `--chart-*`, menu (`--sidebar*`, textos em azul-marinho) e o card de destaque (`--hero` #004AAD → `--hero-end` #112440, como a capa) na paleta; tema escuro com fundo e cards levemente azul-marinho. Novo token `--gold`/`--gold-soft` só para detalhes.
+- Alerta (`--alert`) virou o dourado/âmbar da paleta; aditivos (`--extra`) saíram do violeta para o azul-marinho. `--positive`/`--negative` (entradas/saídas) não mudaram.
+- Menu: item ativo em pílula azul → azul-marinho com ícone e marcador dourados; grupos Comercial em azul-marinho (`navy`), demais tons de azul mantidos.
+- Card de destaque (`KpiCard hero`) com ícone dourado e a logo branca da JMG como marca d'água, como a capa estilo "B".
+
+**Conferência:** lint, formatação e 173 testes passando; navegador em 1440px claro/escuro e 375px claro. O typecheck acusou só `src/lib/work-budget.ts` por causa dos campos novos que a sessão do modelo de orçamento está adicionando em paralelo (não é desta mudança).
+
 ### 2026-10-28 — Checklist de conferência por etapa da obra (branch `feat/fundacao-tecnica`)
 
 **Pedido:** o Guilherme quer, dentro da obra, um checklist por etapa com os serviços listados na etapa, para conferir em obra marcando cada item, e um PDF de cada etapa junto com o cronograma.

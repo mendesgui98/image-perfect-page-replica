@@ -77,6 +77,8 @@
   --color-extra: var(--extra);
   --color-extra-soft: var(--extra-soft);
   --color-primary-soft: var(--primary-soft);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
   --color-hero: var(--hero);
   --color-hero-end: var(--hero-end);
   --color-hero-foreground: var(--hero-foreground);
@@ -89,7 +91,7 @@
 }
 
 :root {
-  /* Clean corporativo: superfícies neutras, azul JMG (#0049ad) só em ações e destaques. */
+  /* Clean corporativo: superfícies neutras, azul JMG (#004AAD), azul-marinho (#112440) e dourado (#E8A33D) da capa do orçamento só em ações e destaques. */
   --radius: 0.75rem;
   --background: oklch(0.977 0.003 250);
   --foreground: oklch(0.21 0.018 262);
@@ -97,15 +99,15 @@
   --card-foreground: oklch(0.21 0.018 262);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.018 262);
-  --primary: oklch(0.47 0.17 258);
+  --primary: oklch(0.443 0.168 259.6);
   --primary-foreground: oklch(0.99 0 0);
-  --primary-glow: oklch(0.58 0.17 256);
+  --primary-glow: oklch(0.53 0.16 258);
   --secondary: oklch(0.967 0.004 250);
   --secondary-foreground: oklch(0.3 0.02 262);
   --muted: oklch(0.967 0.004 250);
   --muted-foreground: oklch(0.52 0.015 260);
-  --accent: oklch(0.955 0.022 255);
-  --accent-foreground: oklch(0.4 0.15 258);
+  --accent: oklch(0.95 0.025 258);
+  --accent-foreground: oklch(0.36 0.13 260);
   --destructive: oklch(0.577 0.215 27);
   --destructive-foreground: oklch(0.99 0 0);
   --success: oklch(0.6 0.13 158);
@@ -114,22 +116,22 @@
   --warning-foreground: oklch(0.33 0.07 60);
   --border: oklch(0.93 0.005 255);
   --input: oklch(0.91 0.006 255);
-  --ring: oklch(0.6 0.15 257);
-  --chart-1: oklch(0.47 0.17 258);
+  --ring: oklch(0.55 0.15 258);
+  --chart-1: oklch(0.443 0.168 259.6);
   --chart-2: oklch(0.6 0.13 158);
-  --chart-3: oklch(0.75 0.15 75);
+  --chart-3: oklch(0.775 0.145 72);
   --chart-4: oklch(0.6 0.2 27);
-  --chart-5: oklch(0.6 0.03 260);
-  /* Menu lateral em azul JMG bem suave. */
-  --sidebar: oklch(0.965 0.018 255);
-  --sidebar-end: oklch(0.925 0.04 256);
-  --sidebar-foreground: oklch(0.38 0.03 262);
-  --sidebar-primary: oklch(0.47 0.17 258);
+  --chart-5: oklch(0.25 0.06 263);
+  /* Menu lateral em azul JMG bem suave, textos em azul-marinho. */
+  --sidebar: oklch(0.968 0.014 258);
+  --sidebar-end: oklch(0.93 0.03 260);
+  --sidebar-foreground: oklch(0.33 0.05 262);
+  --sidebar-primary: oklch(0.25 0.06 263);
   --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(1 0 0);
-  --sidebar-accent-foreground: oklch(0.36 0.15 260);
-  --sidebar-border: oklch(0.9 0.025 255);
-  --sidebar-ring: oklch(0.6 0.15 257);
+  --sidebar-accent-foreground: oklch(0.25 0.06 263);
+  --sidebar-border: oklch(0.9 0.025 258);
+  --sidebar-ring: oklch(0.55 0.15 258);
   --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-brand: "Montserrat", ui-sans-serif, system-ui, sans-serif;
@@ -137,37 +139,40 @@
   --positive-soft: oklch(0.965 0.03 155);
   --negative: oklch(0.55 0.2 27);
   --negative-soft: oklch(0.965 0.022 25);
-  --alert: oklch(0.6 0.15 60);
-  --alert-soft: oklch(0.97 0.04 85);
+  --alert: oklch(0.6 0.13 68);
+  --alert-soft: oklch(0.965 0.045 82);
   --neutral-soft: oklch(0.962 0.005 255);
-  --extra: oklch(0.5 0.15 295);
-  --extra-soft: oklch(0.965 0.025 295);
-  --primary-soft: oklch(0.955 0.025 255);
-  /* Card de destaque (saldo em caixa): azul JMG profundo nos dois temas. */
-  --hero: oklch(0.47 0.17 258);
-  --hero-end: oklch(0.36 0.14 263);
+  --extra: oklch(0.3 0.07 262);
+  --extra-soft: oklch(0.94 0.018 262);
+  --primary-soft: oklch(0.95 0.025 258);
+  /* Dourado JMG (#E8A33D): só detalhes e destaques, nunca como cor financeira. */
+  --gold: oklch(0.775 0.145 72);
+  --gold-soft: oklch(0.96 0.045 82);
+  /* Card de destaque: azul da marca para o azul-marinho, como a capa do orçamento. */
+  --hero: oklch(0.443 0.168 259.6);
+  --hero-end: oklch(0.25 0.06 263);
   --hero-foreground: oklch(0.99 0 0);
   --shadow-card: 0 1px 2px oklch(0.25 0.02 260 / 4%), 0 4px 16px -6px oklch(0.25 0.03 260 / 8%);
   --shadow-elevated: 0 10px 30px -12px oklch(0.25 0.04 260 / 22%);
-  --shadow-hero: 0 14px 34px -14px oklch(0.4 0.17 258 / 45%);
+  --shadow-hero: 0 14px 34px -14px oklch(0.25 0.06 263 / 50%);
   color-scheme: light;
 }
 
 .dark {
-  --background: oklch(0.165 0.008 262);
+  --background: oklch(0.165 0.018 263);
   --foreground: oklch(0.95 0.004 250);
-  --card: oklch(0.2 0.01 262);
+  --card: oklch(0.2 0.024 263);
   --card-foreground: oklch(0.95 0.004 250);
-  --popover: oklch(0.215 0.011 262);
+  --popover: oklch(0.215 0.026 263);
   --popover-foreground: oklch(0.95 0.004 250);
-  --primary: oklch(0.68 0.14 254);
+  --primary: oklch(0.66 0.14 256);
   --primary-foreground: oklch(0.16 0.02 262);
-  --primary-glow: oklch(0.74 0.13 252);
-  --secondary: oklch(0.255 0.011 262);
+  --primary-glow: oklch(0.72 0.13 254);
+  --secondary: oklch(0.255 0.028 263);
   --secondary-foreground: oklch(0.93 0.005 250);
-  --muted: oklch(0.255 0.011 262);
+  --muted: oklch(0.255 0.028 263);
   --muted-foreground: oklch(0.7 0.013 258);
-  --accent: oklch(0.27 0.035 258);
+  --accent: oklch(0.28 0.05 260);
   --accent-foreground: oklch(0.88 0.05 254);
   --destructive: oklch(0.65 0.2 25);
   --destructive-foreground: oklch(0.99 0 0);
@@ -177,18 +182,18 @@
   --warning-foreground: oklch(0.88 0.09 85);
   --border: oklch(1 0 0 / 9%);
   --input: oklch(1 0 0 / 13%);
-  --ring: oklch(0.68 0.14 254);
-  --chart-1: oklch(0.68 0.14 254);
+  --ring: oklch(0.66 0.14 256);
+  --chart-1: oklch(0.66 0.14 256);
   --chart-2: oklch(0.7 0.13 158);
-  --chart-3: oklch(0.8 0.14 80);
+  --chart-3: oklch(0.8 0.13 75);
   --chart-4: oklch(0.67 0.19 25);
-  --chart-5: oklch(0.7 0.03 260);
-  --sidebar: oklch(0.2 0.03 260);
-  --sidebar-end: oklch(0.23 0.06 262);
+  --chart-5: oklch(0.72 0.05 260);
+  --sidebar: oklch(0.22 0.05 263);
+  --sidebar-end: oklch(0.25 0.06 263);
   --sidebar-foreground: oklch(0.75 0.012 258);
   --sidebar-primary: oklch(0.68 0.14 254);
   --sidebar-primary-foreground: oklch(0.16 0.02 262);
-  --sidebar-accent: oklch(0.28 0.05 258);
+  --sidebar-accent: oklch(0.3 0.06 262);
   --sidebar-accent-foreground: oklch(0.92 0.04 254);
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: oklch(0.68 0.14 254);
@@ -198,12 +203,14 @@
   --negative-soft: oklch(0.34 0.07 25 / 38%);
   --alert: oklch(0.8 0.13 75);
   --alert-soft: oklch(0.36 0.06 75 / 40%);
-  --neutral-soft: oklch(0.255 0.011 262);
-  --extra: oklch(0.76 0.11 295);
-  --extra-soft: oklch(0.34 0.06 295 / 40%);
+  --neutral-soft: oklch(0.255 0.028 263);
+  --extra: oklch(0.8 0.06 255);
+  --extra-soft: oklch(0.32 0.05 262 / 55%);
   --primary-soft: oklch(0.29 0.045 258 / 70%);
-  --hero: oklch(0.43 0.14 258);
-  --hero-end: oklch(0.29 0.09 263);
+  --gold: oklch(0.8 0.13 75);
+  --gold-soft: oklch(0.36 0.06 75 / 40%);
+  --hero: oklch(0.42 0.15 259);
+  --hero-end: oklch(0.25 0.06 263);
   --hero-foreground: oklch(0.98 0 0);
   --shadow-card: 0 1px 2px oklch(0 0 0 / 30%);
   --shadow-elevated: 0 12px 32px -12px oklch(0 0 0 / 60%);

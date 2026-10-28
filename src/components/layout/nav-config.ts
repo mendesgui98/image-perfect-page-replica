@@ -22,7 +22,7 @@ export type NavItem = {
   /** Tom de azul do módulo no menu, por grupo (só aparência). */
   color?: NavColor;
 };
-export type NavColor = "blue" | "indigo" | "sky" | "slate";
+export type NavColor = "blue" | "navy" | "sky" | "slate";
 export type NavGroup = { label: string; items: NavItem[] };
 
 export const NAV_GROUPS: NavGroup[] = [
@@ -33,8 +33,8 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Comercial",
     items: [
-      { to: "/orcamentos", label: "Orçamentos", icon: FileText, costs: true, color: "indigo" },
-      { to: "/contratos", label: "Contratos", icon: FileSignature, costs: true, color: "indigo" },
+      { to: "/orcamentos", label: "Orçamentos", icon: FileText, costs: true, color: "navy" },
+      { to: "/contratos", label: "Contratos", icon: FileSignature, costs: true, color: "navy" },
     ],
   },
   {

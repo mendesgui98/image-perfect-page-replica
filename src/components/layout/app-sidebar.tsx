@@ -7,10 +7,10 @@ import { Brand } from "./brand";
 import { SETTINGS_ITEM, isActive, visibleGroups, type NavColor, type NavItem } from "./nav-config";
 import { UserMenu } from "./user-menu";
 
-/** Ícone de cada módulo num quadradinho em um tom de azul do seu grupo. */
+/** Ícone de cada módulo num quadradinho em um tom da paleta azul JMG do seu grupo. */
 const NAV_CHIP: Record<NavColor, string> = {
-  blue: "bg-blue-500/12 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300",
-  indigo: "bg-indigo-500/12 text-indigo-600 dark:bg-indigo-400/15 dark:text-indigo-300",
+  blue: "bg-primary-soft text-primary",
+  navy: "bg-extra-soft text-extra",
   sky: "bg-sky-500/15 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300",
   slate: "bg-slate-500/12 text-slate-600 dark:bg-slate-400/15 dark:text-slate-300",
 };
@@ -30,7 +30,7 @@ export function NavLink({
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex h-10 items-center gap-3 rounded-xl px-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+        "group relative flex h-10 items-center gap-3 rounded-xl px-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         active
           ? "bg-gradient-to-r from-hero to-hero-end font-semibold text-hero-foreground shadow-hero"
           : "text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-foreground",
@@ -39,12 +39,13 @@ export function NavLink({
       <span
         className={cn(
           "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105",
-          active ? "bg-white/18 text-hero-foreground" : NAV_CHIP[item.color ?? "slate"],
+          active ? "bg-gold/20 text-gold" : NAV_CHIP[item.color ?? "slate"],
         )}
       >
         <item.icon className="h-4 w-4" />
       </span>
       {item.label}
+      {active && <span aria-hidden className="ml-auto mr-1 h-1.5 w-1.5 rounded-full bg-gold" />}
     </Link>
   );
 }
