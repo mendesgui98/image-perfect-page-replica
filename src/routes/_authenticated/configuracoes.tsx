@@ -22,6 +22,7 @@ import { fmtBRL } from "@/lib/format";
 import { apiConfigured } from "@/lib/api-client";
 import { UsersAdmin } from "@/components/admin/users-admin";
 import { MfaSettings } from "@/components/admin/mfa";
+import { ContractClausesSettings } from "@/components/settings/contract-clauses";
 import { IconBubble } from "@/components/kpi";
 import { selectClass } from "@/components/works/fields";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,7 @@ function Config() {
         <TabsList>
           <TabsTrigger value="empresa">Empresa</TabsTrigger>
           {me?.canSeeCosts && <TabsTrigger value="precos">Precificação</TabsTrigger>}
+          {me?.canSeeCosts && <TabsTrigger value="contrato">Contrato</TabsTrigger>}
           {me?.isAdmin && <TabsTrigger value="usuarios">Usuários</TabsTrigger>}
           <TabsTrigger value="seguranca">Segurança</TabsTrigger>
         </TabsList>
@@ -64,6 +66,9 @@ function Config() {
         </TabsContent>
         <TabsContent value="precos">
           <Precos ro={!me?.isAdmin} />
+        </TabsContent>
+        <TabsContent value="contrato">
+          <ContractClausesSettings ro={!me?.isAdmin} />
         </TabsContent>
         <TabsContent value="seguranca">
           <MfaSettings required={!!me?.isAdmin} />

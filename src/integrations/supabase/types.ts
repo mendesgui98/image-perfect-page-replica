@@ -501,6 +501,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      contract_clauses: {
+        Row: {
+          active: boolean;
+          body: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          sort: number;
+          title: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          active?: boolean;
+          body?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          sort?: number;
+          title: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          active?: boolean;
+          body?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          sort?: number;
+          title?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       contracts: {
         Row: {
           deleted_at: string | null;
