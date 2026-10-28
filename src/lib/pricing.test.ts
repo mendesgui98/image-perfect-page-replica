@@ -3,6 +3,11 @@ import {
   computeBudget,
   computeWorkResult,
   emptyParams,
+  marginLevel,
+  priceBreakdown,
+  priceFromCost,
+  priceSimulation,
+  suggestedPrice,
   materialCost,
   materialPackages,
   materialPurchaseQty,
@@ -204,5 +209,87 @@ describe("rendimento de embalagem (arredonda por serviço)", () => {
 
   it("material fornecido pelo cliente não tem custo", () => {
     expect(materialCost(salvaPiso({ supplied_by: "cliente" }), 100)).toBe(0);
+  });
+});
+
+describe("precificação pelo custo direto", () => {
+  const rates = { structure: 12.5, rt: 10, taxes: 8, margin: 15 };
+  const params = {
+    ...emptyParams,
+    model: "custo_direto" as const,
+    structure_rate: 12.5,
+    architect_commission: 10,
+    tax_rate: 8,
+    desired_margin: 15,
+    min_margin: 10,
+  };
+  const obra = [{ quantity: 1, labor_cost_unit: 12000, materials: [] }];
+
+  it("R$ 12.000 de custo direto vira R$ 22.018,35", () => {
+    expect(priceFromCost(12000, rates)).toBe(22018.35);
+    expect(suggestedPrice(22018.35)).toBe(22000);
+  });
+
+  it("abre o preço com o lucro como sobra, centavo a centavo", () => {
+    const r = computeBudget(obra, params);
+    expect(r.saleNet).toBe(22018.35);
+    expect(r.structure).toBe(2752.29);
+    expect(r.commission).toBe(2201.83);
+    expect(r.taxesTotal).toBe(1761.47);
+    expect(r.result).toBe(3302.76);
+    expect(r.totalCost + r.structure + r.commission + r.taxesTotal + r.result).toBeCloseTo(
+      r.saleNet,
+      6,
+    );
+  });
+
+  it("negociado a R$ 20.000: lucro de R$ 1.900 e margem de 9,5%", () => {
+    const r = computeBudget(obra, { ...params, negotiated_price: 20000 });
+    expect(r.saleNet).toBe(20000);
+    expect(r.structure).toBe(2500);
+    expect(r.commission).toBe(2000);
+    expect(r.taxesTotal).toBe(1600);
+    expect(r.result).toBe(1900);
+    expect(r.margin).toBeCloseTo(0.095, 10);
+    expect(r.totalDiscount).toBe(2018.35);
+    expect(r.belowMin).toBe(true);
+    expect(marginLevel(r.margin, 15, 10)).toBe("alerta");
+  });
+
+  it("RT desligada fica em zero", () => {
+    expect(priceBreakdown(10000, 5000, { structure: 0, rt: 0, taxes: 0 }).rt).toBe(0);
+    const r = computeBudget(obra, { ...params, apply_rt: false });
+    expect(r.commission).toBe(0);
+    expect(r.saleNet).toBe(priceFromCost(12000, { ...rates, rt: 0 }));
+  });
+
+  it("percentuais somando 100% ou mais não têm preço", () =>
+    expect(priceFromCost(12000, { structure: 40, rt: 20, taxes: 20, margin: 20 })).toBeNull());
+
+  it("simulador com as margens do documento", () =>
+    expect(priceSimulation(12000, rates).map((r) => r.price)).toEqual([
+      18604.65, 19512.2, 20168.07, 20869.57, 22018.35, 24242.42,
+    ]));
+
+  it("faixas de margem: saudável, atenção, alerta e prejuízo", () => {
+    expect(marginLevel(0.15, 15, 10)).toBe("saudavel");
+    expect(marginLevel(0.12, 15, 10)).toBe("atencao");
+    expect(marginLevel(0.095, 15, 10)).toBe("alerta");
+    expect(marginLevel(-0.01, 15, 10)).toBe("prejuizo");
+  });
+
+  it("materiais a custo e mão de obra com o restante do preço", () => {
+    const r = computeBudget(
+      [{ quantity: 10, labor_cost_unit: 500, materials: [mat({ price: 0, consumption: 0 })] }],
+      { ...params, negotiated_price: 9000 },
+    );
+    expect(r.materialsNet).toBe(r.materialsCost);
+    expect(r.laborNet + r.materialsNet).toBe(9000);
+  });
+
+  it("custo estrutural entra no custo econômico da obra", () => {
+    const base = computeBudget(obra, params);
+    const w = computeWorkResult(base, [], 12000, 0, 0);
+    expect(w.result).toBeCloseTo(base.result, 6);
   });
 });
