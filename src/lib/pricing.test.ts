@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   computeBudget,
   computeWorkResult,
+  clientPriceSheet,
   costBreakdown,
   emptyParams,
   marginLevel,
@@ -295,6 +296,16 @@ describe("precificação pelo custo direto", () => {
     );
     expect(r.materialsNet).toBe(r.materialsCost);
     expect(r.laborNet + r.materialsNet).toBe(9000);
+  });
+
+  it("PDF do cliente: preço final, materiais a custo e mão de obra = preço − materiais", () => {
+    const sheet = clientPriceSheet(
+      [{ group: "Etapa 1", quantity: 10, labor_cost_unit: 500, materials: [mat()] }],
+      { ...params, negotiated_price: 9000 },
+    );
+    expect(sheet.total).toBe(9000);
+    expect(sheet.laborTotal).toBeCloseTo(9000 - sheet.materialsTotal, 2);
+    expect(sheet.materialsTotal).toBeCloseTo(materialCost(mat(), 10), 1);
   });
 
   it("custo estrutural entra no custo econômico da obra", () => {

@@ -24,6 +24,7 @@ import { Contract } from "@/components/works/contract";
 import { Purchases } from "@/components/works/purchases";
 import { Finance } from "@/components/works/finance";
 import { WorkSummaryPanel } from "@/components/works/summary";
+import { BudgetVsActual } from "@/components/works/budget-vs-actual";
 import { StagePhotos } from "@/components/works/photos";
 import { WorkSituation } from "@/components/works/situation";
 import { WorkResult } from "@/components/works/result";
@@ -182,7 +183,10 @@ function Work() {
         </TabsList>
         <TabsContent value="resumo">
           {me?.canSeeCosts ? (
-            <WorkSummaryPanel workId={id} />
+            <>
+              <WorkSummaryPanel workId={id} />
+              <BudgetVsActual workId={id} stages={data.stages} />
+            </>
           ) : (
             <WorkSituation work={w} stages={data.stages} records={data.records} />
           )}

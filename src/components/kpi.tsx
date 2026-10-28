@@ -75,9 +75,9 @@ export function Money({
   className,
 }: {
   value: number;
-  tone?: Tone | "auto" | "inherit";
-  signed?: "+" | "−";
-  className?: string;
+  tone?: Tone | "auto" | "inherit" | undefined;
+  signed?: "+" | "−" | undefined;
+  className?: string | undefined;
 }) {
   const negative = value < 0;
   const digits = fmtBRL(Math.abs(value)).replace(/^R\$\s?/, "");

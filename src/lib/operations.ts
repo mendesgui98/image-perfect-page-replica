@@ -280,6 +280,29 @@ export function stageCosts(
   };
 }
 
+/* ---------------- Orçado × realizado ---------------- */
+/** Diferença (realizado − orçado) e variação % sobre o orçado (null sem orçado). */
+export function costVariance(planned: number, actual: number) {
+  const p = Number(planned) || 0;
+  const a = Number(actual) || 0;
+  return { planned: p, actual: a, difference: a - p, variation: p > 0 ? (a - p) / p : null };
+}
+
+/** Gasto pago (baixas) das saídas da obra sem etapa vinculada. */
+export function unassignedStageSpent(
+  workId: string,
+  entries: (AccountEntry & { stage_id?: string | null })[],
+  settlements: SettlementLike[],
+) {
+  const own = entries.filter(
+    (e) => e.work_id === workId && !e.stage_id && e.direction === "saida" && !e.canceled,
+  );
+  return own.reduce(
+    (t, e) => t + settlements.filter((s) => s.entry_id === e.id).reduce((x, s) => x + s.amount, 0),
+    0,
+  );
+}
+
 /** Serviços das etapas de uma obra vinda do orçamento: custo de MO e materiais de cada item
  * (já calculado por computeBudget), em centavos. O banco liga cada item à etapa do seu grupo. */
 export function budgetStageServices(

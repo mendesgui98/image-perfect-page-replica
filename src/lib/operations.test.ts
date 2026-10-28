@@ -9,6 +9,8 @@ import {
   cashMovements,
   cashSummary,
   stageCosts,
+  costVariance,
+  unassignedStageSpent,
   budgetStageServices,
   type AccountEntry,
 } from "./operations";
@@ -288,5 +290,43 @@ describe("etapas a partir do orçamento", () => {
     expect(budgetStageServices([{ id: "i", laborCost: NaN, materialsCost: -5 }])).toEqual([
       { item_id: "i", labor_planned: 0, material_planned: 0 },
     ]);
+  });
+});
+
+describe("orçado × realizado", () => {
+  it("Demolição orçada em R$ 2.000 e realizada em R$ 2.500: +R$ 500 e +25%", () =>
+    expect(costVariance(2000, 2500)).toEqual({
+      planned: 2000,
+      actual: 2500,
+      difference: 500,
+      variation: 0.25,
+    }));
+  it("sem orçado não inventa variação", () => expect(costVariance(0, 300).variation).toBeNull());
+  it("soma só o que foi pago em saídas da obra sem etapa", () => {
+    const base = {
+      work_id: "w1",
+      direction: "saida",
+      incurred: true,
+      canceled: false,
+      purchase_order_id: null,
+      category: "Materiais",
+      description: "x",
+      due_date: "2026-10-28",
+    };
+    expect(
+      unassignedStageSpent(
+        "w1",
+        [
+          { ...base, id: "a", amount: 500, stage_id: null },
+          { ...base, id: "b", amount: 900, stage_id: "st" },
+          { ...base, id: "c", amount: 700, stage_id: null, canceled: true },
+        ],
+        [
+          { entry_id: "a", amount: 300, account_id: null },
+          { entry_id: "b", amount: 900, account_id: null },
+          { entry_id: "c", amount: 700, account_id: null },
+        ],
+      ),
+    ).toBe(300);
   });
 });
