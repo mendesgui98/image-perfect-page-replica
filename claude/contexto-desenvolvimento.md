@@ -4,6 +4,14 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Orçamentos em aberto passam para a precificação nova (branch `feat/fundacao-tecnica`)
+
+**Pedido:** o Guilherme abriu o orçamento nº 9 e viu as porcentagens antigas (acréscimos, reserva). Ele foi criado antes da precificação nova, que só valia para orçamentos novos.
+
+**Decisões:** migração `20261028000031_open_budgets_direct_cost.sql` passa todo orçamento em elaboração/enviado (fora da lixeira) para `model = "custo_direto"` com os percentuais das Configurações (RT ligada só com arquiteto), registrando em `budget_history`; trigger `budget_direct_cost_default` faz revisões e cópias de orçamentos antigos (copy_budget) já nascerem no modelo novo. Aprovados, recusados e substituídos mantêm o cálculo com que foram fechados.
+
+**Conferência:** nº 9 abriu com a Formação de preço nova (custo R$ 5.207,00 → R$ 8.072,87, sem RT por não ter arquiteto); cópia testada em transação desfeita; checagens passando.
+
 ### 2026-10-28 — Orçamento editável até a aprovação e versões salvas com PDF (branch `feat/fundacao-tecnica`)
 
 **Pedido:** o Guilherme não conseguia abrir o orçamento para editar. Quer editar livremente até aprovar; cada vez que salvar, guardar o PDF como versão; ao aprovar, a última versão salva fica como a aprovada (ex.: "3 versões até a aprovação").
