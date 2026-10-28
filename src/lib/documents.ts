@@ -68,3 +68,8 @@ export function formatPhone(v: string | null | undefined) {
     .map((part, i, all) => (i === all.length - 1 && !part.trim() ? "" : formatOnePhone(part)))
     .join(" / ");
 }
+
+/** CEP: 00000-000 */
+export function formatCep(v: string | null | undefined) {
+  return mask(digits(v).slice(0, 8), "00000-000");
+}

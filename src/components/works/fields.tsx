@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { capitalizeWordsProps } from "@/lib/text-case";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -13,12 +14,15 @@ export function Field({
   type = "text",
   value,
   required = false,
+  capitalize = false,
 }: {
   label: string;
   name: string;
   type?: string;
   value?: string | number | null | undefined;
   required?: boolean;
+  /** Nome/endereço: primeira letra de cada palavra maiúscula ao digitar. */
+  capitalize?: boolean;
 }) {
   return (
     <label className="block space-y-1 text-sm">
@@ -30,6 +34,7 @@ export function Field({
         required={required}
         min={type === "number" ? 0 : undefined}
         step={type === "number" ? "any" : undefined}
+        {...(capitalize ? capitalizeWordsProps : {})}
       />
     </label>
   );

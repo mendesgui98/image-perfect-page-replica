@@ -213,10 +213,10 @@ function Work() {
               save(new FormData(e.currentTarget));
             }}
           >
-            <Field name="name" label="Nome da obra" required value={w.name} />
-            <Field name="responsible" label="Responsável" value={w.responsible} />
+            <Field name="name" label="Nome da obra" required value={w.name} capitalize />
+            <Field name="responsible" label="Responsável" value={w.responsible} capitalize />
             <div className="sm:col-span-2">
-              <Field name="address" label="Endereço" value={w.address} />
+              <Field name="address" label="Endereço" value={w.address} capitalize />
             </div>
             <Field name="start" label="Início previsto" type="date" value={w.planned_start} />
             <Field name="end" label="Término previsto" type="date" value={w.planned_end} />

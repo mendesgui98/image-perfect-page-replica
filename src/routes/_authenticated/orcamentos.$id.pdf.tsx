@@ -1,5 +1,5 @@
 import { DeletedRecordNotice } from "@/components/management/record-deletion";
-import { formatCnpj, formatPhone } from "@/lib/documents";
+import { formatCep, formatCnpj, formatPhone } from "@/lib/documents";
 import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -46,7 +46,7 @@ function Pdf() {
     budget.endereco,
     budget.bairro,
     [budget.cidade, budget.uf].filter(Boolean).join(" - "),
-    budget.cep ? `Cep: ${budget.cep}` : "",
+    budget.cep ? `Cep: ${formatCep(budget.cep)}` : "",
   ].filter(Boolean);
 
   const missing: string[] = [];

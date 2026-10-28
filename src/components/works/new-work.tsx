@@ -174,7 +174,7 @@ export function NewWork() {
                 </label>
               ) : (
                 <>
-                  <Field name="name" label="Nome da obra" required />
+                  <Field name="name" label="Nome da obra" required capitalize />
                   <label className="block text-sm">
                     Cliente
                     <select
@@ -191,10 +191,10 @@ export function NewWork() {
                       ))}
                     </select>
                   </label>
-                  <Field name="address" label="Endereço / localização" />
+                  <Field name="address" label="Endereço / localização" capitalize />
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Field name="work_type" label="Tipo de obra" />
-                    <Field name="responsible" label="Responsável" />
+                    <Field name="responsible" label="Responsável" capitalize />
                     <Field name="start" label="Data de início" type="date" />
                     <Field name="end" label="Previsão de término" type="date" />
                   </div>

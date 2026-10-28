@@ -1,5 +1,6 @@
 import { RecordDeleteButton, RecordTrash } from "@/components/management/record-deletion";
-import { formatCpfCnpj, formatPhone, formatRg } from "@/lib/documents";
+import { formatCep, formatCpfCnpj, formatPhone, formatRg } from "@/lib/documents";
+import { capitalizeWordsProps } from "@/lib/text-case";
 import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -64,7 +65,10 @@ const MASKS: Partial<Record<keyof Person, (v: string) => string>> = {
   document: formatCpfCnpj,
   rg: formatRg,
   phone: formatPhone,
+  cep: formatCep,
 };
+// Primeira letra de cada palavra maiúscula enquanto digita.
+const CAPITALIZED = new Set<keyof Person>(["name", "endereco", "bairro", "cidade"]);
 
 // Busca aceita o documento com ou sem pontuação.
 function matches(value: string, q: string) {
@@ -114,6 +118,7 @@ function Cadastros() {
         document: p.document ? formatCpfCnpj(p.document) : p.document,
         rg: p.rg ? formatRg(p.rg) : p.rg,
         phone: p.phone ? formatPhone(p.phone).replace(/\s*\/\s*$/, "") : p.phone,
+        cep: p.cep ? formatCep(p.cep) : p.cep,
       } as Person;
       const { error } = p.id
         ? await supabase.from("people").update(payload).eq("id", p.id)
@@ -251,7 +256,14 @@ function Cadastros() {
                     <Label>{l}</Label>
                     <Input
                       value={(edit[f] as string) ?? ""}
-                      inputMode={f === "document" ? "numeric" : f === "phone" ? "tel" : undefined}
+                      inputMode={
+                        f === "document" || f === "cep"
+                          ? "numeric"
+                          : f === "phone"
+                            ? "tel"
+                            : undefined
+                      }
+                      {...(CAPITALIZED.has(f) ? capitalizeWordsProps : {})}
                       onChange={(e) =>
                         setEdit({ ...edit, [f]: MASKS[f]?.(e.target.value) ?? e.target.value })
                       }

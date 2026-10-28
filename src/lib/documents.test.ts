@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { formatCnpj, formatCpf, formatCpfCnpj, formatPhone, formatRg } from "./documents";
+import {
+  formatCep,
+  formatCnpj,
+  formatCpf,
+  formatCpfCnpj,
+  formatPhone,
+  formatRg,
+} from "./documents";
 
 describe("pontuação de documentos", () => {
   it("CPF completo e durante a digitação", () => {
@@ -74,5 +81,15 @@ describe("pontuação de telefone", () => {
   it("vazio", () => {
     expect(formatPhone("")).toBe("");
     expect(formatPhone(null)).toBe("");
+  });
+});
+
+describe("pontuação de CEP", () => {
+  it("completo, parcial e idempotente", () => {
+    expect(formatCep("01310100")).toBe("01310-100");
+    expect(formatCep("01310")).toBe("01310");
+    expect(formatCep("013101")).toBe("01310-1");
+    expect(formatCep("01310-100")).toBe("01310-100");
+    expect(formatCep("0131010099")).toBe("01310-100");
   });
 });

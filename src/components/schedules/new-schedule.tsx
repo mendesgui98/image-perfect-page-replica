@@ -113,7 +113,7 @@ export function NewSchedule({ copyId }: { copyId?: string }) {
             >
               {mode === "avulso" ? (
                 <>
-                  <Field name="name" label="Nome da obra/projeto" required />
+                  <Field name="name" label="Nome da obra/projeto" required capitalize />
                   <label className="text-sm">
                     Cliente cadastrado
                     <select name="client_id" className={selectClass}>
@@ -125,9 +125,9 @@ export function NewSchedule({ copyId }: { copyId?: string }) {
                       ))}
                     </select>
                   </label>
-                  <Field name="client_name" label="Nome do cliente" />
-                  <Field name="address" label="Local da obra" />
-                  <Field name="responsible" label="Responsável" />
+                  <Field name="client_name" label="Nome do cliente" capitalize />
+                  <Field name="address" label="Local da obra" capitalize />
+                  <Field name="responsible" label="Responsável" capitalize />
                   <Field name="planned_start" label="Data prevista de início" type="date" />
                   <Field name="planned_end" label="Data prevista de término" type="date" />
                   <Memo name="description" label="Descrição" />

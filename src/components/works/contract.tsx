@@ -1,5 +1,5 @@
 import { RecordDeleteButton, DeletedRecordNotice } from "@/components/management/record-deletion";
-import { formatCnpj, formatCpfCnpj, formatRg } from "@/lib/documents";
+import { formatCep, formatCnpj, formatCpfCnpj, formatRg } from "@/lib/documents";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -54,7 +54,13 @@ export function Contract({
         RG: formatRg(client?.rg),
         DOCUMENTO: formatCpfCnpj(client?.document),
         ENDERECO_CLIENTE: client
-          ? [client.endereco, client.bairro, client.cidade, client.uf, client.cep]
+          ? [
+              client.endereco,
+              client.bairro,
+              client.cidade,
+              client.uf,
+              client.cep && formatCep(client.cep),
+            ]
               .filter(Boolean)
               .join(", ")
           : "",
@@ -65,7 +71,7 @@ export function Contract({
           x.bairro,
           x.cidade,
           x.uf,
-          x.cep,
+          x.cep && formatCep(x.cep),
         ]
           .filter(Boolean)
           .join("\n"),

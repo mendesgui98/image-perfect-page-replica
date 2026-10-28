@@ -1,5 +1,6 @@
 import { pageMeta } from "@/lib/page-meta";
-import { formatCnpj, formatPhone } from "@/lib/documents";
+import { formatCep, formatCnpj, formatPhone } from "@/lib/documents";
+import { capitalizeWordsProps } from "@/lib/text-case";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -73,7 +74,17 @@ function Config() {
 const COMPANY_MASKS: Partial<Record<string, (v: string) => string>> = {
   cnpj: formatCnpj,
   telefone: formatPhone,
+  cep: formatCep,
 };
+// Primeira letra de cada palavra maiúscula enquanto digita.
+const COMPANY_CAPITALIZED = new Set([
+  "razao_social",
+  "nome_fantasia",
+  "responsavel",
+  "endereco",
+  "bairro",
+  "cidade",
+]);
 
 const COMPANY_FIELDS: [keyof Company, string][] = [
   ["razao_social", "Razão social"],
@@ -130,7 +141,10 @@ function Empresa({ ro }: { ro: boolean }) {
               <Input
                 disabled={ro}
                 value={(f[k] as string) ?? ""}
-                inputMode={k === "cnpj" ? "numeric" : k === "telefone" ? "tel" : undefined}
+                inputMode={
+                  k === "cnpj" || k === "cep" ? "numeric" : k === "telefone" ? "tel" : undefined
+                }
+                {...(COMPANY_CAPITALIZED.has(k) ? capitalizeWordsProps : {})}
                 onChange={(e) =>
                   setF({ ...f, [k]: COMPANY_MASKS[k]?.(e.target.value) ?? e.target.value })
                 }

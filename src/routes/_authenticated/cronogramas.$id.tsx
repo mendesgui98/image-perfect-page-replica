@@ -238,10 +238,10 @@ function ScheduleDetail() {
               void update(new FormData(e.currentTarget));
             }}
           >
-            <Field label="Nome da obra/projeto" name="name" required value={h.name} />
-            <Field label="Nome do cliente" name="client_name" value={h.client_name} />
-            <Field label="Local da obra" name="address" value={h.address} />
-            <Field label="Responsável" name="responsible" value={h.responsible} />
+            <Field label="Nome da obra/projeto" name="name" required value={h.name} capitalize />
+            <Field label="Nome do cliente" name="client_name" value={h.client_name} capitalize />
+            <Field label="Local da obra" name="address" value={h.address} capitalize />
+            <Field label="Responsável" name="responsible" value={h.responsible} capitalize />
             <Field
               label="Data prevista de início"
               name="planned_start"

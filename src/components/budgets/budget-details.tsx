@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { formatCep } from "@/lib/documents";
+import { capitalizeWordsProps } from "@/lib/text-case";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -68,6 +70,7 @@ export function DadosEditor({
           },
     );
   };
+  const capitalized = ["client_display", "endereco", "bairro", "cidade"];
   const field = (k: keyof typeof f, l: string, type = "text", span = "") => (
     <div className={`space-y-1 ${span}`}>
       <Label>{l}</Label>
@@ -75,7 +78,11 @@ export function DadosEditor({
         type={type}
         disabled={locked}
         value={(f[k] as string) ?? ""}
-        onChange={(e) => setF({ ...f, [k]: e.target.value })}
+        inputMode={k === "cep" ? "numeric" : undefined}
+        {...(capitalized.includes(k) ? capitalizeWordsProps : {})}
+        onChange={(e) =>
+          setF({ ...f, [k]: k === "cep" ? formatCep(e.target.value) : e.target.value })
+        }
       />
     </div>
   );
