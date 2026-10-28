@@ -40,8 +40,9 @@ COPY api/package.json ./package.json
 RUN npm install --omit=dev --no-audit --no-fund
 COPY api/src ./src
 COPY api/assets ./assets
-# Módulos puros compartilhados com o app (contas de preço, proposta, extenso, documentos).
-COPY src/lib/pricing.ts src/lib/proposal.ts src/lib/extenso.ts src/lib/documents.ts /app/src/lib/
+# Módulos puros compartilhados com o app (preço, proposta, extenso, documentos, cláusulas).
+# A pasta inteira, para um import novo da API nunca faltar na imagem (o CI testa a subida).
+COPY src/lib /app/src/lib
 RUN echo '{"type":"module"}' > /app/package.json
 USER pwuser
 EXPOSE 4000

@@ -109,10 +109,28 @@ jobs:
         with:
           context: .
           target: api
-          push: ${{ env.PUBLISH == 'true' }}
+          load: true
           tags: ${{ env.IMAGE }}/api:${{ github.sha }}
           cache-from: type=gha,scope=api
           cache-to: type=gha,scope=api,mode=max
+      - name: Testar a subida da api (imports e configuração)
+        run: |
+          docker run -d --name api-smoke -p 4000:4000 \
+            -e DATABASE_URL=postgres://x:x@127.0.0.1:1/x -e JWT_SECRET=x -e AUTH_URL=http://127.0.0.1:1 \
+            -e SERVICE_ROLE_KEY=x -e SITE_URL=http://localhost "$IMAGE/api:$GITHUB_SHA"
+          code=000
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4000/health || true)
+            # Sem banco o /health responde 503: a API subiu, que é o que importa aqui.
+            if [ "$code" = 200 ] || [ "$code" = 503 ]; then break; fi
+            sleep 1
+          done
+          docker logs api-smoke
+          docker rm -f api-smoke >/dev/null
+          [ "$code" = 200 ] || [ "$code" = 503 ] || { echo "::error::A api não subiu (HTTP $code)"; exit 1; }
+      - name: Publicar api
+        if: env.PUBLISH == 'true'
+        run: docker push "$IMAGE/api:$GITHUB_SHA"
       - name: Build migrator
         uses: docker/build-push-action@v6
         with:

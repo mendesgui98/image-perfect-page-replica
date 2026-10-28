@@ -21,6 +21,8 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 **Primeiro deploy (correção):** o `migrate` falhou na VPS em `20261016000001` (`storage.objects.owner_id` não existe): esperava só a tabela `storage.objects`, que o Storage cria antes das próprias migrações terminarem. `scripts/migrate.mjs` agora espera `GET auth:9999/health` e `storage:5000/status` (os serviços só respondem depois de migrar). Reproduzido localmente com as imagens do Supabase (falha com o script antigo, 36 migrações aplicadas com o novo); `create-admin.sh` (conta criada, papel admin, login 200) e `backup.sh` testados na mesma stack.
 
+**Segundo deploy:** migrações todas aplicadas, mas a `api` reiniciava sem parar (`Cannot find module /app/src/lib/contract-clauses.ts`): o `Dockerfile` copiava uma lista fixa de módulos de `src/lib` e o das cláusulas nunca entrou. Agora copia a pasta inteira, e o CI liga a imagem da api e espera o `/health` (503 sem banco) antes de publicar; a publicação da api virou `docker push` depois desse teste. O Caddy não subiu porque o Traefik do Docker Manager da Hostinger (projeto `traefik-4ylg`) ocupava as portas 80/443.
+
 ### 2026-10-28 — Olhinho para ocultar valores no Painel e no Financeiro (branch `feat/fundacao-tecnica`)
 
 **Pedido:** o Guilherme quer um ícone de olho no Painel e no Financeiro para esconder os valores (ex.: com alguém olhando a tela) e mostrar de novo.
