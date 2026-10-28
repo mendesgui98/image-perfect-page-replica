@@ -1,6 +1,6 @@
 # Regras do projeto JMG Obras
 
-Desenvolvimento direto pelo GitHub (sem Lovable). Trabalhe em branches e abra PR para a `main`; o CI precisa passar.
+Desenvolvimento direto pelo GitHub (sem Lovable). Trabalhe em branches e abra PR para a `main`; o CI precisa passar. Merge na `main` faz o deploy automático na VPS (`.github/workflows/ci.yml` publica as imagens no GHCR e roda `infra/vps/deploy.sh`; guia em `docs/deploy-vps.md`). O `infra/.env` de produção é montado pelo workflow a partir das variáveis/segredos do GitHub: configuração nova de produção entra lá e no workflow, nunca só na VPS.
 
 ## Project rules
 

@@ -32,30 +32,28 @@ Para desenvolver com recarga automática use `bun run dev:all` (banco em Docker,
 
 ## Subir na VPS
 
-1. VPS com Ubuntu 24.04, 2 vCPU e 4 GB de RAM (mínimo recomendado), Docker instalado.
-2. DNS: registros A de `app.seudominio` e `api.seudominio` apontando para o IP da VPS.
-3. Firewall: liberar só 22, 80 e 443 (`ufw allow OpenSSH && ufw allow 80,443/tcp && ufw enable`).
-4. Clonar o repositório, criar `infra/.env` com `SITE_URL`/`API_EXTERNAL_URL` em https e os domínios.
-5. `docker compose --profile prod up -d --build` (o perfil `dev`, com a caixa de e-mails de teste, não é usado na VPS)
-6. Studio e banco: acessar por túnel, nunca pela internet:
-   `ssh -L 3001:127.0.0.1:3001 -L 54322:127.0.0.1:54322 usuario@vps`
+O deploy é automático: cada merge na `main` roda o CI, publica as imagens `web`, `api` e `migrate`
+no GitHub Container Registry e atualiza a VPS por SSH (`.github/workflows/ci.yml` → `infra/vps/deploy.sh`).
+O `infra/.env` da VPS é montado pelo workflow a partir das variáveis e segredos do repositório.
 
-### Atualizar a versão
+Passo a passo completo (VPS, DNS, segredos, primeiro admin): [docs/deploy-vps.md](../docs/deploy-vps.md).
 
-```sh
-git pull
-docker compose --profile prod up -d --build   # o serviço migrate aplica só as migrações novas
-```
+Scripts em `infra/vps/`:
+
+| Script            | Onde roda                  | Função                                                   |
+| ----------------- | -------------------------- | -------------------------------------------------------- |
+| `setup.sh`        | VPS nova, uma vez, root    | Docker, usuário deploy, firewall, fail2ban, swap, backup |
+| `deploy.sh`       | VPS, chamado pelo workflow | Baixa as imagens do commit, migra e reinicia             |
+| `create-admin.sh` | VPS, uma vez               | Cria o primeiro administrador (cadastro fica fechado)    |
+| `backup.sh`       | VPS, cron diário 03:30     | `pg_dump` do banco + arquivos do Storage, 14 dias        |
+
+Studio e banco: acessar por túnel, nunca pela internet:
+`ssh -L 3001:127.0.0.1:3001 -L 54322:127.0.0.1:54322 deploy@IP_DA_VPS`
 
 ### Backup
 
-```sh
-# banco (diário, via cron)
-docker compose exec -T db pg_dump -U postgres -Fc postgres > backup-$(date +%F).dump
-# arquivos
-docker run --rm -v jmg-obras_storage-data:/data -v "$PWD":/out alpine \
-  tar czf /out/storage-$(date +%F).tgz -C /data .
-```
+`infra/vps/backup.sh` roda todo dia às 03:30 e guarda em `/opt/jmg/backups`. Para rodar na hora:
+`bash /opt/jmg/infra/vps/backup.sh`.
 
 Guarde as cópias fora da VPS (outro servidor ou armazenamento de objetos) e teste a restauração.
 
@@ -79,7 +77,8 @@ Feito uma vez, com o sistema antigo em modo somente leitura:
 
 - **migrate falha com permissão em `storage.objects`**: troque o usuário de `DATABASE_URL` do serviço
   `migrate` para `supabase_admin` (mesma senha).
-- **Login funciona local mas não na VPS**: `SITE_URL` e `API_EXTERNAL_URL` precisam estar em https e o
-  front precisa ser reconstruído (`--build`), porque `VITE_*` entra no bundle no momento do build.
+- **Login funciona local mas não na VPS**: confira as variáveis `APP_DOMAIN`/`API_DOMAIN` e o segredo
+  `ANON_KEY` no GitHub. `VITE_*` entra no bundle no build da imagem `web`, então depois de mudá-los
+  rode o workflow de novo (Actions → CI/CD → Run workflow).
 - **Versões das imagens**: as tags seguem o compose oficial do Supabase de janeiro/2025. Atualize-as
   conferindo o arquivo oficial antes de produção.

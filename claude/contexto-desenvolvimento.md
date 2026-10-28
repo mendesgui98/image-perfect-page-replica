@@ -4,6 +4,21 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Deploy automático na VPS da Hostinger (branch `claude/nifty-dijkstra-i0rmcy`, sobre `feat/fundacao-tecnica`)
+
+**Pedido:** o Guilherme assinou uma VPS KVM 2 na Hostinger e quer deploy automático pelo GitHub Actions, com o sistema num subdomínio (`app.jmgreformas.com.br`), deixando o domínio principal para o site institucional, e o passo a passo para configurar a VPS.
+
+**Decisões:**
+
+- O CI (`.github/workflows/ci.yml`, agora "CI/CD") continua verificando PRs sem publicar nada; no merge na `main` (ou "Run workflow") publica `web`, `api` e `migrate` no GHCR com a tag do commit e o job "Deploy na VPS" entra por SSH como `deploy`. O deploy é no merge, não ao abrir o PR, para código ainda em revisão não ir para produção.
+- `infra/docker-compose.yml`: `web`, `api` e `migrate` ganharam `image: ${IMAGE_REGISTRY}/<serviço>:${IMAGE_TAG}`; localmente continuam sendo construídos (`jmg-obras/*:local`), na VPS só são baixados (`--no-build`).
+- O `infra/.env` da VPS é escrito pelo workflow a cada deploy a partir das variáveis/segredos do repositório (fonte única; a VPS pode ser refeita do zero). Produção sai com cadastro fechado (`DISABLE_SIGNUP=true`, `SIGNUP_ENABLED=false`) e sem autoconfirmação de e-mail. As `VITE_*` da imagem `web` usam `API_DOMAIN` e `ANON_KEY` do GitHub.
+- O login no GHCR da VPS usa o `GITHUB_TOKEN` do próprio job (com logout no final); não é preciso token pessoal.
+- `infra/vps/`: `setup.sh` (Ubuntu 24.04 nova: Docker oficial, usuário deploy, ufw 22/80/443, fail2ban, atualizações automáticas, swap de 2 GB, cron de backup), `deploy.sh` (pull, up com migrações, logs se falhar, limpeza), `backup.sh` (pg_dump como `supabase_admin` + tar do volume do Storage, 14 dias) e `create-admin.sh` (primeiro admin pela API admin do Auth + papel em `user_roles`).
+- Guia em `docs/deploy-vps.md`; `infra/README.md` aponta para ele.
+
+**Conferência:** lint, typecheck, formatação, 198 testes do app, testes do banco e da API passando; `docker compose --profile prod config` validado com o `.env` gerado pelo próprio passo do workflow (inclusive senha SMTP com `#` e espaço). Não verificado aqui: build das imagens e execução de `deploy.sh`/`backup.sh`/`create-admin.sh` contra a stack, porque o Docker Hub limitou os downloads nesta sandbox. O build das imagens roda no CI do PR.
+
 ### 2026-10-28 — Olhinho para ocultar valores no Painel e no Financeiro (branch `feat/fundacao-tecnica`)
 
 **Pedido:** o Guilherme quer um ícone de olho no Painel e no Financeiro para esconder os valores (ex.: com alguém olhando a tela) e mostrar de novo.

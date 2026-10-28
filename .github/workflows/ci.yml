@@ -1,13 +1,21 @@
-name: CI
+name: CI/CD
 
+# PR para a main: verifica e constrói as imagens (sem publicar).
+# Merge na main (ou "Run workflow"): verifica, publica as imagens no GHCR e faz o deploy na VPS.
+# Configuração (variáveis e segredos do repositório): docs/deploy-vps.md
 on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Em PR a execução antiga é cancelada; na main nunca, para não interromper um deploy.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   verificar:
@@ -38,35 +46,198 @@ jobs:
     name: Imagens Docker
     runs-on: ubuntu-latest
     needs: verificar
-    timeout-minutes: 20
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    env:
+      PUBLISH: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
+      - name: Nome das imagens e endereços do front
+        env:
+          API_DOMAIN: ${{ vars.API_DOMAIN }}
+          ANON_KEY: ${{ secrets.ANON_KEY }}
+          SIGNUP_ENABLED: ${{ vars.SIGNUP_ENABLED }}
+        run: |
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+          if [ "$PUBLISH" = "true" ]; then
+            if [ -z "$API_DOMAIN" ] || [ -z "$ANON_KEY" ]; then
+              echo "::error::Configure a variável API_DOMAIN e o segredo ANON_KEY (docs/deploy-vps.md)."
+              exit 1
+            fi
+            # VITE_* entram no bundle do navegador: precisam ser os valores de produção.
+            {
+              echo "VITE_SUPABASE_URL=https://$API_DOMAIN"
+              echo "VITE_API_URL=https://$API_DOMAIN/jmg"
+              echo "VITE_SIGNUP_ENABLED=${SIGNUP_ENABLED:-false}"
+            } >> "$GITHUB_ENV"
+            echo "::add-mask::$ANON_KEY"
+            echo "VITE_SUPABASE_PUBLISHABLE_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          else
+            {
+              echo "VITE_SUPABASE_URL=http://localhost:8000"
+              echo "VITE_API_URL="
+              echo "VITE_SIGNUP_ENABLED=true"
+              echo "VITE_SUPABASE_PUBLISHABLE_KEY=ci-placeholder"
+            } >> "$GITHUB_ENV"
+          fi
+      - name: Login no GHCR
+        if: env.PUBLISH == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build web
         uses: docker/build-push-action@v6
         with:
           context: .
           target: web
-          push: false
+          push: ${{ env.PUBLISH == 'true' }}
+          tags: ${{ env.IMAGE }}/web:${{ github.sha }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
           build-args: |
-            VITE_SUPABASE_URL=http://localhost:8000
-            VITE_SUPABASE_PUBLISHABLE_KEY=ci-placeholder
+            VITE_SUPABASE_URL=${{ env.VITE_SUPABASE_URL }}
+            VITE_SUPABASE_PUBLISHABLE_KEY=${{ env.VITE_SUPABASE_PUBLISHABLE_KEY }}
+            VITE_API_URL=${{ env.VITE_API_URL }}
+            VITE_SIGNUP_ENABLED=${{ env.VITE_SIGNUP_ENABLED }}
       - name: Build api
         uses: docker/build-push-action@v6
         with:
           context: .
           target: api
-          push: false
+          push: ${{ env.PUBLISH == 'true' }}
+          tags: ${{ env.IMAGE }}/api:${{ github.sha }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
       - name: Build migrator
         uses: docker/build-push-action@v6
         with:
           context: .
           target: migrator
-          push: false
+          push: ${{ env.PUBLISH == 'true' }}
+          tags: ${{ env.IMAGE }}/migrate:${{ github.sha }}
+          cache-from: type=gha,scope=migrate
+          cache-to: type=gha,scope=migrate,mode=max
       - name: Validar config do Kong (renderizada como no container)
         run: |
           SUPABASE_ANON_KEY=a SUPABASE_SERVICE_KEY=b bash -c 'eval "echo \"$(cat infra/kong/kong.yml)\""' > /tmp/kong.yml
           python3 -c "import yaml,sys; d=yaml.safe_load(open('/tmp/kong.yml')); sys.exit(0 if isinstance(d['_format_version'], str) else 'kong.yml: _format_version virou número (aspas duplas?)')"
       - name: Validar docker-compose
         working-directory: infra
-        run: cp .env.example .env && docker compose config --quiet
+        run: cp .env.example .env && docker compose --profile prod config --quiet
+
+  deploy:
+    name: Deploy na VPS
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+    environment:
+      name: production
+      url: https://${{ vars.APP_DOMAIN }}
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      VPS_HOST: ${{ vars.VPS_HOST }}
+      VPS_USER: ${{ vars.VPS_USER || 'deploy' }}
+      VPS_PORT: ${{ vars.VPS_PORT || '22' }}
+      APP_DIR: /opt/jmg
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Montar infra/.env de produção
+        env:
+          APP_DOMAIN: ${{ vars.APP_DOMAIN }}
+          API_DOMAIN: ${{ vars.API_DOMAIN }}
+          ACME_EMAIL: ${{ vars.ACME_EMAIL }}
+          SIGNUP_ENABLED: ${{ vars.SIGNUP_ENABLED || 'false' }}
+          SMTP_HOST: ${{ vars.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT || '587' }}
+          SMTP_USER: ${{ vars.SMTP_USER }}
+          SMTP_ADMIN_EMAIL: ${{ vars.SMTP_ADMIN_EMAIL }}
+          SMTP_SENDER_NAME: ${{ vars.SMTP_SENDER_NAME || 'JMG Reformas' }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ANON_KEY: ${{ secrets.ANON_KEY }}
+          SERVICE_ROLE_KEY: ${{ secrets.SERVICE_ROLE_KEY }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          missing=""
+          for v in VPS_HOST APP_DOMAIN API_DOMAIN ACME_EMAIL POSTGRES_PASSWORD JWT_SECRET ANON_KEY SERVICE_ROLE_KEY VPS_SSH_KEY; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Faltam variáveis/segredos do repositório:$missing (docs/deploy-vps.md)"
+            exit 1
+          fi
+          [ -n "$SMTP_HOST" ] || echo "::warning::SMTP_HOST vazio: convites e recuperação de senha não vão enviar e-mail."
+          # Aspas simples só nos valores livres (senha e nome); os demais são seguros.
+          case "$SMTP_PASS$SMTP_SENDER_NAME" in *"'"*)
+            echo "::error::SMTP_PASS e SMTP_SENDER_NAME não podem ter aspas simples (')."; exit 1 ;;
+          esac
+          q() { printf "'%s'" "$1"; }
+          cat > "$RUNNER_TEMP/jmg.env" <<EOF
+          POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+          JWT_SECRET=$JWT_SECRET
+          ANON_KEY=$ANON_KEY
+          SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY
+          JWT_EXP=3600
+          SITE_URL=https://$APP_DOMAIN
+          API_EXTERNAL_URL=https://$API_DOMAIN
+          APP_API_URL=https://$API_DOMAIN/jmg
+          APP_DOMAIN=$APP_DOMAIN
+          API_DOMAIN=$API_DOMAIN
+          ACME_EMAIL=$ACME_EMAIL
+          DISABLE_SIGNUP=$([ "$SIGNUP_ENABLED" = "true" ] && echo false || echo true)
+          SIGNUP_ENABLED=$SIGNUP_ENABLED
+          MAILER_AUTOCONFIRM=false
+          PASSWORD_MIN_LENGTH=8
+          SMTP_ADMIN_EMAIL=${SMTP_ADMIN_EMAIL:-$SMTP_USER}
+          SMTP_HOST=$SMTP_HOST
+          SMTP_PORT=$SMTP_PORT
+          SMTP_USER=$SMTP_USER
+          SMTP_PASS=$(q "$SMTP_PASS")
+          SMTP_SENDER_NAME=$(q "$SMTP_SENDER_NAME")
+          IMAGE_REGISTRY=ghcr.io/${GITHUB_REPOSITORY,,}
+          IMAGE_TAG=$GITHUB_SHA
+          EOF
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Enviar configuração para a VPS
+        run: |
+          SSH="ssh -p $VPS_PORT $VPS_USER@$VPS_HOST"
+          $SSH "mkdir -p $APP_DIR/infra"
+          tar -C infra --exclude='./.env' -cz . | $SSH "tar -xz -C $APP_DIR/infra"
+          $SSH "umask 077 && cat > $APP_DIR/infra/.env" < "$RUNNER_TEMP/jmg.env"
+
+      - name: Atualizar os containers
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SSH="ssh -p $VPS_PORT $VPS_USER@$VPS_HOST"
+          printf '%s\n' "$GHCR_TOKEN" | $SSH "docker login ghcr.io -u ${{ github.actor }} --password-stdin"
+          status=0
+          $SSH "bash $APP_DIR/infra/vps/deploy.sh" || status=$?
+          $SSH "docker logout ghcr.io" || true
+          exit $status
+
+      - name: Conferir o sistema no ar
+        env:
+          APP_DOMAIN: ${{ vars.APP_DOMAIN }}
+          API_DOMAIN: ${{ vars.API_DOMAIN }}
+        run: |
+          curl -fsS -o /dev/null --retry 12 --retry-delay 10 --retry-all-errors "https://$APP_DOMAIN/"
+          curl -fsS --retry 12 --retry-delay 10 --retry-all-errors "https://$API_DOMAIN/jmg/health"
+          echo "No ar: https://$APP_DOMAIN"

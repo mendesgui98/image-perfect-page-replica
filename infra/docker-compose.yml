@@ -1,7 +1,8 @@
 # Stack completa da JMG Obras: front (SSR) + Supabase self-hosted + migrações.
 # Uso (na pasta infra/):  cp .env.example .env  →  preencha  →  docker compose up -d --build
-# Em produção (VPS) acrescente o perfil "prod" para subir o Caddy com HTTPS:
-#   docker compose --profile prod up -d --build
+# Em produção (VPS) o GitHub Actions publica as imagens web/api/migrate no GHCR e a VPS só baixa:
+#   IMAGE_REGISTRY=ghcr.io/<dono>/<repo> IMAGE_TAG=<commit> docker compose --profile prod up -d --no-build
+# (infra/vps/deploy.sh faz isso; veja docs/deploy-vps.md). Localmente as imagens são construídas.
 #
 # Versões das imagens: baseadas no compose oficial do Supabase (docker/docker-compose.yml).
 # Antes de ir para produção, confira e atualize as tags em
@@ -11,6 +12,7 @@ name: jmg-obras
 
 services:
   web:
+    image: ${IMAGE_REGISTRY:-jmg-obras}/web:${IMAGE_TAG:-local}
     build:
       context: ..
       target: web
@@ -32,6 +34,7 @@ services:
         condition: service_completed_successfully
 
   api:
+    image: ${IMAGE_REGISTRY:-jmg-obras}/api:${IMAGE_TAG:-local}
     build:
       context: ..
       target: api
@@ -51,6 +54,7 @@ services:
         condition: service_completed_successfully
 
   migrate:
+    image: ${IMAGE_REGISTRY:-jmg-obras}/migrate:${IMAGE_TAG:-local}
     build:
       context: ..
       target: migrator
