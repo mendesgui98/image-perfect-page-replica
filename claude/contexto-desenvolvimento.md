@@ -4,6 +4,16 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Excluir e editar obras (branch `feat/fundacao-tecnica`)
+
+**Decisão do Guilherme:** obra usa a lixeira com bloqueio, igual a orçamentos e cadastros.
+
+- Migração `20261027000000_work_trash.sql`: `work_registry` ganhou `deleted_at`/`deleted_by` e o `guard_record_deletion`; `manage_record_deletion` aceita `work_registry`. Lixeira leva junto o cabeçalho do cronograma (mesmo horário) e restaurar traz de volta. Exclusão definitiva só para obra sem financeiro, abertura com valores recebidos/pagos, compras, contrato, registros, extras ou estimativas — a mensagem lista o que impede; apaga cronograma, etapas, versões, abertura, histórico e o espelho legado `works`, guardando tudo no `record_deletion_log`.
+- Leitores de lista filtram `deleted_at` (obras, painel, cronogramas, seletores do financeiro, perfil da pessoa). Página da obra na lixeira mostra o aviso de restauração.
+- "Editar obra" (antes "Dados da obra") passou a editar cliente, arquiteto, tipo de obra, condições de pagamento e observações; cliente na lixeira continua na lista para não perder o vínculo.
+
+**Testado:** fluxo SQL em transação desfeita (lixeira, bloqueio de edição, restaurar, definitiva, bloqueio por valores) e no navegador com obra de teste (editar, excluir, lixeira, excluir definitivamente).
+
 ### 2026-10-27 — Serviço avulso no orçamento (branch `feat/fundacao-tecnica`)
 
 **Problema:** serviços usados só numa obra precisavam ser cadastrados no catálogo; o "Item manual" criava um item vazio e não havia como colocar materiais do catálogo em um item.

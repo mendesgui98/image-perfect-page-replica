@@ -9,7 +9,7 @@ export const financeOptions = {
       supabase.from("financial_settlements").select("*"),
       supabase.from("financial_accounts").select("*").eq("active", true),
       supabase.from("account_transfers").select("*"),
-      supabase.from("work_registry").select("id,name"),
+      supabase.from("work_registry").select("id,name,deleted_at"),
       supabase.from("people").select("id,name,deleted_at"),
       supabase.from("cost_categories").select("name").eq("active", true),
       supabase.from("expense_allocations").select("*"),

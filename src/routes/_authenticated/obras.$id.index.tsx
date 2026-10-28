@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { FileDown, Settings } from "lucide-react";
@@ -11,7 +11,8 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
-import { Field, selectClass } from "@/components/works/fields";
+import { Field, Memo, selectClass } from "@/components/works/fields";
+import { DeletedRecordNotice, RecordDeleteButton } from "@/components/management/record-deletion";
 import { text } from "@/lib/form-values";
 import { Schedule } from "@/components/works/schedule";
 import { Records } from "@/components/works/records";
@@ -48,6 +49,19 @@ function Work() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const w = data.work;
+  const { data: people = [] } = useQuery({
+    queryKey: ["people", "work-edit"],
+    enabled: !!me?.canSeeCosts,
+    queryFn: async () => {
+      const r = await supabase
+        .from("people")
+        .select("id,name,kind,deleted_at")
+        .in("kind", ["cliente", "arquiteto"])
+        .order("name");
+      if (r.error) throw r.error;
+      return r.data;
+    },
+  });
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["schedules"] });
     qc.invalidateQueries({ queryKey: ["schedule"] });
@@ -64,6 +78,11 @@ function Work() {
         .from("work_registry")
         .update({
           name: text(d, "name"),
+          client_id: text(d, "client_id") || null,
+          architect_id: text(d, "architect_id") || null,
+          work_type: text(d, "work_type") || null,
+          payment_conditions: text(d, "payment_conditions") || null,
+          notes: text(d, "notes") || null,
           responsible: text(d, "responsible"),
           address: text(d, "address"),
           planned_start: text(d, "start") || null,
@@ -83,6 +102,11 @@ function Work() {
       setBusy(false);
     }
   }
+  if (w.deleted_at) return <DeletedRecordNotice entity="work_registry" id={id} name={w.name} />;
+  // Mantém o cliente/arquiteto atual na lista mesmo se estiver na lixeira, para não
+  // apagar o vínculo ao salvar outros campos.
+  const options = (kind: string, current: string | null) =>
+    people.filter((p) => (p.kind === kind && !p.deleted_at) || p.id === current);
   return (
     <div>
       <Link to="/obras" className="text-sm text-muted-foreground">
@@ -109,9 +133,15 @@ function Work() {
             {me?.canSeeCosts && (
               <Button variant="outline" onClick={() => setOpen(true)}>
                 <Settings className="h-4 w-4" />
-                Dados da obra
+                Editar obra
               </Button>
             )}
+            <RecordDeleteButton
+              entity="work_registry"
+              id={id}
+              name={w.name}
+              onDeleted={() => void navigate({ to: "/obras" })}
+            />
           </>
         }
       />
@@ -201,10 +231,10 @@ function Work() {
           </>
         )}
       </Tabs>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+      <Dialog open={open && people.length > 0} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Dados da obra</DialogTitle>
+            <DialogTitle>Editar obra</DialogTitle>
           </DialogHeader>
           <form
             className="grid gap-3 sm:grid-cols-2"
@@ -215,6 +245,38 @@ function Work() {
           >
             <Field name="name" label="Nome da obra" required value={w.name} capitalize />
             <Field name="responsible" label="Responsável" value={w.responsible} capitalize />
+            <label className="text-sm">
+              Cliente
+              <select
+                name="client_id"
+                defaultValue={w.client_id ?? ""}
+                required
+                className={selectClass}
+              >
+                {!w.client_id && <option value="">Selecione</option>}
+                {options("cliente", w.client_id).map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm">
+              Arquiteto(a)
+              <select
+                name="architect_id"
+                defaultValue={w.architect_id ?? ""}
+                className={selectClass}
+              >
+                <option value="">—</option>
+                {options("arquiteto", w.architect_id).map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Field name="work_type" label="Tipo de obra" value={w.work_type} />
             <div className="sm:col-span-2">
               <Field name="address" label="Endereço" value={w.address} capitalize />
             </div>
@@ -231,6 +293,16 @@ function Work() {
                 <option value="concluida">Concluída</option>
               </select>
             </label>
+            <div className="sm:col-span-2">
+              <Memo
+                name="payment_conditions"
+                label="Condições de pagamento"
+                value={w.payment_conditions}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Memo name="notes" label="Observações" value={w.notes} />
+            </div>
             <Button type="submit" disabled={busy}>
               Salvar
             </Button>

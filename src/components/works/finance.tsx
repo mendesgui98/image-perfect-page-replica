@@ -156,11 +156,13 @@ export function Finance({ workId }: { workId?: string }) {
         required={dialog === "allocate"}
       >
         <option value="">Despesas gerais da JMG</option>
-        {data?.works.map((w) => (
-          <option key={w.id} value={w.id}>
-            {w.name}
-          </option>
-        ))}
+        {data?.works
+          .filter((w) => !w.deleted_at)
+          .map((w) => (
+            <option key={w.id} value={w.id}>
+              {w.name}
+            </option>
+          ))}
       </select>
     </label>
   );
@@ -227,11 +229,13 @@ export function Finance({ workId }: { workId?: string }) {
               onChange={(e) => setFilterWork(e.target.value)}
             >
               <option value="">Todas</option>
-              {data?.works.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
+              {data?.works
+                .filter((w) => !w.deleted_at)
+                .map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
             </select>
           </label>
         )}

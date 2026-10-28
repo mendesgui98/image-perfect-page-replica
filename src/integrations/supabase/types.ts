@@ -1733,6 +1733,8 @@ export type Database = {
           client_id: string | null;
           created_at: string;
           created_by: string | null;
+          deleted_at: string | null;
+          deleted_by: string | null;
           id: string;
           is_pilot: boolean;
           linked_budget_id: string | null;
@@ -1760,6 +1762,8 @@ export type Database = {
           client_id?: string | null;
           created_at?: string;
           created_by?: string | null;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
           id?: string;
           is_pilot?: boolean;
           linked_budget_id?: string | null;
@@ -1787,6 +1791,8 @@ export type Database = {
           client_id?: string | null;
           created_at?: string;
           created_by?: string | null;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
           id?: string;
           is_pilot?: boolean;
           linked_budget_id?: string | null;

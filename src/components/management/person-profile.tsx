@@ -33,7 +33,9 @@ export function PersonProfile({ id }: { id: string }) {
   );
   const purchases = data.purchases.filter((p) => p.supplier_id === id);
   const workIds = new Set([
-    ...data.works.filter((w) => w.client_id === id || w.architect_id === id).map((w) => w.id),
+    ...data.works
+      .filter((w) => !w.deleted_at && (w.client_id === id || w.architect_id === id))
+      .map((w) => w.id),
     ...purchases.map((p) => p.work_id),
   ]);
   const works = data.works.filter((w) => workIds.has(w.id));

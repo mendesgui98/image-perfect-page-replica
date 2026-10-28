@@ -8,7 +8,7 @@ import { contractBalance, entryState } from "./dashboard-math";
 import { financeOptions } from "@/lib/finance-data";
 export async function loadDashboard() {
   const [wr, st, ex, po, es, people, finance, op] = await Promise.all([
-    supabase.from("work_registry").select("*").eq("archived", false),
+    supabase.from("work_registry").select("*").eq("archived", false).is("deleted_at", null),
     supabase.from("work_stages").select("*").eq("removed", false),
     supabase.from("work_extras").select("*"),
     supabase.from("purchase_orders").select("*,purchase_lines(*)"),

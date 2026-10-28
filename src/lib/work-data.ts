@@ -8,6 +8,7 @@ export const worksOptions = queryOptions({
       .from("work_registry")
       .select("*")
       .eq("archived", false)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
     if (r.error) throw r.error;
     return r.data;

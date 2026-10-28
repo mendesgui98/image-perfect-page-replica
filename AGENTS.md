@@ -8,6 +8,7 @@ Desenvolvimento direto pelo GitHub (sem Lovable). Trabalhe em branches e abra PR
 - Budget items snapshot catalog costs/composition (jsonb `materials`) so catalog edits never silently change existing budgets.
 - Cost data access is enforced by RLS via `public.can_see_costs()` (admin/financeiro); roles live in `user_roles`, never on profiles.
 - Approved/refused budgets are locked by DB trigger; changes go through `copy_budget(id, true)` revisions.
+- Works use the shared record trash (`manage_record_deletion` with `work_registry`): trashing also trashes the linked schedule header; permanent deletion is refused while financial, purchase, contract, record, extra or estimate links exist. Work list readers filter `deleted_at`.
 - Client PDF is an HTML print view (`/orcamentos/$id/pdf`) styled after the client's model; it must never render internal costs/margins.
 - work_registry is canonical for both origins; linked_budget_id alone references an immutable approved budget. Legacy works mirrors conversion atomically to preserve identifiers; direct works never insert budgets.
 - Operational quantities and cash/allocations use pure tested helpers in operations.ts and work-opening.ts; economic price/result calculations stay in pricing.ts.

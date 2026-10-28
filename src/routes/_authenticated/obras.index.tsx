@@ -1,3 +1,4 @@
+import { RecordTrash } from "@/components/management/record-deletion";
 import { WorkList } from "@/components/management/work-list";
 import { NewWork } from "@/components/works/new-work";
 import { dashboardSearch } from "@/lib/dashboard-search";
@@ -19,7 +20,14 @@ function Works() {
       <PageHeader
         title="Obras"
         subtitle="Gestão e acompanhamento"
-        actions={me?.canSeeCosts ? <NewWork /> : undefined}
+        actions={
+          me?.canSeeCosts ? (
+            <>
+              <RecordTrash entity="work_registry" />
+              <NewWork />
+            </>
+          ) : undefined
+        }
       />
       <WorkList />
     </div>

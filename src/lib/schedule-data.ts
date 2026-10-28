@@ -45,7 +45,7 @@ export const schedulesOptions = queryOptions({
         .eq("archived", false)
         .order("updated_at", { ascending: false }),
       supabase.from("work_stages").select("*").eq("removed", false),
-      supabase.from("work_registry").select("*").eq("archived", false),
+      supabase.from("work_registry").select("*").eq("archived", false).is("deleted_at", null),
       supabase.from("work_openings").select("work_id,progress"),
     ]);
     for (const r of [h, s, w, o]) if (r.error) throw r.error;

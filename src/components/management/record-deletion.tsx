@@ -11,12 +11,13 @@ import { ConfirmRecordAction } from "./confirm-record-action";
 import { fmtDate } from "@/lib/format";
 import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 
-export type DeletableEntity = "budgets" | "contracts" | "schedules" | "people";
+export type DeletableEntity = "budgets" | "contracts" | "schedules" | "people" | "work_registry";
 const names: Record<DeletableEntity, string> = {
   budgets: "orçamento",
   contracts: "contrato",
   schedules: "cronograma",
   people: "cadastro",
+  work_registry: "obra",
 };
 function useDeletion() {
   const qc = useQueryClient();
@@ -54,7 +55,11 @@ export function RecordDeleteButton({
   return (
     <ConfirmRecordAction
       name={name}
-      description={`Este ${names[entity]} será retirado das listas e enviado para a lixeira. Você poderá restaurar ou excluir definitivamente pela lixeira. Obras, financeiro e outros registros vinculados serão mantidos.${entity === "schedules" ? " As etapas e o avanço já registrados na obra permanecem disponíveis nela." : ""}`}
+      description={
+        entity === "work_registry"
+          ? "Esta obra sai das listas e do painel e vai para a lixeira, junto com o cronograma dela. Lançamentos financeiros, compras, contratos e registros são mantidos. Você poderá restaurar ou excluir definitivamente pela lixeira; a exclusão definitiva só é permitida para obra sem esses vínculos."
+          : `Este ${names[entity]} será retirado das listas e enviado para a lixeira. Você poderá restaurar ou excluir definitivamente pela lixeira. Obras, financeiro e outros registros vinculados serão mantidos.${entity === "schedules" ? " As etapas e o avanço já registrados na obra permanecem disponíveis nela." : ""}`
+      }
       onConfirm={async () => {
         await manage(entity, id, "trash");
         onDeleted?.();
