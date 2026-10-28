@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatCnpj, formatCpf, formatCpfCnpj, formatRg } from "./documents";
+import { formatCnpj, formatCpf, formatCpfCnpj, formatPhone, formatRg } from "./documents";
 
 describe("pontuação de documentos", () => {
   it("CPF completo e durante a digitação", () => {
@@ -40,5 +40,39 @@ describe("pontuação de documentos", () => {
     expect(formatRg("1234")).toBe("1234");
     expect(formatRg("1234567890")).toBe("1234567890");
     expect(formatRg("MG-12.345.678")).toBe("MG-12.345.678");
+  });
+});
+
+describe("pontuação de telefone", () => {
+  it("celular, fixo e durante a digitação", () => {
+    expect(formatPhone("11998937694")).toBe("(11) 99893-7694");
+    expect(formatPhone("1133334444")).toBe("(11) 3333-4444");
+    expect(formatPhone("11")).toBe("(11");
+    expect(formatPhone("119989")).toBe("(11) 9989");
+    expect(formatPhone("1199893")).toBe("(11) 9989-3");
+  });
+
+  it("é idempotente", () => {
+    expect(formatPhone("(11) 99893-7694")).toBe("(11) 99893-7694");
+    expect(formatPhone("(11) 3333-4444")).toBe("(11) 3333-4444");
+  });
+
+  it("com DDI do Brasil", () => {
+    expect(formatPhone("5511998937694")).toBe("+55 (11) 99893-7694");
+    expect(formatPhone("+55 11 99893 7694")).toBe("+55 (11) 99893-7694");
+  });
+
+  it("número longo de outro formato fica como digitado", () => {
+    expect(formatPhone("11111111111111")).toBe("11111111111111");
+  });
+
+  it("vários números separados por barra", () => {
+    expect(formatPhone("11996062427/11998937694")).toBe("(11) 99606-2427 / (11) 99893-7694");
+    expect(formatPhone("(11) 99606-2427 / ")).toBe("(11) 99606-2427 / ");
+  });
+
+  it("vazio", () => {
+    expect(formatPhone("")).toBe("");
+    expect(formatPhone(null)).toBe("");
   });
 });

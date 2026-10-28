@@ -1,5 +1,5 @@
 import { pageMeta } from "@/lib/page-meta";
-import { formatCnpj } from "@/lib/documents";
+import { formatCnpj, formatPhone } from "@/lib/documents";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -69,6 +69,12 @@ function Config() {
   );
 }
 
+// Pontuação aplicada enquanto digita.
+const COMPANY_MASKS: Partial<Record<string, (v: string) => string>> = {
+  cnpj: formatCnpj,
+  telefone: formatPhone,
+};
+
 const COMPANY_FIELDS: [keyof Company, string][] = [
   ["razao_social", "Razão social"],
   ["nome_fantasia", "Nome fantasia"],
@@ -124,9 +130,9 @@ function Empresa({ ro }: { ro: boolean }) {
               <Input
                 disabled={ro}
                 value={(f[k] as string) ?? ""}
-                inputMode={k === "cnpj" ? "numeric" : undefined}
+                inputMode={k === "cnpj" ? "numeric" : k === "telefone" ? "tel" : undefined}
                 onChange={(e) =>
-                  setF({ ...f, [k]: k === "cnpj" ? formatCnpj(e.target.value) : e.target.value })
+                  setF({ ...f, [k]: COMPANY_MASKS[k]?.(e.target.value) ?? e.target.value })
                 }
               />
             </div>

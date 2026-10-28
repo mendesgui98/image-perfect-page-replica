@@ -42,3 +42,29 @@ export function formatRg(v: string | null | undefined) {
   if (chars.length !== 9 || /X./.test(chars)) return raw;
   return mask(chars, "00.000.000-0");
 }
+
+/** Um telefone: (11) 99999-9999 (celular), (11) 9999-9999 (fixo) ou +55 (11) 99999-9999. */
+function formatOnePhone(raw: string): string {
+  const d = digits(raw);
+  if (!d) return raw.trim();
+  if (d.length > 11) {
+    // Com DDI do Brasil; outros tamanhos (exterior, ramais) ficam como digitados.
+    if (d.startsWith("55") && d.length <= 13) return `+55 ${formatOnePhone(d.slice(2))}`;
+    return raw.trim();
+  }
+  if (d.length <= 2) return `(${d}`;
+  const local = d.slice(2);
+  const split = d.length === 11 ? 5 : 4;
+  const number = local.length > split ? `${local.slice(0, split)}-${local.slice(split)}` : local;
+  return `(${d.slice(0, 2)}) ${number}`;
+}
+
+/** Telefone com DDD; vários números separados por "/" são pontuados um a um. */
+export function formatPhone(v: string | null | undefined) {
+  const value = v ?? "";
+  if (!value.includes("/")) return formatOnePhone(value);
+  return value
+    .split("/")
+    .map((part, i, all) => (i === all.length - 1 && !part.trim() ? "" : formatOnePhone(part)))
+    .join(" / ");
+}

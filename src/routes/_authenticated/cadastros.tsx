@@ -1,5 +1,5 @@
 import { RecordDeleteButton, RecordTrash } from "@/components/management/record-deletion";
-import { formatCpfCnpj, formatRg } from "@/lib/documents";
+import { formatCpfCnpj, formatPhone, formatRg } from "@/lib/documents";
 import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -63,6 +63,7 @@ const FIELDS: [keyof Person, string, string?][] = [
 const MASKS: Partial<Record<keyof Person, (v: string) => string>> = {
   document: formatCpfCnpj,
   rg: formatRg,
+  phone: formatPhone,
 };
 
 // Busca aceita o documento com ou sem pontuação.
@@ -112,6 +113,7 @@ function Cadastros() {
         name: p.name.trim(),
         document: p.document ? formatCpfCnpj(p.document) : p.document,
         rg: p.rg ? formatRg(p.rg) : p.rg,
+        phone: p.phone ? formatPhone(p.phone).replace(/\s*\/\s*$/, "") : p.phone,
       } as Person;
       const { error } = p.id
         ? await supabase.from("people").update(payload).eq("id", p.id)
@@ -193,7 +195,7 @@ function Cadastros() {
                     {p.name}
                   </Link>
                 </td>
-                <td className="whitespace-nowrap p-3">{p.phone || "—"}</td>
+                <td className="whitespace-nowrap p-3">{p.phone ? formatPhone(p.phone) : "—"}</td>
                 <td className="p-3">{p.email || "—"}</td>
                 <td className="p-3">{p.specialty || "—"}</td>
                 <td className="p-3 text-xs">{p.active ? "Ativo" : "Arquivado"}</td>
@@ -249,7 +251,7 @@ function Cadastros() {
                     <Label>{l}</Label>
                     <Input
                       value={(edit[f] as string) ?? ""}
-                      inputMode={f === "document" ? "numeric" : undefined}
+                      inputMode={f === "document" ? "numeric" : f === "phone" ? "tel" : undefined}
                       onChange={(e) =>
                         setEdit({ ...edit, [f]: MASKS[f]?.(e.target.value) ?? e.target.value })
                       }

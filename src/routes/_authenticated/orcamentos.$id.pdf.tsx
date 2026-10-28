@@ -1,5 +1,5 @@
 import { DeletedRecordNotice } from "@/components/management/record-deletion";
-import { formatCnpj } from "@/lib/documents";
+import { formatCnpj, formatPhone } from "@/lib/documents";
 import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -271,7 +271,7 @@ function Pdf() {
                 .join(" ")}
             </div>
           )}
-          {company.telefone && <div>Contato : {company.telefone}</div>}
+          {company.telefone && <div>Contato : {formatPhone(company.telefone)}</div>}
           {company.instagram && <div>{company.instagram}</div>}
         </div>
         <p className="mt-10 text-center text-[16px] italic" style={{ fontFamily: "Arial" }}>
