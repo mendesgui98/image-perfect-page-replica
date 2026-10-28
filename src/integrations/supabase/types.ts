@@ -1864,6 +1864,51 @@ export type Database = {
           },
         ];
       };
+      work_stage_services: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          description: string;
+          id: string;
+          labor_planned: number;
+          material_planned: number;
+          progress: number;
+          sort: number;
+          stage_id: string;
+          updated_at: string;
+          updated_by: string | null;
+          work_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          description: string;
+          id?: string;
+          labor_planned?: number;
+          material_planned?: number;
+          progress?: number;
+          sort?: number;
+          stage_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          work_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          id?: string;
+          labor_planned?: number;
+          material_planned?: number;
+          progress?: number;
+          sort?: number;
+          stage_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          work_id?: string;
+        };
+        Relationships: [];
+      };
       work_stages: {
         Row: {
           actual_end: string | null;

@@ -117,6 +117,65 @@ export function Finance({ workId }: { workId?: string }) {
 
   // Etapas da forma de pagamento (orçamento) para as contas a receber da obra.
   const { data: dash } = useQuery({ ...dashboardOptions, enabled: !!workId });
+  // Etapas da obra: a saída lançada numa etapa vira o gasto real dela.
+  const { data: workStages = [] } = useQuery({
+    queryKey: ["work-stages-finance", workId],
+    enabled: !!workId,
+    queryFn: async () => {
+      const r = await supabase
+        .from("work_stages")
+        .select("id,name")
+        .eq("work_id", workId ?? "")
+        .eq("removed", false)
+        .order("sort");
+      if (r.error) throw r.error;
+      return r.data;
+    },
+  });
+  const stageSelect =
+    workStages.length > 0 ? (
+      <label className="block text-sm">
+        Etapa da obra (opcional)
+        <select name="work_stage" defaultValue="" className={selectClass}>
+          <option value="">Sem etapa</option>
+          {workStages.map((st) => (
+            <option key={st.id} value={st.id}>
+              {st.name}
+            </option>
+          ))}
+        </select>
+        <span className="mt-1 block text-xs text-muted-foreground">
+          Entra no gasto real da etapa (aba Etapas).
+        </span>
+      </label>
+    ) : null;
+  async function setEntryStage(entryId: string, stageId: string) {
+    const r = await supabase
+      .from("financial_entries")
+      .update({ stage_id: stageId || null })
+      .eq("id", entryId);
+    if (r.error) toast.error(r.error.message);
+    else {
+      refresh();
+      toast.success(stageId ? "Etapa vinculada." : "Etapa removida.");
+    }
+  }
+  const stageTag = (entryId: string, current: string | null, direction: string) =>
+    workId && direction === "saida" && workStages.length > 0 ? (
+      <select
+        aria-label="Etapa da obra"
+        className="h-7 rounded border bg-background px-1 text-xs"
+        value={current ?? ""}
+        onChange={(ev) => setEntryStage(entryId, ev.target.value)}
+      >
+        <option value="">Sem etapa</option>
+        {workStages.map((st) => (
+          <option key={st.id} value={st.id}>
+            Etapa: {st.name}
+          </option>
+        ))}
+      </select>
+    ) : null;
   const workSummary = dash?.works.find((w) => w.work.id === workId);
   const stages = workSummary
     ? paymentStages(
@@ -219,6 +278,15 @@ export function Finance({ workId }: { workId?: string }) {
         });
       } else throw Error("Selecione um lançamento.");
       if (r.error) throw Error(r.error.message);
+      const stageId = text(d, "work_stage");
+      if (stageId && (dialog === "cash" || dialog === "entry")) {
+        // À vista: a conta tem o id da requisição; parcelado: o grupo tem.
+        const link = await supabase
+          .from("financial_entries")
+          .update({ stage_id: stageId })
+          .eq(dialog === "cash" ? "id" : "group_id", requestId);
+        if (link.error) throw Error(link.error.message);
+      }
       const { data: u } = await supabase.auth.getUser();
       if (u.user)
         localStorage.removeItem(`jmg-draft:${u.user.id}:finance-${workId || "general"}-${dialog}`);
@@ -608,6 +676,11 @@ export function Finance({ workId }: { workId?: string }) {
                   )}
                   {m.notes ? ` · ${m.notes}` : ""}
                 </p>
+                {stageTag(
+                  m.entry_id,
+                  data?.entries.find((x) => x.id === m.entry_id)?.stage_id ?? null,
+                  m.direction,
+                )}
               </div>
               <Attachment path={m.file_path} />
               <p
@@ -658,7 +731,8 @@ export function Finance({ workId }: { workId?: string }) {
                         ` · ${data?.works.find((w) => w.id === e.work_id)?.name || "Geral JMG"}`}
                       {e.notes ? ` · ${e.notes}` : ""}
                     </p>
-                    <div className="mt-1 flex flex-wrap gap-3 text-xs">
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs">
+                      {stageTag(e.id, e.stage_id, e.direction)}
                       {e.person_id && (
                         <Link
                           to="/cadastros/$id"
@@ -845,6 +919,7 @@ export function Finance({ workId }: { workId?: string }) {
                     ? "Cliente (opcional)"
                     : "Fornecedor / prestador (opcional)",
                 )}
+                {entryDirection === "saida" && stageSelect}
                 <Field name="notes" label="Observação" />
               </>
             )}
@@ -886,6 +961,7 @@ export function Finance({ workId }: { workId?: string }) {
                 <Field name="amount" label="Valor (R$)" type="number" required />
                 <Installments />
                 {methodSelect()}
+                {entryDirection === "saida" && stageSelect}
                 <Field name="center" label="Centro de custo" />
                 <Field name="notes" label="Observação" />
                 {entryDirection === "saida" && (

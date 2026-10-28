@@ -21,6 +21,9 @@ import { useRecordFocus } from "@/hooks/use-record-focus";
 import { fmtDate, fmtNum } from "@/lib/format";
 import { Plus, Pencil, Camera, ArrowUp, ArrowDown, Copy, Trash2, Layers } from "lucide-react";
 import { StagePhotos } from "./photos";
+import { StageServicesPanel } from "./stage-services";
+import { stageServicesOptions } from "@/lib/stage-services-data";
+import { servicesProgress } from "@/lib/work-progress";
 import { stageLabels } from "@/lib/stage-labels";
 import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
 type Stage = Database["public"]["Tables"]["work_stages"]["Row"];
@@ -93,6 +96,12 @@ export function Schedule({
     [creating, setCreating] = useState(false),
     [busy, setBusy] = useState(false);
   const { data: me } = useMe();
+  const { data: services = [] } = useQuery({
+    ...stageServicesOptions(workId),
+    enabled: !!me?.canSeeCosts,
+  });
+  // Etapa com serviços tem o avanço calculado por eles (ponderado pelo valor).
+  const computed = (id: string) => servicesProgress(services.filter((x) => x.stage_id === id));
   const w = weightedProgress(stages),
     today = businessDate();
   async function quick(stage: Stage, value: string) {
@@ -125,7 +134,8 @@ export function Schedule({
   async function save(d: FormData) {
     setBusy(true);
     try {
-      const progress = number(d, "progress"),
+      const fromServices = editing && !creating ? computed(editing.id) : null;
+      const progress = fromServices ?? number(d, "progress"),
         weight = number(d, "weight");
       if (progress > 100 || weight > 100) throw Error("Percentuais devem estar entre 0 e 100%.");
       const payload = {
@@ -263,21 +273,31 @@ export function Schedule({
               >
                 {stageLabels[stageStatus(s, today)]}
               </span>
-              <label className="flex items-center gap-1 text-sm">
-                <input
-                  key={`${s.id}-${s.progress}`}
+              {computed(s.id) !== null ? (
+                <span
+                  className="text-sm font-semibold num"
+                  title="Calculado pelos serviços da etapa"
                   aria-label={`Avanço ${s.name}`}
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="1"
-                  defaultValue={s.progress}
-                  onBlur={(e) => quick(s, e.target.value)}
-                  onKeyDown={commitOnEnter}
-                  className="h-10 w-20 rounded-md border bg-background px-2 text-right num"
-                />
-                %
-              </label>
+                >
+                  {fmtNum(s.progress)}%
+                </span>
+              ) : (
+                <label className="flex items-center gap-1 text-sm">
+                  <input
+                    key={`${s.id}-${s.progress}`}
+                    aria-label={`Avanço ${s.name}`}
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    defaultValue={s.progress}
+                    onBlur={(e) => quick(s, e.target.value)}
+                    onKeyDown={commitOnEnter}
+                    className="h-10 w-20 rounded-md border bg-background px-2 text-right num"
+                  />
+                  %
+                </label>
+              )}
               <Button
                 size="icon"
                 variant="ghost"
@@ -325,6 +345,9 @@ export function Schedule({
               )}
             </div>
             <progress max="100" value={s.progress} className="mt-3 h-2 w-full accent-primary" />
+            {mode === "etapas" && me?.canSeeCosts && (
+              <StageServicesPanel workId={workId} stage={s} onChange={refresh} />
+            )}
             {s.scope_services && (
               <p className="mt-2 whitespace-pre-wrap text-xs text-muted-foreground">
                 {s.scope_services}

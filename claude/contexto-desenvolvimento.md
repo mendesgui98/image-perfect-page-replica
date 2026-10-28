@@ -4,6 +4,17 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Serviços, avanço e valores por etapa da obra (branch `feat/fundacao-tecnica`)
+
+**Decisões do Guilherme:** gasto real vem do financeiro (saídas com etapa); avanço da etapa ponderado pelo valor dos serviços.
+
+- Migração `20261028000001_stage_services_and_costs.sql`: tabela `work_stage_services` (descrição, MO e material previstos, avanço %), RLS `can_see_costs`, guarda de etapa ativa da mesma obra, auditoria em `work_history` (inclusive exclusão), cascata na exclusão definitiva da obra. `financial_entries.stage_id` validado contra a obra; `guard_installment_entry` permite escolher/trocar a etapa de parcelas.
+- Cálculos: `servicesProgress`/`statusForProgress` (work-progress.ts) e `stageCosts` (operations.ts: previsto, gasto pago por MO/material/outros, comprometido, saldo). Avanço calculado é gravado em `work_stages.progress`, então cronograma, painel e relatórios usam o mesmo número.
+- Tela: painel por etapa na aba Etapas (cards e lista editável de serviços); avanço manual some quando a etapa tem serviços. Financeiro da obra: "Etapa da obra" ao lançar saída/conta a pagar e seletor de etapa em cada saída.
+- Etapas novas já existiam ("Nova etapa") e ficam no cronograma porque é a mesma tabela.
+
+**Testado no navegador** com obra de teste (apagada depois): R$ 2.000 a 50% + R$ 1.000 a 100% → 66,67%; saídas de R$ 1.500 MO + R$ 500 material na etapa → previsto R$ 3.000, gasto R$ 2.000, saldo R$ 1.000.
+
 ### 2026-10-28 — Financeiro: caixa separado de contas a receber/pagar (branch `feat/fundacao-tecnica`)
 
 **Modelo (sem mover dados):** `financial_entries` são as contas (futuro) e `financial_settlements` são o caixa (realizado). Decisão do Guilherme: saldo atual inclui o saldo inicial das contas bancárias.

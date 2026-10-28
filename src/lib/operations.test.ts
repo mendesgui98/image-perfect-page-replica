@@ -8,6 +8,7 @@ import {
   accountStatus,
   cashMovements,
   cashSummary,
+  stageCosts,
   type AccountEntry,
 } from "./operations";
 const entry = {
@@ -181,5 +182,53 @@ describe("caixa e contas a receber/pagar (critérios de aceite)", () => {
     const overdue = entry({ id: "v", amount: 70, due_date: "2026-10-01" });
     const r = cashSummary([overdue, receber], [], today, 1000);
     expect(r).toMatchObject({ current: 1000, receivable: 270, receivableOverdue: 70 });
+  });
+});
+
+describe("valores da etapa", () => {
+  const services = [
+    { stage_id: "st", labor_planned: 2000, material_planned: 1000 },
+    { stage_id: "outra", labor_planned: 999, material_planned: 0 },
+  ];
+  const saida = (id: string, category: string, amount: number, stage_id: string | null = "st") => ({
+    id,
+    work_id: "w1",
+    stage_id,
+    direction: "saida",
+    amount,
+    category,
+    incurred: true,
+    canceled: false,
+    purchase_order_id: null,
+    description: id,
+    due_date: "2026-10-28",
+  });
+  const paid = (entry_id: string, amount: number) => ({ entry_id, amount, account_id: null });
+
+  it("previsto R$ 3.000, gasto R$ 2.000 → sobra R$ 1.000", () => {
+    const r = stageCosts(
+      "st",
+      services,
+      [
+        saida("mo", "Mão de obra", 1500),
+        saida("mat", "Materiais", 500),
+        saida("x", "Materiais", 400, null),
+      ],
+      [paid("mo", 1500), paid("mat", 500), paid("x", 400)],
+    );
+    expect(r).toMatchObject({
+      laborPlanned: 2000,
+      materialPlanned: 1000,
+      planned: 3000,
+      laborSpent: 1500,
+      materialSpent: 500,
+      spent: 2000,
+      balance: 1000,
+    });
+  });
+
+  it("conta ainda não paga entra como comprometido, não como gasto", () => {
+    const r = stageCosts("st", services, [saida("mo", "Mão de obra", 800)], [paid("mo", 300)]);
+    expect(r).toMatchObject({ spent: 300, committed: 500, balance: 2700 });
   });
 });

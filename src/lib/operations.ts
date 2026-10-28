@@ -231,3 +231,44 @@ export function cashSummary(
     forecast: current + total(receivable) - total(payable),
   };
 }
+
+/* ---------------- Valores da etapa ---------------- */
+// Previsto = soma dos serviços da etapa. Gasto real = baixas (caixa) das saídas ligadas à
+// etapa, separadas pela categoria; o que ainda está em aberto aparece como comprometido.
+export function stageCosts(
+  stageId: string,
+  services: { stage_id: string; labor_planned: number; material_planned: number }[],
+  entries: (AccountEntry & { stage_id?: string | null })[],
+  settlements: SettlementLike[],
+) {
+  const own = services.filter((s) => s.stage_id === stageId);
+  const laborPlanned = own.reduce((t, s) => t + (Number(s.labor_planned) || 0), 0);
+  const materialPlanned = own.reduce((t, s) => t + (Number(s.material_planned) || 0), 0);
+  const outflows = entries.filter(
+    (e) => e.stage_id === stageId && e.direction === "saida" && !e.canceled,
+  );
+  let laborSpent = 0,
+    materialSpent = 0,
+    otherSpent = 0,
+    committed = 0;
+  for (const e of outflows) {
+    const paid = settlements.filter((s) => s.entry_id === e.id).reduce((t, s) => t + s.amount, 0);
+    if (e.category === "Mão de obra") laborSpent += paid;
+    else if (e.category === "Materiais") materialSpent += paid;
+    else otherSpent += paid;
+    committed += Math.max(0, e.amount - paid);
+  }
+  const planned = laborPlanned + materialPlanned;
+  const spent = laborSpent + materialSpent + otherSpent;
+  return {
+    laborPlanned,
+    materialPlanned,
+    planned,
+    laborSpent,
+    materialSpent,
+    otherSpent,
+    spent,
+    committed,
+    balance: planned - spent,
+  };
+}
