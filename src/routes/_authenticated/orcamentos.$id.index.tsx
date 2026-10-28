@@ -19,7 +19,7 @@ import {
 import { toast } from "sonner";
 import { useMe } from "@/hooks/use-me";
 import { supabase } from "@/integrations/supabase/client";
-import { NoAccess } from "@/components/page-header";
+import { NoAccess, PageBand } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { budgetApi, budgetFamilyOptions } from "@/lib/budget-api";
@@ -183,7 +183,7 @@ function Editor() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+      <PageBand className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Link to="/orcamentos" className="text-sm text-muted-foreground hover:underline">
             ← Orçamentos
@@ -293,7 +293,7 @@ function Editor() {
             </Button>
           )}
         </div>
-      </div>
+      </PageBand>
 
       <div className="mb-6 grid grid-cols-2 gap-3 xl:grid-cols-[1.5fr_1fr_1fr_1fr]">
         <KpiCard

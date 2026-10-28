@@ -93,7 +93,7 @@
 :root {
   /* Clean corporativo: superfícies neutras, azul JMG (#004AAD), azul-marinho (#112440) e dourado (#E8A33D) da capa do orçamento só em ações e destaques. */
   --radius: 0.75rem;
-  --background: oklch(0.977 0.003 250);
+  --background: oklch(0.945 0.02 258);
   --foreground: oklch(0.21 0.018 262);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.21 0.018 262);
@@ -102,11 +102,11 @@
   --primary: oklch(0.443 0.168 259.6);
   --primary-foreground: oklch(0.99 0 0);
   --primary-glow: oklch(0.53 0.16 258);
-  --secondary: oklch(0.967 0.004 250);
+  --secondary: oklch(0.93 0.025 258);
   --secondary-foreground: oklch(0.3 0.02 262);
-  --muted: oklch(0.967 0.004 250);
-  --muted-foreground: oklch(0.52 0.015 260);
-  --accent: oklch(0.95 0.025 258);
+  --muted: oklch(0.935 0.022 258);
+  --muted-foreground: oklch(0.48 0.03 262);
+  --accent: oklch(0.92 0.035 258);
   --accent-foreground: oklch(0.36 0.13 260);
   --destructive: oklch(0.577 0.215 27);
   --destructive-foreground: oklch(0.99 0 0);
@@ -114,8 +114,8 @@
   --success-foreground: oklch(0.99 0 0);
   --warning: oklch(0.8 0.15 80);
   --warning-foreground: oklch(0.33 0.07 60);
-  --border: oklch(0.93 0.005 255);
-  --input: oklch(0.91 0.006 255);
+  --border: oklch(0.89 0.022 258);
+  --input: oklch(0.86 0.028 258);
   --ring: oklch(0.55 0.15 258);
   --chart-1: oklch(0.443 0.168 259.6);
   --chart-2: oklch(0.6 0.13 158);
@@ -123,8 +123,8 @@
   --chart-4: oklch(0.6 0.2 27);
   --chart-5: oklch(0.25 0.06 263);
   /* Menu lateral em azul JMG bem suave, textos em azul-marinho. */
-  --sidebar: oklch(0.968 0.014 258);
-  --sidebar-end: oklch(0.93 0.03 260);
+  --sidebar: oklch(0.985 0.008 258);
+  --sidebar-end: oklch(0.94 0.028 259);
   --sidebar-foreground: oklch(0.33 0.05 262);
   --sidebar-primary: oklch(0.25 0.06 263);
   --sidebar-primary-foreground: oklch(0.99 0 0);
@@ -141,10 +141,10 @@
   --negative-soft: oklch(0.965 0.022 25);
   --alert: oklch(0.6 0.13 68);
   --alert-soft: oklch(0.965 0.045 82);
-  --neutral-soft: oklch(0.962 0.005 255);
+  --neutral-soft: oklch(0.935 0.022 258);
   --extra: oklch(0.3 0.07 262);
   --extra-soft: oklch(0.94 0.018 262);
-  --primary-soft: oklch(0.95 0.025 258);
+  --primary-soft: oklch(0.92 0.04 258);
   /* Dourado JMG (#E8A33D): só detalhes e destaques, nunca como cor financeira. */
   --gold: oklch(0.775 0.145 72);
   --gold-soft: oklch(0.96 0.045 82);
@@ -152,7 +152,7 @@
   --hero: oklch(0.443 0.168 259.6);
   --hero-end: oklch(0.25 0.06 263);
   --hero-foreground: oklch(0.99 0 0);
-  --shadow-card: 0 1px 2px oklch(0.25 0.02 260 / 4%), 0 4px 16px -6px oklch(0.25 0.03 260 / 8%);
+  --shadow-card: 0 1px 2px oklch(0.25 0.06 263 / 6%), 0 6px 18px -8px oklch(0.25 0.06 263 / 14%);
   --shadow-elevated: 0 10px 30px -12px oklch(0.25 0.04 260 / 22%);
   --shadow-hero: 0 14px 34px -14px oklch(0.25 0.06 263 / 50%);
   color-scheme: light;
