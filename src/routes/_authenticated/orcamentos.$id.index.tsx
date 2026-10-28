@@ -354,6 +354,7 @@ function Editor() {
           params={data.params}
           discount={budget.general_discount}
           items={data.items}
+          sections={data.sections}
           result={result}
           locked={locked}
           onApplied={refresh}

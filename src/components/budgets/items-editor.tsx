@@ -36,6 +36,7 @@ import {
   type BudgetResult,
   type ItemMaterial,
   type PricingParams,
+  isDirectCostModel,
 } from "@/lib/pricing";
 import { fmtBRL, fmtNum, UNIT_LABEL } from "@/lib/format";
 import { selectClass } from "@/components/works/fields";
@@ -350,6 +351,9 @@ function ItemRow({
 }) {
   const [open, setOpen] = useState(false);
   const [newMaterial, setNewMaterial] = useState("");
+  // Acréscimos e desconto por item só existem no cálculo antigo; no custo direto o preço é
+  // formado no painel de precificação.
+  const legacy = !isDirectCostModel(params);
   const upd = (p: Record<string, unknown>) => run(budgetApi.updateItem(item.id, p));
   const num = (v: string) => (v === "" ? null : Number(v));
   const setMat = (i: number, p: Partial<ItemMaterial>) =>
@@ -412,7 +416,7 @@ function ItemRow({
           ) : (
             <ChevronRight className="h-3.5 w-3.5" />
           )}
-          Materiais ({item.materials.length}), percentuais e desconto
+          Materiais ({item.materials.length}){legacy && ", percentuais e desconto"}
         </button>
         {!locked && (
           <Button
@@ -444,48 +448,52 @@ function ItemRow({
                 ))}
               </select>
             </div>
-            <div>
-              <Label className="text-xs">
-                Acréscimo MO % (padrão {fmtNum(params.labor_markup)})
-              </Label>
-              <Input
-                onKeyDown={commitOnEnter}
-                type="number"
-                step="any"
-                placeholder="padrão"
-                defaultValue={item.labor_markup_override ?? ""}
-                disabled={locked}
-                onBlur={(e) => upd({ labor_markup_override: num(e.target.value) })}
-              />
-            </div>
-            <div>
-              <Label className="text-xs">
-                Acréscimo mat. % (padrão {fmtNum(params.materials_markup)})
-              </Label>
-              <Input
-                onKeyDown={commitOnEnter}
-                type="number"
-                step="any"
-                placeholder="padrão"
-                defaultValue={item.materials_markup_override ?? ""}
-                disabled={locked}
-                onBlur={(e) => upd({ materials_markup_override: num(e.target.value) })}
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Desconto neste item (R$)</Label>
-              <Input
-                onKeyDown={commitOnEnter}
-                type="number"
-                step="0.01"
-                defaultValue={item.item_discount}
-                disabled={locked}
-                onBlur={(e) =>
-                  Number(e.target.value) !== item.item_discount &&
-                  upd({ item_discount: Number(e.target.value) || 0 })
-                }
-              />
-            </div>
+            {legacy && (
+              <>
+                <div>
+                  <Label className="text-xs">
+                    Acréscimo MO % (padrão {fmtNum(params.labor_markup)})
+                  </Label>
+                  <Input
+                    onKeyDown={commitOnEnter}
+                    type="number"
+                    step="any"
+                    placeholder="padrão"
+                    defaultValue={item.labor_markup_override ?? ""}
+                    disabled={locked}
+                    onBlur={(e) => upd({ labor_markup_override: num(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">
+                    Acréscimo mat. % (padrão {fmtNum(params.materials_markup)})
+                  </Label>
+                  <Input
+                    onKeyDown={commitOnEnter}
+                    type="number"
+                    step="any"
+                    placeholder="padrão"
+                    defaultValue={item.materials_markup_override ?? ""}
+                    disabled={locked}
+                    onBlur={(e) => upd({ materials_markup_override: num(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Desconto neste item (R$)</Label>
+                  <Input
+                    onKeyDown={commitOnEnter}
+                    type="number"
+                    step="0.01"
+                    defaultValue={item.item_discount}
+                    disabled={locked}
+                    onBlur={(e) =>
+                      Number(e.target.value) !== item.item_discount &&
+                      upd({ item_discount: Number(e.target.value) || 0 })
+                    }
+                  />
+                </div>
+              </>
+            )}
           </div>
           {item.materials.map((m, i) => (
             <div

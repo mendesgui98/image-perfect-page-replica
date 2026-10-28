@@ -230,6 +230,12 @@ export function priceBreakdown(
   };
 }
 
+/** Abertura do preço calculado para um custo direto (null se os percentuais somam 100%+). */
+export function costBreakdown(directCost: number, rates: PriceRates) {
+  const raw = rawPrice(directCost, rates);
+  return raw === null ? null : priceBreakdown(r2(raw), directCost, rates, raw);
+}
+
 export type MarginLevel = "saudavel" | "atencao" | "alerta" | "prejuizo";
 /** Faixa da margem: meta ou acima, entre mínima e meta, abaixo da mínima, negativa. */
 export function marginLevel(margin: number, target: number, min: number): MarginLevel {

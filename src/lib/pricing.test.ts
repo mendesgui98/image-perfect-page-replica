@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   computeBudget,
   computeWorkResult,
+  costBreakdown,
   emptyParams,
   marginLevel,
   priceBreakdown,
@@ -224,6 +225,15 @@ describe("precificação pelo custo direto", () => {
     min_margin: 10,
   };
   const obra = [{ quantity: 1, labor_cost_unit: 12000, materials: [] }];
+
+  it("abertura do preço calculado bate com o documento", () =>
+    expect(costBreakdown(12000, rates)).toMatchObject({
+      price: 22018.35,
+      structure: 2752.29,
+      rt: 2201.83,
+      taxes: 1761.47,
+      profit: 3302.76,
+    }));
 
   it("R$ 12.000 de custo direto vira R$ 22.018,35", () => {
     expect(priceFromCost(12000, rates)).toBe(22018.35);
