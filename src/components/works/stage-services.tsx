@@ -7,6 +7,8 @@ import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SubmitForm } from "@/components/enter-submit";
+import { MoneyInput } from "@/components/money-input";
+import { maskBRL, parseBRL } from "@/lib/money";
 import { commitOnEnter } from "@/lib/enter-submit";
 import { capitalizeWordsProps } from "@/lib/text-case";
 import { stageCosts } from "@/lib/operations";
@@ -20,8 +22,6 @@ import {
 import { fmtBRL, fmtNum } from "@/lib/format";
 
 type Stage = Database["public"]["Tables"]["work_stages"]["Row"];
-
-const money = (v: string) => Math.max(0, Number(v.replace(",", ".")) || 0);
 
 export function StageServicesPanel({
   workId,
@@ -53,18 +53,6 @@ export function StageServicesPanel({
     await qc.invalidateQueries({ queryKey: ["stage-services", workId] });
     onChange();
   }
-  async function saveTyped(field: "labor_planned" | "material_planned", raw: string) {
-    const value = money(raw);
-    const current = values.find((v) => v.stage_id === stage.id);
-    if ((current?.[field] ?? 0) === value) return;
-    // Só o campo alterado: o upsert mantém o outro valor já gravado, mesmo salvando em sequência.
-    const key = { stage_id: stage.id, work_id: workId };
-    const row: Database["public"]["Tables"]["work_stage_values"]["Insert"] = { ...key };
-    row[field] = value;
-    const r = await supabase.from("work_stage_values").upsert(row, { onConflict: "stage_id" });
-    if (r.error) return void toast.error(r.error.message);
-    await qc.invalidateQueries({ queryKey: ["stage-values", workId] });
-  }
   async function update(s: StageService, patch: Partial<StageService>) {
     const r = await supabase.from("work_stage_services").update(patch).eq("id", s.id);
     if (r.error) return void toast.error(r.error.message);
@@ -93,8 +81,8 @@ export function StageServicesPanel({
         work_id: workId,
         stage_id: stage.id,
         description: draft.description.trim(),
-        labor_planned: money(draft.labor),
-        material_planned: money(draft.material),
+        labor_planned: parseBRL(draft.labor),
+        material_planned: parseBRL(draft.material),
         sort: Math.max(-1, ...services.map((s) => s.sort)) + 1,
       })
       .select("*")
@@ -110,47 +98,10 @@ export function StageServicesPanel({
   }
 
   const usedPct = costs.planned > 0 ? (costs.spent / costs.planned) * 100 : 0;
-  const typedField = (
-    field: "labor_planned" | "material_planned",
-    label: string,
-    value: number,
-  ) => (
-    <label className="block">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      {costs.fromServices ? (
-        <span className="mt-1 block font-semibold num" title="Soma dos serviços da etapa">
-          {fmtBRL(value)}
-          <span className="ml-1 text-xs font-normal text-muted-foreground">
-            (soma dos serviços)
-          </span>
-        </span>
-      ) : (
-        <span className="mt-1 flex items-center gap-1">
-          <span className="text-xs text-muted-foreground">R$</span>
-          <Input
-            key={`${stage.id}-${field}-${value}`}
-            className="h-9 num"
-            aria-label={`${label} — ${stage.name}`}
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="0,00"
-            defaultValue={value || ""}
-            onKeyDown={commitOnEnter}
-            onBlur={(e) => saveTyped(field, e.target.value)}
-          />
-        </span>
-      )}
-    </label>
-  );
   const split = (labor: number, material: number) =>
     `Etapa ${fmtBRL(labor)} · Mat. ${fmtBRL(material)}`;
   return (
-    <div className="mt-4 space-y-4 border-t pt-4 text-sm">
-      <div className="grid gap-3 sm:grid-cols-2 sm:max-w-xl">
-        {typedField("labor_planned", "Valor da etapa (mão de obra / serviço)", costs.laborPlanned)}
-        {typedField("material_planned", "Valor dos materiais da etapa", costs.materialPlanned)}
-      </div>
+    <div className="mt-4 border-t pt-4 text-sm">
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
         <div>
           <dt className="text-xs text-muted-foreground">Valor previsto</dt>
@@ -226,31 +177,21 @@ export function StageServicesPanel({
                   update(s, { description: e.target.value.trim() })
                 }
               />
-              <Input
-                className="col-span-4 sm:col-span-2 num"
+              <MoneyInput
+                key={`${s.id}-labor_planned-${s.labor_planned}`}
+                className="col-span-4 sm:col-span-2"
                 aria-label="Mão de obra prevista"
-                type="number"
-                min="0"
-                step="0.01"
-                defaultValue={s.labor_planned}
+                value={s.labor_planned}
                 onKeyDown={commitOnEnter}
-                onBlur={(e) =>
-                  money(e.target.value) !== s.labor_planned &&
-                  update(s, { labor_planned: money(e.target.value) })
-                }
+                onCommit={(v) => update(s, { labor_planned: v })}
               />
-              <Input
-                className="col-span-4 sm:col-span-2 num"
+              <MoneyInput
+                key={`${s.id}-material_planned-${s.material_planned}`}
+                className="col-span-4 sm:col-span-2"
                 aria-label="Material previsto"
-                type="number"
-                min="0"
-                step="0.01"
-                defaultValue={s.material_planned}
+                value={s.material_planned}
                 onKeyDown={commitOnEnter}
-                onBlur={(e) =>
-                  money(e.target.value) !== s.material_planned &&
-                  update(s, { material_planned: money(e.target.value) })
-                }
+                onCommit={(v) => update(s, { material_planned: v })}
               />
               <Input
                 key={`${s.id}-${s.progress}`}
@@ -295,21 +236,17 @@ export function StageServicesPanel({
             />
             <Input
               className="col-span-4 sm:col-span-2"
-              placeholder="MO R$"
-              type="number"
-              min="0"
-              step="0.01"
+              placeholder="MO R$ 0,00"
+              inputMode="numeric"
               value={draft.labor}
-              onChange={(e) => setDraft({ ...draft, labor: e.target.value })}
+              onChange={(e) => setDraft({ ...draft, labor: maskBRL(e.target.value) })}
             />
             <Input
               className="col-span-4 sm:col-span-2"
-              placeholder="Material R$"
-              type="number"
-              min="0"
-              step="0.01"
+              placeholder="Material R$ 0,00"
+              inputMode="numeric"
               value={draft.material}
-              onChange={(e) => setDraft({ ...draft, material: e.target.value })}
+              onChange={(e) => setDraft({ ...draft, material: maskBRL(e.target.value) })}
             />
             <Button
               type="submit"

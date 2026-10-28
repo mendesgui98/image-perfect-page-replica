@@ -43,3 +43,15 @@ export const stageValuesOptions = (workId: string) =>
       return r.data;
     },
   });
+
+/** Grava o custo digitado da etapa (uma linha por etapa). */
+export async function saveStageValues(
+  workId: string,
+  stageId: string,
+  v: { labor_planned: number; material_planned: number },
+) {
+  const r = await supabase
+    .from("work_stage_values")
+    .upsert({ stage_id: stageId, work_id: workId, ...v }, { onConflict: "stage_id" });
+  if (r.error) throw r.error;
+}

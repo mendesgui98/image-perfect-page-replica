@@ -22,7 +22,14 @@ import { fmtDate, fmtNum } from "@/lib/format";
 import { Plus, Pencil, Camera, ArrowUp, ArrowDown, Copy, Trash2, Layers } from "lucide-react";
 import { StagePhotos } from "./photos";
 import { StageServicesPanel } from "./stage-services";
-import { stageServicesOptions } from "@/lib/stage-services-data";
+import {
+  saveStageValues,
+  stageServicesOptions,
+  stageValuesOptions,
+} from "@/lib/stage-services-data";
+import { MoneyInput } from "@/components/money-input";
+import { parseBRL } from "@/lib/money";
+import { fmtBRL } from "@/lib/format";
 import { stagesOptions } from "@/lib/budget-api";
 import { Input } from "@/components/ui/input";
 import { servicesProgress } from "@/lib/work-progress";
@@ -102,6 +109,10 @@ export function Schedule({
     ...stageServicesOptions(workId),
     enabled: !!me?.canSeeCosts,
   });
+  const { data: stageValues = [] } = useQuery({
+    ...stageValuesOptions(workId),
+    enabled: !!me?.canSeeCosts,
+  });
   // Etapa com serviços tem o avanço calculado por eles (ponderado pelo valor).
   const computed = (id: string) => servicesProgress(services.filter((x) => x.stage_id === id));
   const w = weightedProgress(stages),
@@ -172,6 +183,17 @@ export function Schedule({
               .select("id")
               .single();
       if (r.error) throw r.error;
+      // Valor da etapa e dos materiais (custo): só sem serviços, que senão já somam o previsto.
+      if (
+        me?.canSeeCosts &&
+        !services.some((x) => x.stage_id === r.data.id) &&
+        d.has("labor_planned")
+      )
+        await saveStageValues(workId, r.data.id, {
+          labor_planned: parseBRL(text(d, "labor_planned")),
+          material_planned: parseBRL(text(d, "material_planned")),
+        });
+      qc.invalidateQueries({ queryKey: ["stage-values", workId] });
       const files = d.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
       for (const f of files) {
         if (!f.type.startsWith("image/")) throw Error("Anexe somente imagens às etapas.");
@@ -425,6 +447,14 @@ export function Schedule({
               label="Avanço (% da obra)"
               value={editing?.weight ?? (stages.length ? 0 : 100)}
             />
+            {me?.canSeeCosts && (
+              <StageCostFields
+                stage={editing}
+                creating={creating}
+                services={services}
+                values={stageValues}
+              />
+            )}
             <label className="text-sm">
               Início previsto
               <input
@@ -689,5 +719,50 @@ function StageNameField({ current, used }: { current: string; used: string[] }) 
         />
       )}
     </div>
+  );
+}
+
+/** Custo previsto da etapa no formulário: mão de obra/serviço e materiais, em reais. */
+function StageCostFields({
+  stage,
+  creating,
+  services,
+  values,
+}: {
+  stage: Stage | null;
+  creating: boolean;
+  services: { stage_id: string; labor_planned: number; material_planned: number }[];
+  values: { stage_id: string; labor_planned: number; material_planned: number }[];
+}) {
+  const own = stage && !creating ? services.filter((s) => s.stage_id === stage.id) : [];
+  const typed = stage && !creating ? values.find((v) => v.stage_id === stage.id) : undefined;
+  if (own.length)
+    return (
+      <p className="text-sm text-muted-foreground sm:col-span-2">
+        Valor da etapa {fmtBRL(own.reduce((t, s) => t + s.labor_planned, 0))} · materiais{" "}
+        {fmtBRL(own.reduce((t, s) => t + s.material_planned, 0))} — soma dos serviços da etapa.
+      </p>
+    );
+  return (
+    <>
+      <label className="block space-y-1 text-sm">
+        <span>Valor da etapa (mão de obra / serviço)</span>
+        <MoneyInput
+          key={`l-${stage?.id ?? "nova"}-${typed?.labor_planned ?? 0}`}
+          name="labor_planned"
+          aria-label="Valor da etapa"
+          value={typed?.labor_planned}
+        />
+      </label>
+      <label className="block space-y-1 text-sm">
+        <span>Valor dos materiais da etapa</span>
+        <MoneyInput
+          key={`m-${stage?.id ?? "nova"}-${typed?.material_planned ?? 0}`}
+          name="material_planned"
+          aria-label="Valor dos materiais"
+          value={typed?.material_planned}
+        />
+      </label>
+    </>
   );
 }

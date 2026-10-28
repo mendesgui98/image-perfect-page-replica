@@ -4,6 +4,15 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Custo da etapa no formulário e campos em reais (branch `feat/fundacao-tecnica`)
+
+**Pedido do Guilherme:** o valor da etapa e dos materiais vai no formulário da etapa (junto de datas e responsável), não no card; o card fica só com os totais. Valores digitados aparecem como moeda.
+
+- `MoneyInput` (`src/components/money-input.tsx`) + `parseBRL`/`maskBRL`/`moneyText` (`src/lib/money.ts`, testados): dígitos viram centavos ("1000000" → "R$ 10.000,00").
+- Formulário da etapa (`schedule.tsx`, `StageCostFields`): "Valor da etapa (mão de obra / serviço)" e "Valor dos materiais da etapa" para admin/financeiro; gravados com `saveStageValues` ao salvar a etapa. Com serviços na etapa mostra a soma deles em vez dos campos.
+- Card (`stage-services.tsx`): só previsto, já pago, restante e contas em aberto; MO/material dos serviços também em reais.
+- Conferido no navegador: etapa existente abre com "R$ 2.825,00"; etapa de teste salva R$ 10.000 + R$ 5.000 e foi removida depois.
+
 ### 2026-10-28 — Reabrir orçamento aprovado para edição (branch `feat/fundacao-tecnica`)
 
 **Decisão do Guilherme:** opção A — o aprovado continua imutável; "Reabrir para edição" cria a revisão e, ao aprovar de novo, ela substitui a anterior. Com contrato assinado, a mudança vira aditivo.
