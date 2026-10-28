@@ -1,4 +1,5 @@
 import { RecordDeleteButton, DeletedRecordNotice } from "@/components/management/record-deletion";
+import { formatCnpj, formatCpfCnpj, formatRg } from "@/lib/documents";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -50,14 +51,22 @@ export function Contract({
       const r = workBase(b);
       const values: Record<string, string> = {
         CLIENTE: b.budget.client_display || client?.name || "",
-        RG: client?.rg || "",
-        DOCUMENTO: client?.document || "",
+        RG: formatRg(client?.rg),
+        DOCUMENTO: formatCpfCnpj(client?.document),
         ENDERECO_CLIENTE: client
           ? [client.endereco, client.bairro, client.cidade, client.uf, client.cep]
               .filter(Boolean)
               .join(", ")
           : "",
-        EMPRESA: [x.razao_social, x.cnpj, x.endereco, x.bairro, x.cidade, x.uf, x.cep]
+        EMPRESA: [
+          x.razao_social,
+          x.cnpj && formatCnpj(x.cnpj),
+          x.endereco,
+          x.bairro,
+          x.cidade,
+          x.uf,
+          x.cep,
+        ]
           .filter(Boolean)
           .join("\n"),
         ENDERECO_OBRA: address || "",
@@ -94,7 +103,9 @@ export function Contract({
                       .join("\n")}\nMateriais inclusos: ${s.materials_text || "não informados"}`,
                 )
                 .join("\n\n"),
-        ASSINATURA_JMG: [x.razao_social, x.cnpj, x.responsavel].filter(Boolean).join("\n"),
+        ASSINATURA_JMG: [x.razao_social, x.cnpj && formatCnpj(x.cnpj), x.responsavel]
+          .filter(Boolean)
+          .join("\n"),
       };
       const generated = contractTemplate.replace(
         /\{\{([^}]+)\}\}/g,

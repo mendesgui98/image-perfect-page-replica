@@ -1,4 +1,5 @@
 import { DeletedRecordNotice } from "@/components/management/record-deletion";
+import { formatCnpj } from "@/lib/documents";
 import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -274,7 +275,7 @@ function Pdf() {
           {company.instagram && <div>{company.instagram}</div>}
         </div>
         <p className="mt-10 text-center text-[16px] italic" style={{ fontFamily: "Arial" }}>
-          {(company.nome_fantasia ?? "").toUpperCase()} - CNPJ: {company.cnpj}
+          {(company.nome_fantasia ?? "").toUpperCase()} - CNPJ: {formatCnpj(company.cnpj)}
         </p>
         <div
           className="absolute inset-x-0 bottom-0 flex h-[70px] items-center justify-center"

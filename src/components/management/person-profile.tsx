@@ -1,4 +1,5 @@
 import { HardHat } from "lucide-react";
+import { formatCpfCnpj, formatRg } from "@/lib/documents";
 import { RecordDeleteButton, DeletedRecordNotice } from "@/components/management/record-deletion";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -85,7 +86,8 @@ export function PersonProfile({ id }: { id: string }) {
         {[
           ["Telefone", person.phone],
           ["E-mail", person.email],
-          ["Documento", person.document],
+          ["CPF / CNPJ", person.document && formatCpfCnpj(person.document)],
+          ["RG", person.rg && formatRg(person.rg)],
           [
             "Endereço",
             [person.endereco, person.bairro, person.cidade, person.uf].filter(Boolean).join(", "),

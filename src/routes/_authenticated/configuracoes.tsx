@@ -1,4 +1,5 @@
 import { pageMeta } from "@/lib/page-meta";
+import { formatCnpj } from "@/lib/documents";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -123,7 +124,10 @@ function Empresa({ ro }: { ro: boolean }) {
               <Input
                 disabled={ro}
                 value={(f[k] as string) ?? ""}
-                onChange={(e) => setF({ ...f, [k]: e.target.value })}
+                inputMode={k === "cnpj" ? "numeric" : undefined}
+                onChange={(e) =>
+                  setF({ ...f, [k]: k === "cnpj" ? formatCnpj(e.target.value) : e.target.value })
+                }
               />
             </div>
           ))}

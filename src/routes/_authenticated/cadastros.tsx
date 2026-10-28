@@ -1,4 +1,5 @@
 import { RecordDeleteButton, RecordTrash } from "@/components/management/record-deletion";
+import { formatCpfCnpj, formatRg } from "@/lib/documents";
 import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -58,6 +59,20 @@ const FIELDS: [keyof Person, string, string?][] = [
   ["specialty", "Especialidade / ramo"],
 ];
 
+// Pontuação aplicada enquanto digita; o valor é salvo já pontuado.
+const MASKS: Partial<Record<keyof Person, (v: string) => string>> = {
+  document: formatCpfCnpj,
+  rg: formatRg,
+};
+
+// Busca aceita o documento com ou sem pontuação.
+function matches(value: string, q: string) {
+  const query = q.toLowerCase();
+  if (value.toLowerCase().includes(query)) return true;
+  const qDigits = q.replace(/\D/g, "");
+  return qDigits.length > 0 && qDigits === q.trim() && value.replace(/\D/g, "").includes(qDigits);
+}
+
 function Cadastros() {
   const search = Route.useSearch();
   const navigate = useNavigate();
@@ -91,7 +106,13 @@ function Cadastros() {
   const save = useMutation({
     mutationFn: async (p: Partial<Person>) => {
       if (!p.name?.trim()) throw new Error("Informe o nome.");
-      const payload = { ...p, kind: p.kind ?? kind, name: p.name.trim() } as Person;
+      const payload = {
+        ...p,
+        kind: p.kind ?? kind,
+        name: p.name.trim(),
+        document: p.document ? formatCpfCnpj(p.document) : p.document,
+        rg: p.rg ? formatRg(p.rg) : p.rg,
+      } as Person;
       const { error } = p.id
         ? await supabase.from("people").update(payload).eq("id", p.id)
         : await supabase.from("people").insert(payload);
@@ -108,8 +129,7 @@ function Cadastros() {
 
   const list = data.filter(
     (p) =>
-      (showInactive || p.active) &&
-      (p.name + (p.document ?? "") + (p.phone ?? "")).toLowerCase().includes(q.toLowerCase()),
+      (showInactive || p.active) && [p.name, p.document, p.phone].some((v) => matches(v ?? "", q)),
   );
 
   return (
@@ -229,7 +249,10 @@ function Cadastros() {
                     <Label>{l}</Label>
                     <Input
                       value={(edit[f] as string) ?? ""}
-                      onChange={(e) => setEdit({ ...edit, [f]: e.target.value })}
+                      inputMode={f === "document" ? "numeric" : undefined}
+                      onChange={(e) =>
+                        setEdit({ ...edit, [f]: MASKS[f]?.(e.target.value) ?? e.target.value })
+                      }
                     />
                   </div>
                 ))}
