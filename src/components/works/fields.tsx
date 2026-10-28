@@ -7,7 +7,7 @@ import { Paperclip } from "lucide-react";
 import { openDocument } from "@/lib/work-data";
 import { toast } from "sonner";
 export const selectClass =
-  "h-10 w-full rounded-md border border-input bg-card px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25";
+  "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm focus-visible:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25";
 export function Field({
   label,
   name,

@@ -4,6 +4,21 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Novo visual: base do design system, Painel e Fluxo de Caixa (branch `feat/fundacao-tecnica`)
+
+**Pedido:** visual de dashboard profissional (cards mais arredondados, menos linhas, hierarquia clara e cores financeiras com significado), começando só pelo Painel e pelo Financeiro → Caixa e contas, para o Guilherme validar antes dos outros módulos. Só visual: nenhum cálculo, consulta, permissão ou regra mudou.
+
+**Decisões:**
+
+- Tokens em `src/styles.css`: `--radius` 12px (cards 20px, internos 12–16px); cores com significado `positive` (entradas), `negative` (saídas), `alert` (vencidos/pendências), `neutral-soft`, `extra` (aditivos) e `primary-soft`, cada uma com fundo suave `*-soft`, nos temas claro e escuro; card de destaque `hero`/`hero-end` (azul JMG profundo) e sombra `shadow-hero`.
+- Componentes: `src/components/kpi.tsx` (`KpiCard` com variantes destaque/preenchido/neutro, `Money` com R$ menor, sinal e cor sem quebrar linha, `IconBubble`, `Segmented`) e `src/lib/surface.ts` (`panelClass`, `segmentClass`). Badge ganhou `positive/negative/alert/neutral/info`; Button ganhou `danger` (cancelar/excluir discreto) e `soft`, altura 40px; campos sem sombra e mais arredondados; título de página maior.
+- Painel: saldo em caixa como card principal; entradas (verde) e saídas (vermelho); a receber/a pagar com fundo suave; obras ativas e valor em obras neutros; resultado previsto com cor pelo sinal; aditivos em violeta discreto. Valores continuam de `executiveComposition`/`indicatorTotal`.
+- Fluxo de Caixa (`Finance`, também usado na aba da obra): saldo atual em destaque, a receber/a pagar com vencidos em laranja, contas bancárias como chips, abas em pílulas, filtros num painel, movimentos e contas em lista com ícone ↑/↓ e valor com sinal; status como badges. Totais seguem de `cashSummary`/`accountStatus`.
+
+**Onde está:** `src/styles.css`, `src/components/kpi.tsx`, `src/lib/surface.ts`, `src/components/ui/{button,badge,card,input,textarea,tabs}.tsx`, `src/components/page-header.tsx`, `src/components/management/executive.tsx`, `src/components/works/finance.tsx`, `src/routes/_authenticated/financeiro.tsx`. Conferido no navegador em 1440px e 375px, claro e escuro.
+
+**Pendências:** validação do Guilherme; depois replicar em Orçamentos, Contratos, Cronogramas, Obras, Cadastros, Catálogo e Relatórios. As linhas de contas a receber/pagar não tinham dados no banco local para conferir na tela.
+
 ### 2026-10-28 — Avanço da obra pelo valor das etapas (branch `feat/fundacao-tecnica`)
 
 **Decisão do Guilherme:** o "Avanço (% da obra)" das etapas vindas do orçamento é proporcional ao valor previsto de cada etapa.

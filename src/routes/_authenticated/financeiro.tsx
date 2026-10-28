@@ -5,7 +5,8 @@ import { useMe } from "@/hooks/use-me";
 import { FinancialDashboard } from "@/components/works/dashboard";
 import { dashboardSearch } from "@/lib/dashboard-search";
 import { FinancialComposition } from "@/components/management/executive";
-import { Button } from "@/components/ui/button";
+import { Segmented } from "@/components/kpi";
+import { segmentClass } from "@/lib/surface";
 import { pageMeta } from "@/lib/page-meta";
 export const Route = createFileRoute("/_authenticated/financeiro")({
   validateSearch: (
@@ -26,19 +27,26 @@ function Page() {
   if (!me.canSeeCosts) return <NoAccess />;
   return (
     <div>
-      <PageHeader title="Financeiro" />
-      <nav className="mb-6 flex flex-wrap gap-2">
-        {[
-          ["lancamentos", "Caixa e contas"],
-          ["composicao", "Recebimentos e saldos"],
-          ["analise", "Análises e resultados"],
-        ].map(([view, label]) => (
-          <Button key={view} variant={search.view === view ? "default" : "outline"} asChild>
-            <Link to="/financeiro" search={{ ...search, view: view || "lancamentos" }}>
+      <PageHeader title="Financeiro" subtitle="Fluxo de caixa, contas a receber e a pagar" />
+      <nav aria-label="Visões do financeiro" className="mb-6">
+        <Segmented>
+          {[
+            ["lancamentos", "Caixa e contas"],
+            ["composicao", "Recebimentos e saldos"],
+            ["analise", "Análises e resultados"],
+          ].map(([view, label]) => (
+            <Link
+              key={view}
+              role="tab"
+              aria-selected={search.view === view}
+              className={segmentClass(search.view === view)}
+              to="/financeiro"
+              search={{ ...search, view: view || "lancamentos" }}
+            >
               {label}
             </Link>
-          </Button>
-        ))}
+          ))}
+        </Segmented>
       </nav>
       {search.view === "analise" ? (
         <FinancialDashboard />

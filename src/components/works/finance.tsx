@@ -2,7 +2,21 @@ import { businessDate, periodRange, inPeriod } from "@/lib/dashboard-math";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeftRight, Plus, Wallet, Check, Undo2, Ban, Minus } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowLeftRight,
+  ArrowUp,
+  Ban,
+  CalendarClock,
+  Check,
+  Landmark,
+  Plus,
+  Receipt,
+  Scale,
+  Undo2,
+  Wallet,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   accountBalances,
@@ -27,6 +41,10 @@ import { Link } from "@tanstack/react-router";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
 import { EmptyState } from "@/components/feedback";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { IconBubble, KpiCard, Money, Segmented } from "@/components/kpi";
+import { panelClass, segmentClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
 type Entry = Database["public"]["Tables"]["financial_entries"]["Row"];
 type Tab = "caixa" | "receber" | "pagar";
 
@@ -39,13 +57,13 @@ const STATUS_LABEL: Record<AccountStatus, string> = {
   paga: "Paga",
   cancelada: "Cancelada",
 };
-const STATUS_CLASS: Record<AccountStatus, string> = {
-  pendente: "bg-muted text-foreground",
-  vencida: "bg-destructive/15 text-destructive",
-  parcial: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  recebida: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  paga: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  cancelada: "bg-muted text-muted-foreground line-through",
+const STATUS_VARIANT: Record<AccountStatus, BadgeProps["variant"]> = {
+  pendente: "neutral",
+  vencida: "negative",
+  parcial: "alert",
+  recebida: "positive",
+  paga: "positive",
+  cancelada: "neutral",
 };
 
 export function Finance({ workId }: { workId?: string }) {
@@ -422,8 +440,10 @@ export function Finance({ workId }: { workId?: string }) {
   const rows = tab === "receber" ? receivableRows : payableRows;
   return (
     <section className="space-y-6">
-      <div className="flex flex-wrap justify-between gap-3">
-        <h2 className="font-bold">Financeiro{workId ? " da obra" : ""}</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className={workId ? "text-lg font-semibold" : "sr-only"}>
+          Financeiro{workId ? " da obra" : ""}
+        </h2>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => open("account")}>
             <Wallet className="h-4 w-4" />
@@ -436,48 +456,57 @@ export function Finance({ workId }: { workId?: string }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 border-y py-4 lg:grid-cols-4">
-        <SummaryCard
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-5">
+        <KpiCard
+          hero
+          className="col-span-2 sm:col-span-3 xl:col-span-2"
           label="Saldo atual"
-          value={summary.current}
+          icon={Wallet}
+          value={<Money value={summary.current} />}
           hint="Só o que já entrou ou saiu"
         />
-        <SummaryCard
+        <KpiCard
+          filled
+          tone="positive"
           label="A receber"
-          value={summary.receivable}
-          hint={
-            summary.receivableOverdue > 0
-              ? `${fmtBRL(summary.receivableOverdue)} vencido`
-              : "Nada vencido"
-          }
-          alert={summary.receivableOverdue > 0}
+          icon={CalendarClock}
+          value={<Money value={summary.receivable} />}
+          hint={<OverdueHint value={summary.receivableOverdue} />}
         />
-        <SummaryCard
+        <KpiCard
+          filled
+          tone="negative"
           label="A pagar"
-          value={summary.payable}
-          hint={
-            summary.payableOverdue > 0
-              ? `${fmtBRL(summary.payableOverdue)} vencido`
-              : "Nada vencido"
-          }
-          alert={summary.payableOverdue > 0}
+          icon={Receipt}
+          value={<Money value={summary.payable} />}
+          hint={<OverdueHint value={summary.payableOverdue} />}
         />
-        <SummaryCard
+        <KpiCard
+          className="col-span-2 sm:col-span-1"
           label="Saldo previsto"
-          value={summary.forecast}
+          icon={Scale}
+          value={<Money value={summary.forecast} tone="auto" />}
           hint="Atual + a receber − a pagar"
         />
       </div>
       {!workId && (
-        <div className="flex flex-wrap gap-4">
+        <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex-wrap [&::-webkit-scrollbar]:hidden">
           {data &&
             accountBalances(data.accounts, data.entries, data.settlements, data.transfers).map(
               (a) => (
-                <div key={a.id} className="border-l-2 border-primary pl-3">
-                  <p className="text-xs text-muted-foreground">
-                    {data.accounts.find((x) => x.id === a.id)?.name}
-                  </p>
-                  <p className="font-semibold num">{fmtBRL(a.balance)}</p>
+                <div
+                  key={a.id}
+                  className="flex shrink-0 items-center gap-3 rounded-xl border border-border/70 bg-card px-3.5 py-2.5"
+                >
+                  <IconBubble icon={Landmark} tone="neutral" className="h-8 w-8 rounded-lg" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      {data.accounts.find((x) => x.id === a.id)?.name}
+                    </p>
+                    <p className="text-sm font-semibold">
+                      <Money value={a.balance} tone="auto" />
+                    </p>
+                  </div>
                 </div>
               ),
             )}
@@ -492,7 +521,7 @@ export function Finance({ workId }: { workId?: string }) {
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="tablist" className="flex flex-wrap gap-1 rounded-lg bg-muted p-1">
+        <Segmented>
           {(
             [
               ["caixa", "Caixa"],
@@ -506,21 +535,21 @@ export function Finance({ workId }: { workId?: string }) {
               role="tab"
               aria-selected={tab === key}
               onClick={() => setTab(key)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium ${tab === key ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+              className={segmentClass(tab === key)}
             >
               {label}
             </button>
           ))}
-        </div>
+        </Segmented>
         <div className="flex flex-wrap gap-2">
           {tab === "caixa" && (
             <>
               <Button onClick={() => open("cash", "entrada")}>
-                <Plus className="h-4 w-4" />
+                <ArrowUp className="h-4 w-4" />
                 Nova entrada
               </Button>
               <Button variant="outline" onClick={() => open("cash", "saida")}>
-                <Minus className="h-4 w-4" />
+                <ArrowDown className="h-4 w-4 text-negative" />
                 Nova saída
               </Button>
             </>
@@ -540,7 +569,12 @@ export function Finance({ workId }: { workId?: string }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
+      <div
+        className={cn(
+          panelClass,
+          "grid grid-cols-2 gap-3 p-4 shadow-none md:flex md:flex-wrap md:items-end [&>label]:text-xs [&>label]:font-medium [&>label]:text-muted-foreground md:[&>label]:w-48",
+        )}
+      >
         {!workId && (
           <label className="text-xs">
             Obra
@@ -639,12 +673,24 @@ export function Finance({ workId }: { workId?: string }) {
       </div>
 
       {tab === "caixa" ? (
-        <div className="divide-y">
+        <div className={cn(panelClass, "divide-y divide-border/60 overflow-hidden")}>
           {movements.map((m) => (
-            <article key={m.id} className="flex flex-wrap items-center gap-3 py-3">
+            <article key={m.id} className="flex gap-3 px-4 py-4 sm:px-5">
+              <IconBubble
+                icon={m.direction === "entrada" ? ArrowUp : ArrowDown}
+                tone={m.direction === "entrada" ? "positive" : "negative"}
+              />
               <div className="min-w-0 flex-1">
-                <h3 className="font-medium">{m.description}</h3>
-                <p className="text-xs text-muted-foreground">
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="min-w-0 font-medium leading-snug">{m.description}</h3>
+                  <Money
+                    value={m.amount}
+                    signed={m.direction === "entrada" ? "+" : "−"}
+                    tone={m.direction === "entrada" ? "positive" : "negative"}
+                    className="shrink-0 font-semibold"
+                  />
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   {fmtDate(m.date)} · {m.direction === "entrada" ? "Entrada" : "Saída"} ·{" "}
                   {m.category} · {m.payment_method || "Forma não informada"}
                   {m.account_id &&
@@ -681,49 +727,64 @@ export function Finance({ workId }: { workId?: string }) {
                   data?.entries.find((x) => x.id === m.entry_id)?.stage_id ?? null,
                   m.direction,
                 )}
+                <div className="-ml-3 mt-1 flex flex-wrap items-center gap-1">
+                  <Attachment path={m.file_path} />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-muted-foreground"
+                    onClick={() => undo(m.id, m.origin === "manual")}
+                  >
+                    <Undo2 className="h-4 w-4" />
+                    Desfazer
+                  </Button>
+                </div>
               </div>
-              <Attachment path={m.file_path} />
-              <p
-                className={`font-semibold num ${m.direction === "entrada" ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}
-              >
-                {m.direction === "entrada" ? "+" : "−"} {fmtBRL(m.amount)}
-              </p>
-              <Button size="sm" variant="ghost" onClick={() => undo(m.id, m.origin === "manual")}>
-                <Undo2 className="h-4 w-4" />
-                Desfazer
-              </Button>
             </article>
           ))}
           {!movements.length && (
-            <EmptyState compact icon={Wallet} title="Nenhuma movimentação neste período" />
+            <EmptyState
+              compact
+              icon={Wallet}
+              title="Nenhuma movimentação neste período"
+              className="py-10"
+            />
           )}
         </div>
       ) : (
-        <div className="divide-y">
+        <div className={cn(panelClass, "divide-y divide-border/60 overflow-hidden")}>
           {rows.map(({ e, st }) => {
             const own = settlements.filter((s) => s.entry_id === e.id);
             return (
               <article
                 key={e.id}
                 id={`record-${e.id}`}
-                className={`scroll-mt-6 py-4 ${selectedRecord === e.id ? "border-l-4 border-primary bg-accent/40 pl-3" : ""} ${st.status === "vencida" ? "border-l-4 border-destructive pl-3" : st.dueSoon ? "border-l-4 border-amber-500 pl-3" : ""}`}
+                className={cn(
+                  "scroll-mt-6 px-4 py-4 sm:px-5",
+                  selectedRecord === e.id &&
+                    "bg-accent/40 shadow-[inset_4px_0_0_var(--color-primary)]",
+                  st.status === "vencida"
+                    ? "shadow-[inset_4px_0_0_var(--color-negative)]"
+                    : st.dueSoon && "shadow-[inset_4px_0_0_var(--color-alert)]",
+                )}
               >
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-start gap-3">
+                  <IconBubble
+                    icon={e.direction === "entrada" ? ArrowUp : ArrowDown}
+                    tone={e.direction === "entrada" ? "positive" : "negative"}
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold">{e.description}</h3>
-                      <span
-                        className={`rounded px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[st.status]}`}
+                      <h3 className="font-semibold leading-snug">{e.description}</h3>
+                      <Badge
+                        variant={STATUS_VARIANT[st.status]}
+                        className={st.status === "cancelada" ? "line-through" : ""}
                       >
                         {STATUS_LABEL[st.status]}
-                      </span>
-                      {st.dueSoon && (
-                        <span className="rounded bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-                          Vence em até 3 dias
-                        </span>
-                      )}
+                      </Badge>
+                      {st.dueSoon && <Badge variant="alert">Vence em até 3 dias</Badge>}
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       Vence {fmtDate(e.due_date)} · {e.category}
                       {e.installment_count > 1 &&
                         ` · parcela ${e.installment_index}/${e.installment_count}`}
@@ -763,7 +824,12 @@ export function Finance({ workId }: { workId?: string }) {
                     </div>
                   </div>
                   <div className="text-right text-sm">
-                    <p className="font-semibold num">{fmtBRL(e.amount)}</p>
+                    <p className="font-semibold">
+                      <Money
+                        value={e.amount}
+                        tone={e.direction === "entrada" ? "positive" : "negative"}
+                      />
+                    </p>
                     {st.paid > 0 && (
                       <p className="text-xs text-muted-foreground">
                         {e.direction === "entrada" ? "Recebido" : "Pago"} {fmtBRL(st.paid)}
@@ -775,7 +841,7 @@ export function Finance({ workId }: { workId?: string }) {
                       </p>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex w-full flex-wrap gap-2 pl-12 sm:w-auto sm:pl-0">
                     {st.pending > 0 && (
                       <Button
                         size="sm"
@@ -813,7 +879,7 @@ export function Finance({ workId }: { workId?: string }) {
                       own.length === 0 &&
                       !e.purchase_order_id &&
                       !e.payable_order_id && (
-                        <Button size="sm" variant="ghost" onClick={() => cancel(e)}>
+                        <Button size="sm" variant="danger" onClick={() => cancel(e)}>
                           <Ban className="h-4 w-4" />
                           Cancelar
                         </Button>
@@ -823,7 +889,7 @@ export function Finance({ workId }: { workId?: string }) {
                 {own.map((s) => (
                   <div
                     key={s.id}
-                    className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
+                    className="mt-2 ml-12 flex flex-wrap items-center gap-2 rounded-lg bg-muted/60 px-3 py-1.5 text-xs text-muted-foreground"
                   >
                     {e.direction === "entrada" ? "Recebido" : "Pago"} em {fmtDate(s.paid_date)} ·{" "}
                     {fmtBRL(s.amount)} · {s.payment_method || "Forma não informada"}
@@ -842,7 +908,7 @@ export function Finance({ workId }: { workId?: string }) {
                 {data?.allocations
                   .filter((a) => a.entry_id === e.id)
                   .map((a) => (
-                    <p key={a.id} className="mt-1 text-xs text-muted-foreground">
+                    <p key={a.id} className="mt-1 ml-12 text-xs text-muted-foreground">
                       Rateio: {data.works.find((w) => w.id === a.work_id)?.name} ·{" "}
                       {fmtBRL(a.amount)} · {a.rule}
                     </p>
@@ -855,6 +921,7 @@ export function Finance({ workId }: { workId?: string }) {
               compact
               icon={Wallet}
               title={tab === "receber" ? "Nenhuma conta a receber" : "Nenhuma conta a pagar"}
+              className="py-10"
             />
           )}
         </div>
@@ -1032,26 +1099,13 @@ export function Finance({ workId }: { workId?: string }) {
   );
 }
 
-function SummaryCard({
-  label,
-  value,
-  hint,
-  alert = false,
-}: {
-  label: string;
-  value: number;
-  hint: string;
-  alert?: boolean;
-}) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`text-lg font-bold num ${value < 0 ? "text-destructive" : ""}`}>
-        {fmtBRL(value)}
-      </p>
-      <p className={`text-xs ${alert ? "font-medium text-destructive" : "text-muted-foreground"}`}>
-        {hint}
-      </p>
-    </div>
+function OverdueHint({ value }: { value: number }) {
+  return value > 0 ? (
+    <span className="inline-flex items-center gap-1 font-medium text-alert">
+      <AlertTriangle className="h-3.5 w-3.5" />
+      {fmtBRL(value)} vencido
+    </span>
+  ) : (
+    "Nada vencido"
   );
 }

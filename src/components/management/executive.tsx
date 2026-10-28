@@ -4,14 +4,15 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch, useLocation } from "@tanstack/react-router";
 import {
   ArrowUpRight,
+  ArrowDown,
+  ArrowUp,
   HardHat,
   Wallet,
   TrendingUp,
+  CalendarClock,
+  FilePlus2,
+  Building2,
   Receipt,
-  Clock,
-  PlusCircle,
-  Landmark,
-  Coins,
   FilterX,
 } from "lucide-react";
 import { dashboardOptions } from "@/lib/dashboard-data";
@@ -28,16 +29,33 @@ import { Button } from "@/components/ui/button";
 import { selectClass } from "@/components/works/fields";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
-const indicators: { id: Indicator; label: string; icon: typeof HardHat }[] = [
-  { id: "active", label: "Obras ativas", icon: HardHat },
-  { id: "received", label: "Recebido", icon: Receipt },
-  { id: "receivable", label: "A receber", icon: Clock },
-  { id: "payable", label: "Contas a pagar", icon: Coins },
-  { id: "cash", label: "Caixa", icon: Wallet },
-  { id: "result", label: "Resultado previsto das obras", icon: TrendingUp },
-  { id: "value", label: "Valor em obras ativas", icon: Landmark },
-  { id: "extras", label: "Aditivos aprovados", icon: PlusCircle },
-  { id: "spent", label: "Despesas pagas", icon: Receipt },
+import { KpiCard, Money, type Tone } from "@/components/kpi";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
+/** Ordem = prioridade no celular; `tone`/`filled`/`span` só definem a aparência do card. */
+const indicators: {
+  id: Indicator;
+  label: string;
+  icon: typeof HardHat;
+  tone: Tone;
+  filled?: boolean;
+  span?: string;
+}[] = [
+  {
+    id: "cash",
+    label: "Saldo em caixa",
+    icon: Wallet,
+    tone: "brand",
+    span: "col-span-2 xl:row-span-2",
+  },
+  { id: "received", label: "Entradas recebidas", icon: ArrowUp, tone: "positive" },
+  { id: "spent", label: "Saídas pagas", icon: ArrowDown, tone: "negative" },
+  { id: "receivable", label: "A receber", icon: CalendarClock, tone: "positive", filled: true },
+  { id: "payable", label: "Contas a pagar", icon: Receipt, tone: "negative", filled: true },
+  { id: "active", label: "Obras ativas", icon: HardHat, tone: "neutral" },
+  { id: "value", label: "Valor em obras ativas", icon: Building2, tone: "neutral" },
+  { id: "result", label: "Resultado previsto das obras", icon: TrendingUp, tone: "brand" },
+  { id: "extras", label: "Aditivos aprovados", icon: FilePlus2, tone: "extra" },
 ];
 export function ManagementFilters({
   works,
@@ -58,9 +76,9 @@ export function ManagementFilters({
     search.pilot
   );
   return (
-    <div className="mb-6 space-y-3 border-y py-4">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <label className="text-xs text-muted-foreground">
+    <div className={cn(panelClass, "mb-6 space-y-3 p-4")}>
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <label className="text-xs font-medium text-muted-foreground">
           Período
           <select
             aria-label="Período"
@@ -83,7 +101,7 @@ export function ManagementFilters({
             ))}
           </select>
         </label>
-        <label className="text-xs text-muted-foreground">
+        <label className="text-xs font-medium text-muted-foreground">
           Obra
           <select
             aria-label="Filtro obra"
@@ -99,7 +117,7 @@ export function ManagementFilters({
             ))}
           </select>
         </label>
-        <label className="text-xs text-muted-foreground">
+        <label className="text-xs font-medium text-muted-foreground">
           Cliente
           <select
             aria-label="Filtro cliente"
@@ -119,7 +137,7 @@ export function ManagementFilters({
             ))}
           </select>
         </label>
-        <label className="text-xs text-muted-foreground">
+        <label className="text-xs font-medium text-muted-foreground">
           Status
           <select
             aria-label="Filtro status"
@@ -306,46 +324,43 @@ export function ExecutivePanel() {
   return (
     <section>
       <ManagementFilters works={data.works.filter((s) => search.pilot || !s.work.is_pilot)} />
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
-        {indicators.map(({ id, label, icon: Icon }) => {
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        {indicators.map(({ id, label, icon, tone, filled, span }) => {
           const value = indicatorTotal(compositions[id]);
+          const scope = ["active", "value", "extras", "result"].includes(id)
+            ? "Posição acumulada"
+            : search.period && search.period !== "todos"
+              ? "Período selecionado"
+              : "Todo o período";
           return (
-            <Button
+            <KpiCard
               key={id}
-              aria-label={`Detalhar ${label}`}
-              variant="outline"
-              className="h-auto min-h-32 w-full items-start justify-start rounded-lg bg-card p-5 text-left shadow-none"
+              ariaLabel={`Detalhar ${label}`}
+              label={label}
+              icon={icon}
+              tone={tone}
+              filled={!!filled}
+              hero={id === "cash"}
+              className={cn(span, id === "cash" && "xl:[&>button]:justify-between")}
+              value={
+                value === null ? (
+                  <span className="text-base font-semibold text-muted-foreground">
+                    Não conferido
+                  </span>
+                ) : id === "active" ? (
+                  <span className="num">{fmtNum(value)}</span>
+                ) : (
+                  <Money value={value} tone={id === "result" ? "auto" : "inherit"} />
+                )
+              }
+              hint={scope}
               onClick={() =>
                 navigate({
                   to: target,
                   search: (old: Record<string, unknown>) => ({ ...old, detail: id }),
                 })
               }
-            >
-              <span className="flex w-full min-w-0 flex-col gap-3">
-                <span className="flex items-center justify-between gap-2">
-                  <Icon className="h-4 w-4 text-primary" />
-                  <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
-                </span>
-                <span className="whitespace-normal text-xs font-medium text-muted-foreground">
-                  {label}
-                </span>
-                <span className="whitespace-normal break-words text-lg font-bold num sm:text-xl">
-                  {value === null
-                    ? "Não conferido"
-                    : id === "active"
-                      ? fmtNum(value)
-                      : fmtBRL(value)}
-                </span>
-                <span className="text-[10px] font-normal text-muted-foreground">
-                  {["active", "value", "extras", "result"].includes(id)
-                    ? "Posição acumulada"
-                    : search.period && search.period !== "todos"
-                      ? "Período selecionado"
-                      : "Todo o período"}
-                </span>
-              </span>
-            </Button>
+            />
           );
         })}
       </div>
