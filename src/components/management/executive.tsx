@@ -16,9 +16,11 @@ import {
 } from "lucide-react";
 import { dashboardOptions } from "@/lib/dashboard-data";
 import { ScheduleSituation } from "@/components/works/schedule-situation";
+import { WorkCard } from "@/components/works/work-card";
 import {
   executiveComposition,
   indicatorTotal,
+  selectWorks,
   type Indicator,
   type ExecutiveFilter,
   type CompositionRow,
@@ -320,6 +322,11 @@ export function ExecutivePanel() {
   const detail = indicators.find((x) => x.id === search.detail);
   const rows = detail ? compositions[detail.id] : [];
   const total = indicatorTotal(rows);
+  /** Ordem de exibição: em execução, planejamento, pausadas e finalizadas. */
+  const order = ["execucao", "contratacao", "pausada", "concluida"];
+  const cards = [...selectWorks(data.works, search)].sort(
+    (a, b) => order.indexOf(a.work.status) - order.indexOf(b.work.status),
+  );
   return (
     <section>
       <ManagementFilters works={data.works.filter((s) => search.pilot || !s.work.is_pilot)} />
@@ -363,6 +370,37 @@ export function ExecutivePanel() {
           );
         })}
       </div>
+      <section aria-labelledby="painel-obras" className="mt-8">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 id="painel-obras" className="text-lg font-semibold">
+              Obras
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              {cards.length} {cards.length === 1 ? "obra" : "obras"} no filtro
+            </p>
+          </div>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/obras">
+              Todas as obras
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+        {cards.length ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {cards.map((s) => (
+              <WorkCard key={s.work.id} s={s} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={HardHat}
+            title="Nenhuma obra neste filtro"
+            description="Ajuste os filtros acima ou cadastre uma nova obra."
+          />
+        )}
+      </section>
       <Dialog
         open={!!detail}
         onOpenChange={(v) => {

@@ -4,6 +4,18 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Cards das obras no Painel (branch `feat/fundacao-tecnica`)
+
+**Pedido:** o Guilherme quer ver todas as obras no Painel, junto do fluxo de caixa, em cards no estilo de uma referência (ObraCash) que ele mandou: faixa colorida com ícone e situação, nome, valores com barra de uso e cliente/local.
+
+**Decisões:**
+
+- Novo `WorkCard` (`src/components/works/work-card.tsx`) com a identidade JMG: a faixa do topo tem a cor da situação (azul em execução, cinza em planejamento, laranja pausada, verde finalizada), selo de situação e avanço físico; valor da obra (`result.sale`) × recebido (`totals.received`) com barra de `balance.financialProgress` e o "a receber" (`balance.receivable`); custo realizado (`incurred`) com barra do consumo do custo previsto (`progressAttention`, "não conferido" em obra direta sem estimativa); cliente e endereço. Nenhuma conta nova: tudo vem de `dashboard-data`/`work-progress`.
+- No Painel (`ExecutivePanel`), seção "Obras" abaixo dos indicadores, usando `selectWorks` (respeita os filtros do Painel e o PILOTO), em ordem execução → planejamento → pausada → finalizada; 1 coluna no celular, 2 no tablet e 3 em tela larga. O card inteiro abre a obra.
+- `Meter` ganhou `showValue={false}` para mostrar só a barra.
+
+**Conferência:** lint, formatação, typecheck e 169 testes passando; navegador em 375px claro, 1440px claro e 1024px escuro (só uma obra nos dados locais).
+
 ### 2026-10-28 — Novo visual levado a todos os módulos (branch `feat/fundacao-tecnica`)
 
 **Pedido:** o Guilherme aprovou o visual do Painel/Fluxo de Caixa e pediu para replicar. Só visual: nenhuma consulta, cálculo, permissão, `name=` ou aria-label mudou; PDFs e impressões do cliente (`*.pdf.tsx`, contrato impresso, Gantt) ficaram iguais.

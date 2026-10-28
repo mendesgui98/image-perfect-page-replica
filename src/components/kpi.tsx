@@ -240,36 +240,45 @@ export function Meter({
   value,
   tone = "brand",
   size = "md",
+  showValue = true,
 }: {
   label?: string | undefined;
   value: number | null;
+  /** false mostra só a barra (quando o percentual já aparece em outro texto). */
+  showValue?: boolean | undefined;
   tone?: Tone | undefined;
   size?: "sm" | "md" | undefined;
 }) {
   const sm = size === "sm";
   return (
     <div className={cn("min-w-0", sm ? "space-y-1.5" : "space-y-2")}>
-      <div className="flex items-baseline justify-between gap-3">
-        {label && (
-          <span className={cn("text-muted-foreground", sm ? "text-xs" : "text-[13px] font-medium")}>
-            {label}
-          </span>
-        )}
-        {value === null ? (
-          <span
-            className={cn(
-              "shrink-0 whitespace-nowrap font-semibold text-muted-foreground",
-              sm ? "text-xs" : "text-sm",
-            )}
-          >
-            {sm ? "—" : "Não conferido"}
-          </span>
-        ) : (
-          <span className={cn("shrink-0 font-bold num", sm ? "text-xs font-semibold" : "text-lg")}>
-            {fmtNum(value)}%
-          </span>
-        )}
-      </div>
+      {(label || showValue) && (
+        <div className="flex items-baseline justify-between gap-3">
+          {label && (
+            <span
+              className={cn("text-muted-foreground", sm ? "text-xs" : "text-[13px] font-medium")}
+            >
+              {label}
+            </span>
+          )}
+          {value === null ? (
+            <span
+              className={cn(
+                "shrink-0 whitespace-nowrap font-semibold text-muted-foreground",
+                sm ? "text-xs" : "text-sm",
+              )}
+            >
+              {sm ? "—" : "Não conferido"}
+            </span>
+          ) : (
+            <span
+              className={cn("shrink-0 font-bold num", sm ? "text-xs font-semibold" : "text-lg")}
+            >
+              {fmtNum(value)}%
+            </span>
+          )}
+        </div>
+      )}
       <div className={cn("overflow-hidden rounded-full bg-muted", sm ? "h-1.5" : "h-2")}>
         {value !== null && (
           <div
