@@ -12,6 +12,8 @@ import { Field, selectClass, Attachment } from "./fields";
 import { text, number } from "@/lib/form-values";
 import { uploadDocument } from "@/lib/work-data";
 import { financeOptions } from "@/lib/finance-data";
+import { dashboardOptions } from "@/lib/dashboard-data";
+import { paymentStages, stageDescription } from "@/lib/payment-stages";
 import { Installments } from "./installments";
 import { DraftForm } from "./draft-form";
 import { entryState } from "@/lib/dashboard-math";
@@ -31,6 +33,7 @@ export function Finance({ workId }: { workId?: string }) {
   const [entry, setEntry] = useState<Entry | null>(null);
   const [busy, setBusy] = useState(false);
   const [direction, setDirection] = useState("");
+  const [entryDirection, setEntryDirection] = useState("entrada");
   const filterWork = search.work || "";
   const setFilterWork = (work: string) =>
     navigate({ to: "/financeiro", search: (prev) => ({ ...prev, work }) });
@@ -46,6 +49,29 @@ export function Finance({ workId }: { workId?: string }) {
       (!from || e.due_date >= from) &&
       (!to || e.due_date <= to),
   );
+  // Etapas da forma de pagamento (orçamento) para as entradas da obra.
+  const { data: dash } = useQuery({ ...dashboardOptions, enabled: !!workId });
+  const summary = dash?.works.find((w) => w.work.id === workId);
+  const stages = summary
+    ? paymentStages(
+        summary.budget.terms,
+        summary.base.saleNet,
+        entries.filter((e) => e.direction === "entrada").map((e) => e.description),
+      )
+    : [];
+  function applyStage(form: HTMLFormElement | null, label: string) {
+    const stage = stages.find((s) => s.label === label);
+    if (!form || !stage || !summary) return;
+    const set = (name: string, value: string) => {
+      const el = form.elements.namedItem(name);
+      if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) el.value = value;
+    };
+    set("description", stageDescription(stage.label, summary.work.name));
+    if (stage.amount !== null) set("amount", String(stage.amount));
+    set("category", "Contrato");
+    if (summary.work.client_id) set("person", summary.work.client_id);
+    form.dispatchEvent(new Event("input", { bubbles: true }));
+  }
   const movementTotals = financeTotals(entries, data?.settlements ?? []);
   const opening = data?.openings.find((o) => o.work_id === (workId || filterWork));
   const totals = {
@@ -180,7 +206,12 @@ export function Finance({ workId }: { workId?: string }) {
             <ArrowLeftRight className="h-4 w-4" />
             Transferência
           </Button>
-          <Button onClick={() => setDialog("entry")}>
+          <Button
+            onClick={() => {
+              setEntryDirection("entrada");
+              setDialog("entry");
+            }}
+          >
             <Plus className="h-4 w-4" />
             Lançamento
           </Button>
@@ -246,9 +277,9 @@ export function Finance({ workId }: { workId?: string }) {
             value={direction}
             onChange={(e) => setDirection(e.target.value)}
           >
-            <option value="">A pagar e a receber</option>
-            <option value="entrada">A receber</option>
-            <option value="saida">A pagar</option>
+            <option value="">Entradas e saídas</option>
+            <option value="entrada">Entradas (a receber)</option>
+            <option value="saida">Saídas (a pagar)</option>
           </select>
         </label>
         <label className="text-xs">
@@ -308,7 +339,7 @@ export function Finance({ workId }: { workId?: string }) {
                   <h3 className="font-semibold">{e.description}</h3>
                   <p className="text-xs text-muted-foreground">
                     {e.installment_index}/{e.installment_count} ·{" "}
-                    {e.direction === "entrada" ? "A receber" : "A pagar"} · {e.category} ·{" "}
+                    {e.direction === "entrada" ? "Entrada" : "Saída"} · {e.category} ·{" "}
                     {fmtDate(e.due_date)} ·{" "}
                     {data?.works.find((w) => w.id === e.work_id)?.name || "Geral JMG"}
                   </p>
@@ -462,9 +493,14 @@ export function Finance({ workId }: { workId?: string }) {
                 <div className="grid grid-cols-2 gap-3">
                   <label className="text-sm">
                     Tipo
-                    <select name="direction" className={selectClass}>
-                      <option value="entrada">A receber</option>
-                      <option value="saida">A pagar</option>
+                    <select
+                      name="direction"
+                      className={selectClass}
+                      defaultValue="entrada"
+                      onChange={(e) => setEntryDirection(e.target.value)}
+                    >
+                      <option value="entrada">Entrada (a receber)</option>
+                      <option value="saida">Saída (a pagar)</option>
                     </select>
                   </label>
                   <label className="text-sm">
@@ -473,11 +509,37 @@ export function Finance({ workId }: { workId?: string }) {
                       {data?.categories.map((c) => (
                         <option key={c.name}>{c.name}</option>
                       ))}
+                      <option>Contrato</option>
                       <option>Comissão da arquiteta</option>
                       <option>Tributos</option>
                     </select>
                   </label>
                 </div>
+                {entryDirection === "entrada" && stages.length > 0 && (
+                  <label className="block text-sm">
+                    Etapa do pagamento
+                    <select
+                      name="stage"
+                      className={selectClass}
+                      defaultValue=""
+                      onChange={(e) => applyStage(e.currentTarget.form, e.target.value)}
+                    >
+                      <option value="">Entrada avulsa (sem etapa)</option>
+                      {stages.map((st) => (
+                        <option key={st.label} value={st.label}>
+                          {st.label}
+                          {st.amount !== null ? ` — ${fmtBRL(st.amount)}` : ""}
+                          {st.launched ? " (já lançada)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      Preenche descrição, categoria, cliente
+                      {stages.some((st) => st.amount !== null) ? " e valor" : ""} pela forma de
+                      pagamento.
+                    </span>
+                  </label>
+                )}
                 <label className="text-sm">
                   Cliente / fornecedor / prestador
                   <select name="person" className={selectClass}>
