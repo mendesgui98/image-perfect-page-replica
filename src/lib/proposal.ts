@@ -153,7 +153,7 @@ export interface ProposalData {
     rg: string | null;
     address: string[];
   };
-  site: { line1: string; line2: string; full: string };
+  site: { line1: string; line2: string; full: string; city: string };
   stages: ProposalStage[];
   materials: { stage: number; title: string; total: number; lines: ClientMaterialLine[] }[];
   materialsCount: number;
@@ -288,6 +288,7 @@ export function buildProposal(input: ProposalInput): ProposalData {
       line1: budget.endereco?.trim() ?? "",
       line2,
       full: [budget.endereco, budget.bairro, cityUf].filter(Boolean).join(", "),
+      city: budget.cidade?.trim() ?? "",
     },
     stages,
     materials,

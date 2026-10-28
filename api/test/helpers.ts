@@ -42,6 +42,7 @@ export function fakeRepo(seed: Record<string, Role[]> = {}, mfa: string[] = []) 
     setRoles: async (id, r) => void roles.set(id, r),
     countAdmins: async () => [...roles.values()].filter((r) => r.includes("admin")).length,
     exportTables: async () => ({ budgets: [{ id: "b1" }] }),
+    proposalInput: async () => null,
   };
   return repo;
 }

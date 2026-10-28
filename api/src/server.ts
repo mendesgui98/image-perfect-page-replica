@@ -3,6 +3,8 @@ import { createApp } from "./app.ts";
 import { loadConfig } from "./config.ts";
 import { createDb } from "./db.ts";
 import { createAuthAdmin } from "./gotrue.ts";
+import { createPdfService } from "./pdf/index.ts";
+import { closeBrowser } from "./pdf/render.ts";
 import { createRepo } from "./repo.ts";
 
 const config = loadConfig();
@@ -13,6 +15,7 @@ const app = createApp({
   corsOrigins: config.corsOrigins,
   repo: createRepo(db),
   authAdmin: createAuthAdmin(config.authUrl, config.serviceRoleKey),
+  pdf: createPdfService(),
 });
 
 const server = createServer((req, res) => void app(req, res));
@@ -21,7 +24,7 @@ server.listen(config.port, () => {
 });
 
 function shutdown() {
-  server.close(() => void db.close().finally(() => process.exit(0)));
+  server.close(() => void Promise.all([db.close(), closeBrowser()]).finally(() => process.exit(0)));
   setTimeout(() => process.exit(1), 10_000).unref();
 }
 process.on("SIGTERM", shutdown);

@@ -1,4 +1,7 @@
+import type { Claims } from "./auth.ts";
 import type { Db } from "./db.ts";
+import { emptyParams } from "../../src/lib/pricing.ts";
+import type { ProposalInput } from "../../src/lib/proposal.ts";
 
 // Consultas SQL da API. Mantidas aqui para os handlers ficarem testáveis com um repositório falso.
 
@@ -25,7 +28,11 @@ export type Repo = {
   setRoles(userId: string, roles: Role[]): Promise<void>;
   countAdmins(): Promise<number>;
   exportTables(): Promise<Record<string, unknown[]>>;
+  /** Linhas do orçamento para o PDF, lidas como o usuário (RLS de custos vale aqui). */
+  proposalInput(claims: Claims, budgetId: string): Promise<Omit<ProposalInput, "today"> | null>;
 };
+
+const num = (v: unknown) => Number(v ?? 0) || 0;
 
 export function createRepo(db: Db): Repo {
   const { sql } = db;
@@ -81,5 +88,92 @@ export function createRepo(db: Db): Repo {
       }
       return out;
     },
+    proposalInput: (claims, budgetId) =>
+      db.asUser(claims, async (tx) => {
+        const [b] = await tx`
+          select b.*, p.full_name as creator_name from public.budgets b
+          left join public.profiles p on p.id = b.created_by
+          where b.id = ${budgetId} and b.deleted_at is null`;
+        if (!b) return null;
+        const sections = await tx`
+          select id, title, description, start_week, duration_weeks from public.budget_sections
+          where budget_id = ${budgetId} order by sort, created_at`;
+        const items = await tx`
+          select section_id, description, unit::text as unit, quantity, labor_cost_unit, materials,
+                 labor_markup_override, materials_markup_override, item_discount
+          from public.budget_items where budget_id = ${budgetId} order by sort, created_at`;
+        const [client] = b["client_id"]
+          ? await tx`select name, document, rg, endereco, bairro, cidade, uf, cep
+                     from public.people where id = ${b["client_id"] as string}`
+          : [];
+        const opt = (v: unknown) => (v === null || v === undefined ? null : num(v));
+        return {
+          creatorName: (b["creator_name"] as string | null) ?? null,
+          budget: {
+            number: num(b["number"]),
+            revision: num(b["revision"]),
+            status: String(b["status"]),
+            title: String(b["title"] ?? ""),
+            description: b["description"] as string | null,
+            client_display: b["client_display"] as string | null,
+            endereco: b["endereco"] as string | null,
+            bairro: b["bairro"] as string | null,
+            cidade: b["cidade"] as string | null,
+            uf: b["uf"] as string | null,
+            cep: b["cep"] as string | null,
+            issue_date: isoDate(b["issue_date"]) ?? "",
+            validity_date: isoDate(b["validity_date"]),
+            start_date: isoDate(b["start_date"]),
+            estimated_weeks: opt(b["estimated_weeks"]),
+            property_type: b["property_type"] as string | null,
+            property_area: opt(b["property_area"]),
+            responsible: b["responsible"] as string | null,
+            notes: b["notes"] as string | null,
+            general_discount: num(b["general_discount"]),
+            params: { ...emptyParams, ...((b["params"] as object | null) ?? {}) },
+            payment_terms: (b["payment_terms"] as ProposalInput["budget"]["payment_terms"]) ?? [],
+          },
+          sections: sections.map((s) => ({
+            id: String(s["id"]),
+            title: String(s["title"]),
+            description: s["description"] as string | null,
+            start_week: opt(s["start_week"]),
+            duration_weeks: opt(s["duration_weeks"]),
+          })),
+          items: items.map((i) => ({
+            section_id: String(i["section_id"]),
+            description: String(i["description"]),
+            unit: String(i["unit"]),
+            quantity: num(i["quantity"]),
+            labor_cost_unit: num(i["labor_cost_unit"]),
+            materials: (i["materials"] as ProposalInput["items"][number]["materials"]) ?? [],
+            labor_markup_override: opt(i["labor_markup_override"]),
+            materials_markup_override: opt(i["materials_markup_override"]),
+            item_discount: num(i["item_discount"]),
+          })),
+          client: client
+            ? {
+                name: String(client["name"]),
+                document: client["document"] as string | null,
+                rg: client["rg"] as string | null,
+                endereco: client["endereco"] as string | null,
+                bairro: client["bairro"] as string | null,
+                cidade: client["cidade"] as string | null,
+                uf: client["uf"] as string | null,
+                cep: client["cep"] as string | null,
+              }
+            : null,
+        };
+      }),
   };
+}
+
+/** Data do Postgres (Date ou texto) em aaaa-mm-dd, sem deslocar fuso. */
+function isoDate(v: unknown): string | null {
+  if (v === null || v === undefined) return null;
+  if (v instanceof Date) {
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${v.getFullYear()}-${p(v.getMonth() + 1)}-${p(v.getDate())}`;
+  }
+  return String(v).slice(0, 10);
 }

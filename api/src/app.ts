@@ -2,8 +2,10 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { z } from "zod";
 import { bearer, verifyJwt, type Claims } from "./auth.ts";
 import type { AuthAdmin } from "./gotrue.ts";
-import { HttpError, Router, json, readJson, send, type Request } from "./http.ts";
+import { HttpError, Router, json, readJson, send, type Reply, type Request } from "./http.ts";
 import { ROLES, type Repo, type Role } from "./repo.ts";
+import type { PdfService } from "./pdf/index.ts";
+import { buildProposal, contractIssues, proposalIssues } from "../../src/lib/proposal.ts";
 
 export type Deps = {
   jwtSecret: string;
@@ -11,6 +13,9 @@ export type Deps = {
   corsOrigins: string[];
   repo: Repo;
   authAdmin: AuthAdmin;
+  pdf?: PdfService;
+  /** Data de hoje (aaaa-mm-dd) no fuso de São Paulo; substituível nos testes. */
+  today?: () => string;
   log?: (entry: Record<string, unknown>) => void;
 };
 
@@ -50,6 +55,34 @@ export function createApp(deps: Deps) {
     }
     return s;
   }
+
+  const today =
+    deps.today ?? (() => new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" }));
+
+  /** Monta os dados do documento; só admin/financeiro (o preço de venda depende dos custos). */
+  async function proposalData(req: Request) {
+    const s = await session(req);
+    if (!s.roles.includes("admin") && !s.roles.includes("financeiro")) {
+      throw new HttpError(403, "forbidden", "Acesso restrito a administradores e financeiro");
+    }
+    if (!deps.pdf) throw new HttpError(503, "pdf_unavailable", "Geração de PDF indisponível");
+    const id = req.params["id"] ?? "";
+    if (!/^[0-9a-f-]{36}$/i.test(id))
+      throw new HttpError(404, "not_found", "Orçamento não encontrado");
+    const input = await deps.repo.proposalInput(s.claims, id);
+    if (!input) throw new HttpError(404, "not_found", "Orçamento não encontrado");
+    return { s, pdf: deps.pdf, data: buildProposal({ ...input, today: today() }) };
+  }
+
+  const pdfReply = (body: Buffer, name: string): Reply => ({
+    status: 200,
+    body,
+    headers: {
+      "content-type": "application/pdf",
+      "content-disposition": `attachment; filename="${name}"`,
+      "cache-control": "no-store",
+    },
+  });
 
   const router = new Router()
     .add("GET", "/health", async () => {
@@ -103,6 +136,22 @@ export function createApp(deps: Deps) {
       await deps.repo.setRoles(target, [...new Set(roles)]);
       log({ event: "roles", by: s.claims.sub, user: target, roles });
       return json(200, { id: target, roles });
+    })
+    .add("POST", "/v1/orcamentos/:id/pdf", async (req) => {
+      const { s, pdf, data } = await proposalData(req);
+      const issues = proposalIssues(data);
+      if (issues.length) throw new HttpError(422, "incomplete", issues.join(" "));
+      const file = await pdf.proposal(data);
+      log({ event: "proposal_pdf", by: s.claims.sub, budget: req.params["id"] });
+      return pdfReply(file, `${data.number}.pdf`);
+    })
+    .add("POST", "/v1/orcamentos/:id/contrato", async (req) => {
+      const { s, pdf, data } = await proposalData(req);
+      const issues = contractIssues(data);
+      if (issues.length) throw new HttpError(422, "incomplete", issues.join(" "));
+      const file = await pdf.contract(data, today());
+      log({ event: "contract_pdf", by: s.claims.sub, budget: req.params["id"] });
+      return pdfReply(file, `Contrato-${data.number}.pdf`);
     })
     .add("GET", "/v1/admin/export", async (req) => {
       const s = await admin(req);

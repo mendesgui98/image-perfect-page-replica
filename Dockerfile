@@ -31,17 +31,22 @@ CMD ["node", "scripts/migrate.mjs"]
 
 # ---------- API própria ----------
 # Node 22 executa TypeScript direto (--experimental-strip-types); sem etapa de build.
-FROM node:22-alpine AS api
-WORKDIR /app
+# Imagem do Playwright: traz o Chromium usado para gerar os PDFs de orçamento e contrato
+# (mesma versão do playwright-core em api/package.json).
+FROM mcr.microsoft.com/playwright:v1.56.1-noble AS api
+WORKDIR /app/api
 ENV NODE_ENV=production PORT=4000
-COPY --from=deps /app/node_modules/postgres ./node_modules/postgres
-COPY --from=deps /app/node_modules/zod ./node_modules/zod
 COPY api/package.json ./package.json
+RUN npm install --omit=dev --no-audit --no-fund
 COPY api/src ./src
-USER node
+COPY api/assets ./assets
+# Módulos puros compartilhados com o app (contas de preço, proposta, extenso, documentos).
+COPY src/lib/pricing.ts src/lib/proposal.ts src/lib/extenso.ts src/lib/documents.ts /app/src/lib/
+RUN echo '{"type":"module"}' > /app/package.json
+USER pwuser
 EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:4000/health >/dev/null || exit 1
+  CMD node -e "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
 CMD ["node", "--experimental-strip-types", "--no-warnings", "src/server.ts"]
 
 # ---------- runtime do front ----------
