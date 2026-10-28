@@ -14,6 +14,7 @@ import {
   PencilLine,
   Percent,
   TrendingUp,
+  Save,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMe } from "@/hooks/use-me";
@@ -38,6 +39,14 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { BUDGET_STATUS_VARIANT } from "@/lib/status-badges";
 import { KpiCard, Money, Notice } from "@/components/kpi";
 import { fmtPct } from "@/lib/format";
+import { apiConfigured } from "@/lib/api-client";
+import {
+  budgetFingerprint,
+  budgetVersionsOptions,
+  hasUnsavedChanges,
+  saveBudgetVersion,
+} from "@/lib/budget-versions";
+import { BudgetVersions } from "@/components/budgets/budget-versions";
 
 export const Route = createFileRoute("/_authenticated/orcamentos/$id/")({
   head: () => pageMeta("Orçamento", "Serviços, condições e aprovação da proposta JMG."),
@@ -94,6 +103,33 @@ function Editor() {
         : null,
     [data],
   );
+
+  // Versões salvas: cada "Salvar versão" guarda o PDF; a aprovação marca a última.
+  const { data: versions = [] } = useQuery(budgetVersionsOptions(id));
+  const fingerprint = useMemo(
+    () =>
+      data
+        ? budgetFingerprint({
+            budget: { ...data.budget, params: data.params, payment_terms: data.terms },
+            sections: data.sections,
+            items: data.items,
+          })
+        : "",
+    [data],
+  );
+  const saveVersion = useMutation({
+    mutationFn: () => saveBudgetVersion(id, result?.saleNet ?? 0, fingerprint),
+    onSuccess: (v) => {
+      toast.success(`Versão ${v.version} salva com o PDF.`);
+      qc.invalidateQueries({ queryKey: ["budget-versions", id] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+  async function saveIfChanged() {
+    if (!apiConfigured || !hasUnsavedChanges(versions, fingerprint)) return;
+    await saveBudgetVersion(id, result?.saleNet ?? 0, fingerprint);
+    await qc.invalidateQueries({ queryKey: ["budget-versions", id] });
+  }
 
   const updBudget = useMutation({
     mutationFn: (p: Record<string, unknown>) => budgetApi.update(id, p),
@@ -226,14 +262,34 @@ function Editor() {
               </Button>
             ))}
           {proposalIssues(proposal).length ? (
-            <Button disabled title={proposalIssues(proposal).join(" ")}>
+            <Button variant="outline" disabled title={proposalIssues(proposal).join(" ")}>
               <FileDown className="h-4 w-4" /> Gerar PDF
             </Button>
           ) : (
-            <Button asChild>
+            <Button variant="outline" asChild>
               <Link to="/orcamentos/$id/pdf" params={{ id }}>
                 <FileDown className="h-4 w-4" /> Gerar PDF
               </Link>
+            </Button>
+          )}
+          {!locked && apiConfigured && (
+            <Button
+              disabled={
+                saveVersion.isPending ||
+                proposalIssues(proposal).length > 0 ||
+                !hasUnsavedChanges(versions, fingerprint)
+              }
+              title={
+                proposalIssues(proposal).length
+                  ? proposalIssues(proposal).join(" ")
+                  : !hasUnsavedChanges(versions, fingerprint)
+                    ? "Nenhuma alteração desde a última versão."
+                    : "Guarda o PDF desta versão do orçamento."
+              }
+              onClick={() => saveVersion.mutate()}
+            >
+              <Save className="h-4 w-4" />
+              {saveVersion.isPending ? "Salvando…" : "Salvar versão"}
             </Button>
           )}
         </div>
@@ -271,6 +327,8 @@ function Editor() {
         />
       </div>
 
+      <BudgetVersions budgetId={id} fingerprint={fingerprint} locked={locked} />
+
       <div className="mb-6 flex flex-wrap items-center gap-2">
         {budget.status === "elaboracao" && (
           <Button size="sm" variant="soft" onClick={() => setStatus("enviado")}>
@@ -287,7 +345,12 @@ function Editor() {
             </Button>
           </>
         )}
-        <Approval budgetId={id} status={budget.status} onChange={refresh} />
+        <Approval
+          budgetId={id}
+          status={budget.status}
+          onChange={refresh}
+          beforeApprove={saveIfChanged}
+        />
         <Attachment path={budget.approval_path} />
         {!budget.archived ? (
           <Button size="sm" variant="ghost" onClick={() => updBudget.mutate({ archived: true })}>

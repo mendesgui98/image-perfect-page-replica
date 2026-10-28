@@ -56,6 +56,42 @@ export type Database = {
           },
         ];
       };
+      budget_versions: {
+        Row: {
+          approved: boolean;
+          budget_id: string;
+          created_at: string;
+          created_by: string | null;
+          file_path: string;
+          fingerprint: string;
+          id: string;
+          total: number;
+          version: number;
+        };
+        Insert: {
+          approved?: boolean;
+          budget_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          file_path: string;
+          fingerprint: string;
+          id?: string;
+          total: number;
+          version?: number;
+        };
+        Update: {
+          approved?: boolean;
+          budget_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          file_path?: string;
+          fingerprint?: string;
+          id?: string;
+          total?: number;
+          version?: number;
+        };
+        Relationships: [];
+      };
       budget_history: {
         Row: {
           action: string;

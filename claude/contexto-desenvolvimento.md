@@ -4,6 +4,20 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Orçamento editável até a aprovação e versões salvas com PDF (branch `feat/fundacao-tecnica`)
+
+**Pedido:** o Guilherme não conseguia abrir o orçamento para editar. Quer editar livremente até aprovar; cada vez que salvar, guardar o PDF como versão; ao aprovar, a última versão salva fica como a aprovada (ex.: "3 versões até a aprovação").
+
+**Decisões:**
+
+- Lista de orçamentos: o card inteiro abre o orçamento (antes só o número era link — regressão do visual novo). A trava já era a combinada: editável em elaboração/enviado, só consulta depois de aprovado (revisões por "Reabrir para edição").
+- Tabela `budget_versions` (migração `20261028000030_budget_versions.sql`): número sequencial, PDF no bucket privado (`budget-versions/<orçamento>/`), total, impressão digital do conteúdo, autor e data definidos pelo banco; só admin/financeiro; não aceita versão nova em orçamento fechado; trigger marca a última versão como aprovada quando o status vira aprovado.
+- Botão "Salvar versão" no orçamento (fica desabilitado quando nada mudou desde a última versão ou há pendência para o PDF); "Gerar PDF" virou só pré-visualização. Lista "Versões salvas" com data, hora, quem salvou, valor, botão do PDF e selo "Aprovada", e aviso quando há alterações ainda não salvas.
+- "Registrar aprovação" salva antes uma versão nova se o conteúdo mudou (`beforeApprove` no `Approval`), para o PDF aprovado ser exatamente o que foi aprovado.
+- Impressão digital em `src/lib/budget-versions.ts` (+ testes): ignora situação, aprovação e datas de edição; muda com itens, etapas, preço e condições.
+
+**Conferência:** migração aplicada; no navegador, numa cópia do orçamento nº 9, versão 1 salva, alteração detectada, versão 2 salva; aprovação testada no banco (versão 2 marcada, versão nova recusada depois) em transação desfeita; cópia excluída. lint, typecheck e 198 testes passando.
+
 ### 2026-10-28 — Precificação pelo custo direto, negociação e orçado × realizado (branch `feat/fundacao-tecnica`)
 
 **Pedido:** documento do Guilherme "Precificação no módulo de Orçamentos": preço formado só pelo custo direto e 4 percentuais (estrutura 12,5%, RT 10% com chave Sim/Não, impostos 8%, margem 15%), preço sugerido na centena, abertura interna, negociação com margem real, alertas, simulador, padrões nas Configurações, PDF com o preço final e orçado × realizado na obra.

@@ -14,10 +14,13 @@ export function Approval({
   budgetId,
   status,
   onChange,
+  beforeApprove,
 }: {
   budgetId: string;
   status: string;
   onChange: () => void;
+  /** Roda antes de aprovar (ex.: salvar a versão atual do orçamento). */
+  beforeApprove?: (() => Promise<void>) | undefined;
 }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -38,6 +41,7 @@ export function Approval({
     mutationFn: async (d: FormData) => {
       const file = d.get("proof");
       if (!(file instanceof File) || !file.size) throw Error("Anexe o comprovante da aprovação.");
+      await beforeApprove?.();
       const path = await uploadDocument(file, "approvals");
       const r = await supabase
         .from("budgets")
