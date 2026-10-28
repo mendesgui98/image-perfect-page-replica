@@ -2,7 +2,7 @@ import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Download, RefreshCw } from "lucide-react";
+import { Download, ExternalLink, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/kpi";
 import { PageSkeleton } from "@/components/feedback";
@@ -72,6 +72,13 @@ function Pdf() {
           >
             <RefreshCw className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} /> Gerar de novo
           </Button>
+          {url && (
+            <Button variant="outline" asChild>
+              <a href={url} target="_blank" rel="noreferrer">
+                <ExternalLink className="h-4 w-4" /> Abrir em nova aba
+              </a>
+            </Button>
+          )}
           {url && data && (
             <Button asChild>
               <a href={url} download={data.name}>
