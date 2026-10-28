@@ -30,3 +30,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local scratch files and dependency caches
+work/
+
+# Ambiente local
+.env
+.env.*
+!.env.example
+package-lock.json
+
+# Gerado por bun run dev:all
+.env.development.local

@@ -5,6 +5,8 @@
  *  - Custo MO do item       = quantidade × custo unitário do terceiro
  *  - Qtde material (consumo) = quantidade × consumo por unidade × (1 + perda)
  *  - Custo material         = qtde consumo × (preço de compra ÷ conversão)   [só materiais fornecidos pela JMG]
+ *    -> com rendimento de embalagem: embalagens = ⌈qtde consumo ÷ rendimento⌉ (por serviço),
+ *       custo = embalagens × preço da embalagem
  *  - Preço MO (lista)       = custo MO × (1 + acréscimo MO) × (1 + reserva de negociação)
  *  - Preço Mat (lista)      = custo Mat × (1 + acréscimo Mat) × (1 + reserva de negociação)
  *    -> "acréscimo" é sempre sobre CUSTO. "Margem" é sempre sobre VENDA.
@@ -16,6 +18,14 @@
  *  - Resultado              = venda líquida − custo MO − custo Mat − tributos − comissão
  *  - Margem                 = resultado ÷ venda líquida
  *  - Reinvestimento         = resultado × % de destinação (não é deduzido do resultado)
+ *  Esse é o modelo dos orçamentos antigos (params sem "model"), mantido para não mudar valores.
+ *
+ * Modelo "custo direto" (params.model = "custo_direto", padrão dos orçamentos novos):
+ *  - Custo direto           = custo MO + custo materiais
+ *  - Preço calculado        = custo direto ÷ [1 − (estrutura + RT + impostos + margem)]
+ *  - Preço final            = preço negociado (se houver) ou o calculado
+ *  - Estrutura, RT, impostos = % × preço final; lucro = preço final − custo direto − os três
+ *  - Materiais vão ao cliente a custo; a mão de obra de venda é o restante do preço final
  */
 
 export type TaxBase = "venda" | "mao_de_obra";
@@ -34,6 +44,16 @@ export interface PricingParams {
   architect_commission: number;
   reinvestment_share: number;
   taxes: Tax[];
+  /** "custo_direto" = modelo atual; ausente = acréscimos sobre custo (orçamentos antigos). */
+  model?: "custo_direto" | undefined;
+  /** Custo estrutural JMG (% do preço). */
+  structure_rate?: number | undefined;
+  /** Impostos (% do preço). */
+  tax_rate?: number | undefined;
+  /** false zera a RT (architect_commission continua guardada). */
+  apply_rt?: boolean | undefined;
+  /** Preço proposto ao cliente; nulo = usa o preço calculado. */
+  negotiated_price?: number | null | undefined;
 }
 
 export const emptyParams: PricingParams = {
@@ -57,6 +77,8 @@ export interface ItemMaterial {
   loss_pct: number;
   price: number; // por unidade de compra (snapshot)
   supplied_by: "jmg" | "cliente";
+  package_yield?: number | null; // rendimento de 1 embalagem; nulo = compra fracionada
+  yield_unit?: string | null;
 }
 
 export interface PricingItem {
@@ -104,6 +126,8 @@ export interface BudgetResult {
   belowMin: boolean;
   belowDesired: boolean;
   maxExtraDiscount: number;
+  /** Custo estrutural JMG (0 no modelo legado). */
+  structure: number;
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -112,13 +136,193 @@ const pct = (n: number | null | undefined) => (Number(n) || 0) / 100;
 export function materialQty(m: ItemMaterial, serviceQty: number) {
   return serviceQty * (Number(m.consumption) || 0) * (1 + pct(m.loss_pct));
 }
+/** Custo por unidade de consumo (estimativa unitária, sem arredondar embalagens). */
 export function materialUnitCost(m: ItemMaterial) {
-  const conv = Number(m.conversion) > 0 ? Number(m.conversion) : 1;
+  const conv =
+    Number(m.package_yield) > 0
+      ? Number(m.package_yield)
+      : Number(m.conversion) > 0
+        ? Number(m.conversion)
+        : 1;
   return (Number(m.price) || 0) / conv;
+}
+/** Embalagens inteiras para um serviço (arredonda por serviço); null sem rendimento. */
+export function materialPackages(m: ItemMaterial, serviceQty: number) {
+  const packageYield = Number(m.package_yield);
+  if (!(packageYield > 0)) return null;
+  return Math.max(0, Math.ceil(materialQty(m, serviceQty) / packageYield - 1e-9));
+}
+/** Quantidade em unidades de compra: embalagens inteiras ou fração pela conversão. */
+export function materialPurchaseQty(m: ItemMaterial, serviceQty: number) {
+  const conv = Number(m.conversion) > 0 ? Number(m.conversion) : 1;
+  return materialPackages(m, serviceQty) ?? materialQty(m, serviceQty) / conv;
 }
 export function materialCost(m: ItemMaterial, serviceQty: number) {
   if (m.supplied_by === "cliente") return 0;
+  const packages = materialPackages(m, serviceQty);
+  if (packages !== null) return packages * (Number(m.price) || 0);
   return materialQty(m, serviceQty) * materialUnitCost(m);
+}
+
+/** Os 4 percentuais do modelo do custo direto, em % (12.5 = 12,5%). */
+export interface PriceRates {
+  structure: number;
+  rt: number;
+  taxes: number;
+  margin: number;
+}
+
+export const isDirectCostModel = (params: Pick<PricingParams, "model">) =>
+  params.model === "custo_direto";
+
+/** Percentuais do orçamento no modelo do custo direto (RT zerada quando não se aplica). */
+export function priceRates(params: PricingParams): PriceRates {
+  return {
+    structure: Number(params.structure_rate) || 0,
+    rt: params.apply_rt === false ? 0 : Number(params.architect_commission) || 0,
+    taxes: Number(params.tax_rate) || 0,
+    margin: Number(params.desired_margin) || 0,
+  };
+}
+
+/**
+ * Preço de venda = custo direto ÷ [1 − (estrutura + RT + impostos + margem)].
+ * null quando a soma dos percentuais chega a 100% (não existe preço).
+ */
+export function priceFromCost(directCost: number, rates: PriceRates) {
+  const raw = rawPrice(directCost, rates);
+  return raw === null ? null : r2(raw);
+}
+function rawPrice(directCost: number, rates: PriceRates) {
+  const share = pct(rates.structure) + pct(rates.rt) + pct(rates.taxes) + pct(rates.margin);
+  if (share >= 1 - 1e-9) return null;
+  return (Number(directCost) || 0) / (1 - share);
+}
+
+/** Preço sugerido: o calculado arredondado para a centena mais próxima. */
+export const suggestedPrice = (price: number) => Math.round(price / 100) * 100;
+
+/**
+ * Abertura de um preço: estrutura, RT e impostos são % do preço; o lucro é a sobra, para a soma
+ * bater centavo a centavo com o preço.
+ */
+export function priceBreakdown(
+  price: number,
+  directCost: number,
+  rates: Omit<PriceRates, "margin">,
+  /** Preço sem arredondar (o calculado), para os percentuais baterem com a conta exata. */
+  exactPrice: number = price,
+) {
+  const p = r2(Number(price) || 0);
+  const basis = Number(exactPrice) || 0;
+  const structure = r2(basis * pct(rates.structure));
+  const rt = r2(basis * pct(rates.rt));
+  const taxes = r2(basis * pct(rates.taxes));
+  const profit = r2(p - (Number(directCost) || 0) - structure - rt - taxes);
+  return {
+    price: p,
+    directCost: r2(directCost),
+    structure,
+    rt,
+    taxes,
+    profit,
+    margin: p > 0 ? profit / p : 0,
+  };
+}
+
+/** Abertura do preço calculado para um custo direto (null se os percentuais somam 100%+). */
+export function costBreakdown(directCost: number, rates: PriceRates) {
+  const raw = rawPrice(directCost, rates);
+  return raw === null ? null : priceBreakdown(r2(raw), directCost, rates, raw);
+}
+
+export type MarginLevel = "saudavel" | "atencao" | "alerta" | "prejuizo";
+/** Faixa da margem: meta ou acima, entre mínima e meta, abaixo da mínima, negativa. */
+export function marginLevel(margin: number, target: number, min: number): MarginLevel {
+  if (margin < 0) return "prejuizo";
+  if (margin < pct(min) - 1e-9) return "alerta";
+  if (margin < pct(target) - 1e-9) return "atencao";
+  return "saudavel";
+}
+
+/** Simulador: preço para o custo direto com cada margem, mantendo estrutura, RT e impostos. */
+export function priceSimulation(
+  directCost: number,
+  rates: PriceRates,
+  margins: number[] = [5, 8, 10, 12, 15, 20],
+) {
+  return margins.map((margin) => ({
+    margin,
+    price: priceFromCost(directCost, { ...rates, margin }),
+  }));
+}
+
+function computeDirectCost(items: PricingItem[], params: PricingParams): BudgetResult {
+  const rates = priceRates(params);
+  const pre = items.map((it) => {
+    const q = Number(it.quantity) || 0;
+    const laborCost = q * (Number(it.labor_cost_unit) || 0);
+    const materialsCost = (it.materials || []).reduce((s, m) => s + materialCost(m, q), 0);
+    return { id: it.id, laborCost, materialsCost };
+  });
+  const laborCost = pre.reduce((s, p) => s + p.laborCost, 0);
+  const materialsCost = pre.reduce((s, p) => s + p.materialsCost, 0);
+  const totalCost = laborCost + materialsCost;
+  const exact = rawPrice(totalCost, rates) ?? 0;
+  const calculated = r2(exact);
+  const negotiated = params.negotiated_price;
+  const isNegotiated = negotiated != null && Number(negotiated) >= 0;
+  const price = isNegotiated ? r2(Number(negotiated)) : calculated;
+  const b = priceBreakdown(price, totalCost, rates, isNegotiated ? price : exact);
+  // Materiais a custo; o que o preço tem além do custo direto vai para a mão de obra de cada
+  // item, proporcional ao custo direto do item.
+  const spread = price - totalCost;
+  const itemResults: ItemResult[] = pre.map((p) => {
+    const direct = p.laborCost + p.materialsCost;
+    const share = totalCost > 0 ? direct / totalCost : pre.length ? 1 / pre.length : 0;
+    const laborNet = p.laborCost + spread * share;
+    return {
+      id: p.id,
+      laborCost: p.laborCost,
+      materialsCost: p.materialsCost,
+      laborList: laborNet,
+      materialsList: p.materialsCost,
+      laborNet,
+      materialsNet: p.materialsCost,
+      total: laborNet + p.materialsCost,
+    };
+  });
+  const discount = Math.max(0, calculated - price);
+  const minPrice = priceFromCost(totalCost, { ...rates, margin: Number(params.min_margin) || 0 });
+  return {
+    items: itemResults,
+    laborCost: r2(laborCost),
+    materialsCost: r2(materialsCost),
+    totalCost: r2(totalCost),
+    laborList: r2(calculated - materialsCost),
+    materialsList: r2(materialsCost),
+    listTotal: r2(calculated),
+    reserveAmount: 0,
+    itemDiscounts: 0,
+    generalDiscount: r2(discount),
+    totalDiscount: r2(discount),
+    laborNet: r2(price - materialsCost),
+    materialsNet: r2(materialsCost),
+    saleNet: price,
+    taxes: [
+      { name: "Impostos", base: "venda", rate: rates.taxes, baseValue: price, amount: b.taxes },
+    ],
+    taxesTotal: b.taxes,
+    commission: b.rt,
+    result: b.profit,
+    margin: b.margin,
+    reinvestment: r2(Math.max(b.profit, 0) * pct(params.reinvestment_share)),
+    belowMin: price > 0 && b.margin < pct(params.min_margin) - 1e-9,
+    belowDesired: price > 0 && b.margin < pct(params.desired_margin) - 1e-9,
+    maxExtraDiscount:
+      minPrice === null ? 0 : Math.max(0, Math.floor((price - minPrice) * 100) / 100),
+    structure: b.structure,
+  };
 }
 
 export function computeBudget(
@@ -126,6 +330,7 @@ export function computeBudget(
   params: PricingParams,
   generalDiscount = 0,
 ): BudgetResult {
+  if (isDirectCostModel(params)) return computeDirectCost(items, params);
   const reserve = pct(params.negotiation_reserve);
   const pre = items.map((it) => {
     const q = Number(it.quantity) || 0;
@@ -170,7 +375,8 @@ export function computeBudget(
     };
   });
 
-  const sum = (f: (x: (typeof itemResults)[number]) => number) => itemResults.reduce((s, x) => s + f(x), 0);
+  const sum = (f: (x: (typeof itemResults)[number]) => number) =>
+    itemResults.reduce((s, x) => s + f(x), 0);
   const laborCost = sum((x) => x.laborCost);
   const materialsCost = sum((x) => x.materialsCost);
   const laborList = sum((x) => x.laborList);
@@ -194,10 +400,13 @@ export function computeBudget(
   // Desconto geral adicional máximo mantendo a margem mínima.
   // Com desconto proporcional extra d, venda e MO caem pelo mesmo fator k=(1-d).
   // margem(k) = a − C/(S·k), onde a = 1 − taxaVenda − (taxaMO+comissão)·L/S
-  const sRate = (params.taxes || []).filter((t) => t.base !== "mao_de_obra").reduce((s, t) => s + pct(t.rate), 0);
+  const sRate = (params.taxes || [])
+    .filter((t) => t.base !== "mao_de_obra")
+    .reduce((s, t) => s + pct(t.rate), 0);
   const lRate =
-    (params.taxes || []).filter((t) => t.base === "mao_de_obra").reduce((s, t) => s + pct(t.rate), 0) +
-    pct(params.architect_commission);
+    (params.taxes || [])
+      .filter((t) => t.base === "mao_de_obra")
+      .reduce((s, t) => s + pct(t.rate), 0) + pct(params.architect_commission);
   let maxExtraDiscount = 0;
   if (saleNet > 0) {
     const a = 1 - sRate - (lRate * laborNet) / saleNet;
@@ -232,35 +441,145 @@ export function computeBudget(
     belowMin: saleNet > 0 && margin < pct(params.min_margin),
     belowDesired: saleNet > 0 && margin < pct(params.desired_margin),
     maxExtraDiscount: Math.floor(maxExtraDiscount * 100) / 100,
+    structure: 0,
   };
 }
 
-/** Distribui o valor total pelas condições de pagamento (%), ajustando centavos na última parcela. */
-export function splitPayments(total: number, terms: { label: string; pct: number }[]) {
-  const out = terms.map((t) => ({ ...t, value: r2((total * (Number(t.pct) || 0)) / 100) }));
-  const pctSum = terms.reduce((s, t) => s + (Number(t.pct) || 0), 0);
-  if (out.length && Math.abs(pctSum - 100) < 1e-9) {
-    const diff = r2(total - out.reduce((s, t) => s + t.value, 0));
-    const last = out[out.length - 1];
-    if (last) last.value = r2(last.value + diff);
+/**
+ * Distribui o valor total pelas condições de pagamento (%). A conta é feita em centavos inteiros:
+ * cada parcela é % × total arredondado ao centavo e a diferença vai para a última parcela.
+ */
+export function splitPayments<T extends { pct: number }>(total: number, terms: T[]) {
+  const totalCents = Math.round((Number(total) || 0) * 100);
+  const cents = terms.map((t) => Math.round((totalCents * (Number(t.pct) || 0)) / 100));
+  const pctSum = r2(terms.reduce((s, t) => s + (Number(t.pct) || 0), 0));
+  if (cents.length && Math.abs(pctSum - 100) < 1e-9) {
+    const others = cents.slice(0, -1).reduce((s, c) => s + c, 0);
+    cents[cents.length - 1] = totalCents - others;
   }
-  return { rows: out, pctSum };
+  return { rows: terms.map((t, i) => ({ ...t, value: (cents[i] ?? 0) / 100 })), pctSum };
+}
+
+export interface ClientMaterialLine {
+  name: string;
+  unit: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+/**
+ * Valores que o cliente vê na proposta, todos a preço de venda líquido (com acréscimo e descontos).
+ * Cada material recebe o fator venda ÷ custo de materiais do seu item; materiais iguais do mesmo
+ * grupo são somados. Valor unitário e total são arredondados ao centavo (total = unitário ×
+ * quantidade) e a diferença de centavos fica na mão de obra, para o total geral ser sempre o
+ * `saleNet` de computeBudget. Material fornecido pelo cliente não tem valor e não entra.
+ */
+export function clientPriceSheet(
+  items: (PricingItem & { group: string })[],
+  params: PricingParams,
+  generalDiscount = 0,
+) {
+  const result = computeBudget(items, params, generalDiscount);
+  const acc = new Map<
+    string,
+    { group: string; name: string; unit: string; qty: number; sale: number }
+  >();
+  items.forEach((it, i) => {
+    const r = result.items[i];
+    if (!r || !(r.materialsCost > 0)) return;
+    const factor = r.materialsNet / r.materialsCost;
+    const q = Number(it.quantity) || 0;
+    for (const m of it.materials || []) {
+      const cost = materialCost(m, q);
+      if (!(cost > 0)) continue;
+      const key = [it.group, m.material_id || m.name.trim().toLowerCase(), m.purchase_unit].join(
+        "|",
+      );
+      const row = acc.get(key) ?? {
+        group: it.group,
+        name: m.name,
+        unit: m.purchase_unit,
+        qty: 0,
+        sale: 0,
+      };
+      row.qty += materialPurchaseQty(m, q);
+      row.sale += cost * factor;
+      acc.set(key, row);
+    }
+  });
+  const groups = new Map<string, { lines: ClientMaterialLine[]; totalCents: number }>();
+  for (const row of acc.values()) {
+    const quantity = r2(row.qty);
+    if (!(quantity > 0)) continue;
+    const unitCents = Math.round((row.sale * 100) / quantity);
+    const totalCents = Math.round(unitCents * quantity);
+    const g = groups.get(row.group) ?? { lines: [], totalCents: 0 };
+    g.lines.push({
+      name: row.name,
+      unit: row.unit,
+      quantity,
+      unitPrice: unitCents / 100,
+      total: totalCents / 100,
+    });
+    g.totalCents += totalCents;
+    groups.set(row.group, g);
+  }
+  const materialsCents = [...groups.values()].reduce((s, g) => s + g.totalCents, 0);
+  const laborCents = Math.max(0, Math.round(result.saleNet * 100) - materialsCents);
+  return {
+    result,
+    materials: new Map(
+      [...groups].map(([k, g]) => [k, { lines: g.lines, total: g.totalCents / 100 }]),
+    ),
+    materialsTotal: materialsCents / 100,
+    laborTotal: laborCents / 100,
+    total: (laborCents + materialsCents) / 100,
+  };
 }
 
 /** Custo econômico não duplica parcelas nem pedidos já incluídos nos lançamentos. */
-export function computeWorkResult(base: BudgetResult, approvedExtras: {price:number;cost:number}[], incurred:number, committed:number, additional:number|null, recordedCommission=0, recordedTaxes=0) {
-  const extraValue=approvedExtras.reduce((s,e)=>s+e.price,0);
-  const sale=base.saleNet+extraValue;
-  const commission=Math.max(base.commission,recordedCommission);
-  const taxes=Math.max(base.taxesTotal,recordedTaxes);
-  const remainingEstimate=additional??Math.max(0,base.totalCost+approvedExtras.reduce((s,e)=>s+e.cost,0)-incurred-committed);
-  const cost=incurred+committed+remainingEstimate+commission+taxes;
-  const result=sale-cost;
-  const accumulatedResult=sale-incurred-commission-taxes;
-  return {sale,extraValue,commission,taxes,cost,result,accumulatedResult,remainingEstimate,estimateConfirmed:additional!==null,margin:sale>0?result/sale:0};
+export function computeWorkResult(
+  base: BudgetResult,
+  approvedExtras: { price: number; cost: number }[],
+  incurred: number,
+  committed: number,
+  additional: number | null,
+  recordedCommission = 0,
+  recordedTaxes = 0,
+) {
+  const extraValue = approvedExtras.reduce((s, e) => s + e.price, 0);
+  const sale = base.saleNet + extraValue;
+  const commission = Math.max(base.commission, recordedCommission);
+  const taxes = Math.max(base.taxesTotal, recordedTaxes);
+  const remainingEstimate =
+    additional ??
+    Math.max(
+      0,
+      base.totalCost + approvedExtras.reduce((s, e) => s + e.cost, 0) - incurred - committed,
+    );
+  // Custo estrutural do orçamento (modelo do custo direto) também não é lucro da obra.
+  const structure = base.structure ?? 0;
+  const cost = incurred + committed + remainingEstimate + commission + taxes + structure;
+  const result = sale - cost;
+  const accumulatedResult = sale - incurred - commission - taxes - structure;
+  return {
+    sale,
+    extraValue,
+    commission,
+    taxes,
+    structure,
+    cost,
+    result,
+    accumulatedResult,
+    remainingEstimate,
+    estimateConfirmed: additional !== null,
+    margin: sale > 0 ? result / sale : 0,
+  };
 }
 
 /** Contract value supplied directly, without inferred catalog pricing or rates. */
-export function directContractBase(value:number):BudgetResult {
- const r=computeBudget([],emptyParams,0);return {...r,saleNet:value,listTotal:value,result:value};
+export function directContractBase(value: number): BudgetResult {
+  const r = computeBudget([], emptyParams, 0);
+  return { ...r, saleNet: value, listTotal: value, result: value };
 }

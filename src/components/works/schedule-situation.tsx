@@ -1,4 +1,67 @@
-import {Link} from '@tanstack/react-router';
-import {scheduleSituation,type ScheduleStage} from '@/lib/work-schedule';
-import {fmtDate} from '@/lib/format';
-export function ScheduleSituation({workId,stages,end,compact=false}:{workId:string;stages:ScheduleStage[];end:string|null;compact?:boolean}){const s=scheduleSituation(stages,new Date().toISOString().slice(0,10),end);return <div className={compact?'space-y-1 text-xs':'grid gap-4 border-b pb-4 sm:grid-cols-2 lg:grid-cols-4'}><div><p className="text-xs text-muted-foreground">Etapa atual</p><p className="text-sm font-medium">{s.current.map(x=>x.name).join(' / ')||'Nenhuma em execução'}</p></div>{!compact&&<div><p className="text-xs text-muted-foreground">Próxima etapa</p><p className="text-sm font-medium">{s.next.map(x=>x.name).join(' / ')||'Nenhuma pendente'}</p></div>}<div><p className="text-xs text-muted-foreground">Conclusão prevista</p><p className="text-sm font-medium">{fmtDate(s.end)}{s.remaining!==null&&` · ${s.remaining<0?Math.abs(s.remaining)+' dias além do prazo':s.remaining+' dias restantes'}`}</p></div><div><p className="text-xs text-muted-foreground">Cronograma</p><Link to="/obras/$id" params={{id:workId}} search={{tab:'cronograma'}} className={`text-sm font-semibold ${s.status==='Atrasado'?'text-destructive':s.status==='Atenção'?'text-warning':'text-success'}`}>{s.status}{s.late.length>0&&` · ${s.late.length} etapas atrasadas`}</Link></div></div>;}
+import { businessDate } from "@/lib/dashboard-math";
+import { Link } from "@tanstack/react-router";
+import { scheduleSituation, type ScheduleStage } from "@/lib/work-schedule";
+import { fmtDate } from "@/lib/format";
+import { badgeVariants } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+export function ScheduleSituation({
+  workId,
+  stages,
+  end,
+  compact = false,
+}: {
+  workId: string;
+  stages: ScheduleStage[];
+  end: string | null;
+  compact?: boolean;
+}) {
+  const s = scheduleSituation(stages, businessDate(), end);
+  return (
+    <div className={compact ? "space-y-1 text-xs" : "grid gap-4 sm:grid-cols-2 lg:grid-cols-4"}>
+      <div>
+        <p className="text-xs text-muted-foreground">Etapa atual</p>
+        <p className="text-sm font-medium">
+          {s.current.map((x) => x.name).join(" / ") || "Nenhuma em execução"}
+        </p>
+      </div>
+      {!compact && (
+        <div>
+          <p className="text-xs text-muted-foreground">Próxima etapa</p>
+          <p className="text-sm font-medium">
+            {s.next.map((x) => x.name).join(" / ") || "Nenhuma pendente"}
+          </p>
+        </div>
+      )}
+      <div>
+        <p className="text-xs text-muted-foreground">Conclusão prevista</p>
+        <p className="text-sm font-medium">
+          {fmtDate(s.end)}
+          {s.remaining !== null &&
+            ` · ${s.remaining < 0 ? Math.abs(s.remaining) + " dias além do prazo" : s.remaining + " dias restantes"}`}
+        </p>
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground">Cronograma</p>
+        <Link
+          to="/obras/$id"
+          params={{ id: workId }}
+          search={{ tab: "cronograma" }}
+          className={cn(
+            badgeVariants({
+              variant:
+                s.status === "Atrasado"
+                  ? "negative"
+                  : s.status === "Atenção"
+                    ? "alert"
+                    : "positive",
+            }),
+            "mt-0.5 hover:opacity-80",
+          )}
+        >
+          {s.status}
+          {s.late.length > 0 && ` · ${s.late.length} etapas atrasadas`}
+        </Link>
+      </div>
+    </div>
+  );
+}

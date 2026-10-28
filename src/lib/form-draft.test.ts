@@ -1,9 +1,43 @@
-import {describe,it,expect} from 'vitest';
-import {captureDraft,readDraft,restoreDraft} from './form-draft';
-function form(){const form=document.createElement('form');form.innerHTML='<input name="name"><input name="pilot" type="checkbox" checked><input name="documents" type="file"><input name="installments" type="hidden">';return form;}
-describe('rascunhos do dispositivo',()=>{
- it('preserva a desmarcação mesmo quando o formulário começa marcado',()=>{const source=form();const flag=source.querySelector<HTMLInputElement>('[name=pilot]');if(!flag)throw new Error('Missing input');flag.checked=false;const values=captureDraft(source);expect(values['pilot']).toBe('');const target=form();restoreDraft(target,values);expect(target.querySelector<HTMLInputElement>('[name=pilot]')?.checked).toBe(false);});
- it('preserva os valores e vencimentos das parcelas',()=>{const source=form();const input=source.querySelector<HTMLInputElement>('[name=installments]');if(!input)throw new Error('Missing input');input.value='[{"amount":150,"due_date":"2026-11-10"},{"amount":250,"due_date":"2026-12-10"}]';const target=form();restoreDraft(target,readDraft(JSON.stringify(captureDraft(source))));expect(JSON.parse(target.querySelector<HTMLInputElement>('[name=installments]')?.value||'[]')).toEqual([{amount:150,due_date:'2026-11-10'},{amount:250,due_date:'2026-12-10'}]);});
- it('exclui anexos do rascunho e ignora caminhos antigos',()=>{const target=form();expect(captureDraft(target)).not.toHaveProperty('documents');restoreDraft(target,{documents:'/old-document.pdf'});expect(target.querySelector<HTMLInputElement>('[name=documents]')?.files?.length).toBe(0);});
- it('rejeita um rascunho que não é um objeto de campos',()=>expect(()=>readDraft('[]')).toThrow('Rascunho inválido'));
+import { describe, it, expect } from "vitest";
+import { captureDraft, readDraft, restoreDraft } from "./form-draft";
+function form() {
+  const form = document.createElement("form");
+  form.innerHTML =
+    '<input name="name"><input name="pilot" type="checkbox" checked><input name="documents" type="file"><input name="installments" type="hidden">';
+  return form;
+}
+describe("rascunhos do dispositivo", () => {
+  it("preserva a desmarcação mesmo quando o formulário começa marcado", () => {
+    const source = form();
+    const flag = source.querySelector<HTMLInputElement>("[name=pilot]");
+    if (!flag) throw new Error("Missing input");
+    flag.checked = false;
+    const values = captureDraft(source);
+    expect(values["pilot"]).toBe("");
+    const target = form();
+    restoreDraft(target, values);
+    expect(target.querySelector<HTMLInputElement>("[name=pilot]")?.checked).toBe(false);
+  });
+  it("preserva os valores e vencimentos das parcelas", () => {
+    const source = form();
+    const input = source.querySelector<HTMLInputElement>("[name=installments]");
+    if (!input) throw new Error("Missing input");
+    input.value = '[{"amount":150,"due_date":"2026-11-10"},{"amount":250,"due_date":"2026-12-10"}]';
+    const target = form();
+    restoreDraft(target, readDraft(JSON.stringify(captureDraft(source))));
+    expect(
+      JSON.parse(target.querySelector<HTMLInputElement>("[name=installments]")?.value || "[]"),
+    ).toEqual([
+      { amount: 150, due_date: "2026-11-10" },
+      { amount: 250, due_date: "2026-12-10" },
+    ]);
+  });
+  it("exclui anexos do rascunho e ignora caminhos antigos", () => {
+    const target = form();
+    expect(captureDraft(target)).not.toHaveProperty("documents");
+    restoreDraft(target, { documents: "/old-document.pdf" });
+    expect(target.querySelector<HTMLInputElement>("[name=documents]")?.files?.length).toBe(0);
+  });
+  it("rejeita um rascunho que não é um objeto de campos", () =>
+    expect(() => readDraft("[]")).toThrow("Rascunho inválido"));
 });

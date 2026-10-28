@@ -1,8 +1,16 @@
-node_modules
-dist
+
+# Local scratch files and dependency caches
 .output
 .vinxi
-pnpm-lock.yaml
-package-lock.json
+.wrangler
 bun.lock
+dist
+drizzle/migrations
+node_modules
+package-lock.json
+pnpm-lock.yaml
 routeTree.gen.ts
+supabase/migrations
+work
+work/
+infra/kong/kong.yml

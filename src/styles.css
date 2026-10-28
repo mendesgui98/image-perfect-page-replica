@@ -53,6 +53,7 @@
   --color-chart-5: var(--chart-5);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-end: var(--sidebar-end);
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
   --color-sidebar-accent: var(--sidebar-accent);
@@ -64,53 +65,157 @@
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-primary-glow: var(--primary-glow);
+  /* Cores financeiras com significado: positivo (entradas), negativo (saídas),
+     alerta, neutro e aditivos. Cada uma tem um fundo suave para cards e ícones. */
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-negative: var(--negative);
+  --color-negative-soft: var(--negative-soft);
+  --color-alert: var(--alert);
+  --color-alert-soft: var(--alert-soft);
+  --color-neutral-soft: var(--neutral-soft);
+  --color-extra: var(--extra);
+  --color-extra-soft: var(--extra-soft);
+  --color-primary-soft: var(--primary-soft);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-hero: var(--hero);
+  --color-hero-end: var(--hero-end);
+  --color-hero-foreground: var(--hero-foreground);
   --font-display: var(--font-display);
   --font-sans: var(--font-body);
+  --font-brand: var(--font-brand);
   --shadow-card: var(--shadow-card);
+  --shadow-elevated: var(--shadow-elevated);
+  --shadow-hero: var(--shadow-hero);
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.985 0.004 250);
-  --foreground: oklch(0.27 0.02 260);
+  /* Clean corporativo: superfícies neutras, azul JMG (#004AAD), azul-marinho (#112440) e dourado (#E8A33D) da capa do orçamento só em ações e destaques. */
+  --radius: 0.75rem;
+  --background: oklch(0.945 0.02 258);
+  --foreground: oklch(0.21 0.018 262);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.27 0.02 260);
+  --card-foreground: oklch(0.21 0.018 262);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.27 0.02 260);
-  --primary: oklch(0.45 0.18 262);
+  --popover-foreground: oklch(0.21 0.018 262);
+  --primary: oklch(0.443 0.168 259.6);
   --primary-foreground: oklch(0.99 0 0);
-  --primary-glow: oklch(0.55 0.2 260);
-  --secondary: oklch(0.95 0.015 255);
-  --secondary-foreground: oklch(0.35 0.12 262);
-  --muted: oklch(0.955 0.006 255);
-  --muted-foreground: oklch(0.5 0.02 260);
-  --accent: oklch(0.93 0.03 255);
-  --accent-foreground: oklch(0.35 0.14 262);
-  --destructive: oklch(0.58 0.22 27);
+  --primary-glow: oklch(0.53 0.16 258);
+  --secondary: oklch(0.93 0.025 258);
+  --secondary-foreground: oklch(0.3 0.02 262);
+  --muted: oklch(0.935 0.022 258);
+  --muted-foreground: oklch(0.48 0.03 262);
+  --accent: oklch(0.92 0.035 258);
+  --accent-foreground: oklch(0.36 0.13 260);
+  --destructive: oklch(0.577 0.215 27);
   --destructive-foreground: oklch(0.99 0 0);
-  --success: oklch(0.6 0.14 155);
+  --success: oklch(0.6 0.13 158);
   --success-foreground: oklch(0.99 0 0);
-  --warning: oklch(0.78 0.15 75);
-  --warning-foreground: oklch(0.3 0.06 60);
-  --border: oklch(0.9 0.01 255);
-  --input: oklch(0.88 0.012 255);
-  --ring: oklch(0.45 0.18 262);
-  --chart-1: oklch(0.45 0.18 262);
-  --chart-2: oklch(0.6 0.14 155);
-  --chart-3: oklch(0.78 0.15 75);
-  --chart-4: oklch(0.58 0.22 27);
-  --chart-5: oklch(0.55 0.05 260);
-  --sidebar: oklch(0.32 0.14 262);
-  --sidebar-foreground: oklch(0.95 0.01 255);
-  --sidebar-primary: oklch(0.99 0 0);
-  --sidebar-primary-foreground: oklch(0.32 0.14 262);
-  --sidebar-accent: oklch(0.4 0.15 262);
-  --sidebar-accent-foreground: oklch(0.99 0 0);
-  --sidebar-border: oklch(0.4 0.12 262);
-  --sidebar-ring: oklch(0.7 0.1 260);
-  --font-display: "Montserrat", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-  --shadow-card: 0 1px 2px oklch(0.3 0.05 260 / 6%), 0 4px 16px -6px oklch(0.3 0.08 260 / 10%);
+  --warning: oklch(0.8 0.15 80);
+  --warning-foreground: oklch(0.33 0.07 60);
+  --border: oklch(0.89 0.022 258);
+  --input: oklch(0.86 0.028 258);
+  --ring: oklch(0.55 0.15 258);
+  --chart-1: oklch(0.443 0.168 259.6);
+  --chart-2: oklch(0.6 0.13 158);
+  --chart-3: oklch(0.775 0.145 72);
+  --chart-4: oklch(0.6 0.2 27);
+  --chart-5: oklch(0.25 0.06 263);
+  /* Menu lateral em azul JMG bem suave, textos em azul-marinho. */
+  --sidebar: oklch(0.985 0.008 258);
+  --sidebar-end: oklch(0.94 0.028 259);
+  --sidebar-foreground: oklch(0.33 0.05 262);
+  --sidebar-primary: oklch(0.25 0.06 263);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(1 0 0);
+  --sidebar-accent-foreground: oklch(0.25 0.06 263);
+  --sidebar-border: oklch(0.9 0.025 258);
+  --sidebar-ring: oklch(0.55 0.15 258);
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-brand: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --positive: oklch(0.53 0.13 155);
+  --positive-soft: oklch(0.965 0.03 155);
+  --negative: oklch(0.55 0.2 27);
+  --negative-soft: oklch(0.965 0.022 25);
+  --alert: oklch(0.6 0.13 68);
+  --alert-soft: oklch(0.965 0.045 82);
+  --neutral-soft: oklch(0.935 0.022 258);
+  --extra: oklch(0.3 0.07 262);
+  --extra-soft: oklch(0.94 0.018 262);
+  --primary-soft: oklch(0.92 0.04 258);
+  /* Dourado JMG (#E8A33D): só detalhes e destaques, nunca como cor financeira. */
+  --gold: oklch(0.775 0.145 72);
+  --gold-soft: oklch(0.96 0.045 82);
+  /* Card de destaque: azul da marca para o azul-marinho, como a capa do orçamento. */
+  --hero: oklch(0.443 0.168 259.6);
+  --hero-end: oklch(0.25 0.06 263);
+  --hero-foreground: oklch(0.99 0 0);
+  --shadow-card: 0 1px 2px oklch(0.25 0.06 263 / 6%), 0 6px 18px -8px oklch(0.25 0.06 263 / 14%);
+  --shadow-elevated: 0 10px 30px -12px oklch(0.25 0.04 260 / 22%);
+  --shadow-hero: 0 14px 34px -14px oklch(0.25 0.06 263 / 50%);
+  color-scheme: light;
+}
+
+.dark {
+  --background: oklch(0.165 0.018 263);
+  --foreground: oklch(0.95 0.004 250);
+  --card: oklch(0.2 0.024 263);
+  --card-foreground: oklch(0.95 0.004 250);
+  --popover: oklch(0.215 0.026 263);
+  --popover-foreground: oklch(0.95 0.004 250);
+  --primary: oklch(0.66 0.14 256);
+  --primary-foreground: oklch(0.16 0.02 262);
+  --primary-glow: oklch(0.72 0.13 254);
+  --secondary: oklch(0.255 0.028 263);
+  --secondary-foreground: oklch(0.93 0.005 250);
+  --muted: oklch(0.255 0.028 263);
+  --muted-foreground: oklch(0.7 0.013 258);
+  --accent: oklch(0.28 0.05 260);
+  --accent-foreground: oklch(0.88 0.05 254);
+  --destructive: oklch(0.65 0.2 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.7 0.13 158);
+  --success-foreground: oklch(0.16 0.02 160);
+  --warning: oklch(0.78 0.14 80);
+  --warning-foreground: oklch(0.88 0.09 85);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 13%);
+  --ring: oklch(0.66 0.14 256);
+  --chart-1: oklch(0.66 0.14 256);
+  --chart-2: oklch(0.7 0.13 158);
+  --chart-3: oklch(0.8 0.13 75);
+  --chart-4: oklch(0.67 0.19 25);
+  --chart-5: oklch(0.72 0.05 260);
+  --sidebar: oklch(0.22 0.05 263);
+  --sidebar-end: oklch(0.25 0.06 263);
+  --sidebar-foreground: oklch(0.75 0.012 258);
+  --sidebar-primary: oklch(0.68 0.14 254);
+  --sidebar-primary-foreground: oklch(0.16 0.02 262);
+  --sidebar-accent: oklch(0.3 0.06 262);
+  --sidebar-accent-foreground: oklch(0.92 0.04 254);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.68 0.14 254);
+  --positive: oklch(0.74 0.14 155);
+  --positive-soft: oklch(0.32 0.05 160 / 38%);
+  --negative: oklch(0.72 0.16 25);
+  --negative-soft: oklch(0.34 0.07 25 / 38%);
+  --alert: oklch(0.8 0.13 75);
+  --alert-soft: oklch(0.36 0.06 75 / 40%);
+  --neutral-soft: oklch(0.255 0.028 263);
+  --extra: oklch(0.8 0.06 255);
+  --extra-soft: oklch(0.32 0.05 262 / 55%);
+  --primary-soft: oklch(0.29 0.045 258 / 70%);
+  --gold: oklch(0.8 0.13 75);
+  --gold-soft: oklch(0.36 0.06 75 / 40%);
+  --hero: oklch(0.42 0.15 259);
+  --hero-end: oklch(0.25 0.06 263);
+  --hero-foreground: oklch(0.98 0 0);
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 30%);
+  --shadow-elevated: 0 12px 32px -12px oklch(0 0 0 / 60%);
+  --shadow-hero: 0 14px 34px -16px oklch(0 0 0 / 70%);
+  color-scheme: dark;
 }
 
 @layer base {
@@ -125,45 +230,138 @@
 }
 
 @layer base {
-  body { font-family: var(--font-body); }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: 0; }
+  body {
+    font-family: var(--font-body);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+  /* Respeita a área segura do iPhone (barra inferior do app instalado). */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
-@utility num { font-variant-numeric: tabular-nums; }
+@utility num {
+  font-variant-numeric: tabular-nums;
+}
 
 /* Documento A4 para impressão / PDF */
 .doc-page {
-  width: 210mm; min-height: 297mm; background: var(--card); color: oklch(0.38 0 0);
-  position: relative; overflow: hidden; margin: 0 auto 16px; box-shadow: var(--shadow-card);
-  font-family: "Montserrat", sans-serif; break-after: page; page-break-after: always;
+  width: 210mm;
+  min-height: 297mm;
+  background: var(--card);
+  color: oklch(0.38 0 0);
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto 16px;
+  box-shadow: var(--shadow-card);
+  font-family: "Montserrat", sans-serif;
+  break-after: page;
+  page-break-after: always;
 }
 @media print {
-  @page { size: A4; margin: 0; }
-  body { background: white; }
-  .doc-page { margin: 0; box-shadow: none; }
-  .no-print { display: none !important; }
-  .contract-print { max-width: none; box-shadow: none; padding: 18mm; }
-  .contract-print section, .contract-print figure { break-inside: avoid; }
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  body {
+    background: white;
+  }
+  .doc-page {
+    margin: 0;
+    box-shadow: none;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .contract-print {
+    max-width: none;
+    box-shadow: none;
+    padding: 18mm;
+  }
+  .contract-print section,
+  .contract-print figure {
+    break-inside: avoid;
+  }
 }
 
 /* Native progress bars keep their semantic color across browsers. */
-progress { appearance: none; border: none; background: var(--muted); border-radius: var(--radius-sm); overflow: hidden; }
-progress::-webkit-progress-bar { background: var(--muted); }
-progress::-webkit-progress-value { background: var(--primary); }
-progress.accent-success::-webkit-progress-value { background: var(--success); }
-progress.accent-warning::-webkit-progress-value { background: var(--warning); }
-progress::-moz-progress-bar { background: var(--primary); }
-progress.accent-success::-moz-progress-bar { background: var(--success); }
-progress.accent-warning::-moz-progress-bar { background: var(--warning); }
-.gantt-track { background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(10% - 1px), var(--border) calc(10% - 1px), var(--border) 10%); }
+progress {
+  appearance: none;
+  border: none;
+  background: var(--muted);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+progress::-webkit-progress-bar {
+  background: var(--muted);
+}
+progress::-webkit-progress-value {
+  background: var(--primary);
+}
+progress.accent-success::-webkit-progress-value {
+  background: var(--success);
+}
+progress.accent-warning::-webkit-progress-value {
+  background: var(--warning);
+}
+progress::-moz-progress-bar {
+  background: var(--primary);
+}
+progress.accent-success::-moz-progress-bar {
+  background: var(--success);
+}
+progress.accent-warning::-moz-progress-bar {
+  background: var(--warning);
+}
+.gantt-track {
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(10% - 1px),
+    var(--border) calc(10% - 1px),
+    var(--border) 10%
+  );
+}
 @media print {
-  .schedule-print { padding: 14mm; max-width: none; }
-  .schedule-print table { font-size: 9px; }
-  .schedule-print tr, .schedule-print header, .schedule-print footer { break-inside: avoid; }
-  .schedule-print thead { display: table-header-group; }
-  .schedule-print .gantt-wrap { overflow: visible; }
-  .schedule-print .gantt-chart { min-width: 0; }
-  .schedule-print .gantt-chart > div { grid-template-columns: 135px 1fr; }
-  .schedule-print .gantt-track { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  .schedule-print .gantt-track span { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .schedule-print {
+    padding: 14mm;
+    max-width: none;
+  }
+  .schedule-print table {
+    font-size: 9px;
+  }
+  .schedule-print tr,
+  .schedule-print header,
+  .schedule-print footer {
+    break-inside: avoid;
+  }
+  .schedule-print thead {
+    display: table-header-group;
+  }
+  .schedule-print .gantt-wrap {
+    overflow: visible;
+  }
+  .schedule-print .gantt-chart {
+    min-width: 0;
+  }
+  .schedule-print .gantt-chart > div {
+    grid-template-columns: 135px 1fr;
+  }
+  .schedule-print .gantt-track {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .schedule-print .gantt-track span {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }

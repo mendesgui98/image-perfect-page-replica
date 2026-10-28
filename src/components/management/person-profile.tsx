@@ -1,12 +1,403 @@
-import {useQuery} from '@tanstack/react-query';
-import {Link} from '@tanstack/react-router';
-import {relationshipOptions} from '@/lib/relationship-data';
-import {dashboardOptions} from '@/lib/dashboard-data';
-import {financeOptions} from '@/components/works/finance';
-import {useMe} from '@/hooks/use-me';
-import {PageHeader} from '@/components/page-header';
-import {Button} from '@/components/ui/button';
-import {Attachment} from '@/components/works/fields';
-import {fmtBRL,fmtDate} from '@/lib/format';
-import {entryState} from '@/lib/dashboard-math';
-export function PersonProfile({id}:{id:string}){const {data:me}=useMe();const {data,error}=useQuery(relationshipOptions(!!me?.canSeeCosts));const {data:dash}=useQuery({...dashboardOptions,enabled:!!me?.canSeeCosts});const {data:finance}=useQuery({...financeOptions,enabled:!!me?.canSeeCosts});if(error)return <p role="alert" className="text-destructive">{error.message}</p>;const person=data?.people.find(p=>p.id===id);if(!data)return <p>Carregando cadastro…</p>;if(!person)return <p>Cadastro não encontrado.</p>;const budgets=data.budgets.filter(b=>b.client_id===id||b.architect_id===id);const purchases=data.purchases.filter(p=>p.supplier_id===id);const workIds=new Set([...data.works.filter(w=>w.client_id===id||w.architect_id===id).map(w=>w.id),...purchases.map(p=>p.work_id)]);const works=data.works.filter(w=>workIds.has(w.id));const sums=dash?.works.filter(w=>workIds.has(w.work.id))??[];const entries=finance?.entries.filter(e=>!e.canceled&&(e.person_id===id||person.kind==='fornecedor'&&purchases.some(p=>p.id===e.payable_order_id||p.id===e.purchase_order_id)))??[];const settled=(direction:string)=>entries.filter(e=>e.direction===direction).reduce((t,e)=>t+entryState(e,finance?.settlements??[]).paid,0);const pending=entries.filter(e=>e.direction==='saida').reduce((t,e)=>t+entryState(e,finance?.settlements??[]).pending,0);const commissionEntries=entries.filter(e=>e.category==='Comissão da arquiteta');const paidCommission=commissionEntries.reduce((t,e)=>t+entryState(e,finance?.settlements??[]).paid,0);const commission=sums.reduce((t,w)=>t+w.result.commission,0);return <div className="space-y-6"><Link to="/cadastros" search={{kind:person.kind}} className="text-sm text-muted-foreground">← Cadastros</Link><PageHeader title={person.name} subtitle={`${person.kind} · ${person.active?'Ativo':'Arquivado'}`} actions={<Button asChild variant="outline"><Link to="/cadastros" search={{kind:person.kind,edit:id}}>Editar cadastro</Link></Button>}/><dl className="grid gap-5 border-y py-5 sm:grid-cols-3">{[['Telefone',person.phone],['E-mail',person.email],['Documento',person.document],['Endereço',[person.endereco,person.bairro,person.cidade,person.uf].filter(Boolean).join(', ')],['Especialidade',person.specialty],['Observações',person.notes]].map(([l,v])=><div key={l}><dt className="text-xs text-muted-foreground">{l}</dt><dd className="mt-1 whitespace-pre-wrap text-sm">{v||'—'}</dd></div>)}</dl>{me?.canSeeCosts&&<dl className="grid grid-cols-2 gap-5 border-b pb-5 lg:grid-cols-4">{(person.kind==='arquiteto'?[['Valor das obras vinculadas',sums.reduce((t,w)=>t+w.result.sale,0)],['Comissão prevista',commission],['Comissão paga com vínculo',paidCommission],['Comissão pendente',Math.max(0,commission-paidCommission)]]:person.kind==='fornecedor'?[['Total comprado',purchases.filter(p=>p.status!=='cancelado').reduce((t,p)=>t+p.purchase_lines.reduce((s,l)=>s+l.quantity*l.unit_price,0),0)],['Pagamentos',settled('saida')],['A pagar',pending]]:[['Valores contratados',sums.reduce((t,w)=>t+w.result.sale,0)],['Recebido',sums.reduce((t,w)=>t+w.totals.received,0)],['Saldo contratual',sums.reduce((t,w)=>t+w.balance.receivable,0)]]).map(([l,v])=><div key={String(l)}><dt className="text-xs text-muted-foreground">{String(l)}</dt><dd className="mt-1 font-semibold num">{fmtBRL(Number(v))}</dd></div>)}</dl>}<section><h2 className="mb-3 font-semibold">Obras atuais e anteriores</h2><div className="divide-y">{works.map(w=><Link key={w.id} to="/obras/$id" params={{id:w.id}} className="flex flex-wrap justify-between gap-3 py-3 text-sm"><span className="text-primary">{w.name}<span className="block text-xs text-muted-foreground">{data.people.find(p=>p.id===w.client_id)?.name}</span></span><span className="text-xs text-muted-foreground">{w.status} · {fmtDate(w.planned_end)}</span></Link>)}{!works.length&&<p className="py-3 text-sm text-muted-foreground">Nenhuma obra vinculada.</p>}</div></section>{me?.canSeeCosts&&<><section className="border-t pt-5"><h2 className="mb-3 font-semibold">Orçamentos</h2>{budgets.map(b=><Link key={b.id} to="/orcamentos/$id" params={{id:b.id}} className="flex justify-between gap-3 py-3 text-sm"><span className="text-primary">#{b.number} · {b.title}</span><span>{b.status}</span></Link>)}</section><section className="border-t pt-5"><h2 className="mb-3 font-semibold">Contratos</h2>{data.contracts.filter(c=>workIds.has(c.work_id)).map(c=><div key={c.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><Link to="/obras/$id" params={{id:c.work_id}} search={{tab:'contrato'}} className="text-sm text-primary">{works.find(w=>w.id===c.work_id)?.name} · {c.status}</Link><Attachment path={c.signed_path}/></div>)}</section>{person.kind==='fornecedor'&&<section className="border-t pt-5"><h2 className="mb-3 font-semibold">Compras</h2>{purchases.map(p=><div key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"><Link to="/obras/$id" params={{id:p.work_id}} search={{tab:'compras',record:p.id}} className="text-primary">{p.description} · {works.find(w=>w.id===p.work_id)?.name}</Link><span>{p.status} · {fmtBRL(p.purchase_lines.reduce((t,l)=>t+l.quantity*l.unit_price,0))}</span><Attachment path={p.file_path}/></div>)}</section>}<section className="border-t pt-5"><h2 className="mb-3 font-semibold">Pagamentos e contas vinculadas</h2>{entries.map(e=><div key={e.id} className="flex flex-wrap justify-between gap-3 border-b py-3 text-sm"><Link to="/financeiro" search={{work:e.work_id||'',entry:e.id}} className="text-primary">{e.description} · parcela {e.installment_index}/{e.installment_count}</Link><span>{fmtBRL(e.amount)} · saldo {fmtBRL(entryState(e,finance?.settlements??[]).pending)}</span></div>)}</section><section className="border-t pt-5"><h2 className="mb-3 font-semibold">Documentos das obras</h2>{data.records.filter(r=>workIds.has(r.work_id)).map(r=><div key={r.id} className="flex items-center gap-3 py-2"><Link to="/obras/$id" params={{id:r.work_id}} search={{tab:'documento',record:r.id}} className="text-sm text-primary">{r.title}</Link><Attachment path={r.file_path}/></div>)}</section><section className="border-t pt-5"><h2 className="mb-3 font-semibold">Histórico cadastral</h2>{data.history.filter(h=>h.entity_id===id).map(h=><p key={h.id} className="py-2 text-xs text-muted-foreground">Alteração registrada · {fmtDate(h.changed_at)}</p>)}</section></>}</div>;}
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  CalendarClock,
+  FileSignature,
+  FileSpreadsheet,
+  FileText,
+  HardHat,
+  History,
+  Percent,
+  Receipt,
+  ShoppingCart,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
+import { formatCpfCnpj, formatPhone, formatRg } from "@/lib/documents";
+import { RecordDeleteButton, DeletedRecordNotice } from "@/components/management/record-deletion";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { relationshipOptions } from "@/lib/relationship-data";
+import { dashboardOptions } from "@/lib/dashboard-data";
+import { financeOptions } from "@/lib/finance-data";
+import { useMe } from "@/hooks/use-me";
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { Attachment } from "@/components/works/fields";
+import { fmtBRL, fmtDate } from "@/lib/format";
+import { entryState } from "@/lib/dashboard-math";
+import { EmptyState, ListSkeleton, PageSkeleton } from "@/components/feedback";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { BUDGET_STATUS_VARIANT, WORK_STATUS_VARIANT } from "@/lib/status-badges";
+import { IconBubble, KpiCard, Money, type Tone } from "@/components/kpi";
+import { STATUS_LABEL as BUDGET_STATUS_LABEL } from "@/lib/budget-status";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
+
+const WORK_STATUS_LABEL: Record<string, string> = {
+  contratacao: "Em contratação",
+  execucao: "Em execução",
+  pausada: "Pausada",
+  concluida: "Concluída",
+};
+
+/** Seção do perfil: título discreto e lista num painel suave. */
+function Section({
+  title,
+  icon,
+  children,
+  empty,
+}: {
+  title: string;
+  icon: LucideIcon;
+  children: ReactNode[];
+  empty?: ReactNode;
+}) {
+  return (
+    <section className="space-y-3">
+      <h2 className="flex items-center gap-2 text-base font-semibold">
+        <IconBubble icon={icon} tone="neutral" className="h-8 w-8 rounded-lg" />
+        {title}
+      </h2>
+      {children.length ? (
+        <div className={cn(panelClass, "divide-y divide-border/60 overflow-hidden")}>
+          {children}
+        </div>
+      ) : (
+        (empty ?? <p className="px-1 text-sm text-muted-foreground">Nenhum registro.</p>)
+      )}
+    </section>
+  );
+}
+const rowClass =
+  "flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-3.5 text-sm sm:px-5";
+export function PersonProfile({ id }: { id: string }) {
+  const { data: me } = useMe();
+  const { data, error } = useQuery(relationshipOptions(!!me?.canSeeCosts));
+  const { data: dash } = useQuery({ ...dashboardOptions, enabled: !!me?.canSeeCosts });
+  const { data: finance } = useQuery({ ...financeOptions, enabled: !!me?.canSeeCosts });
+  if (error)
+    return (
+      <p role="alert" className="text-destructive">
+        {error.message}
+      </p>
+    );
+  const person = data?.people.find((p) => p.id === id);
+  if (!data) return <PageSkeleton cards={3} />;
+  if (!person) return <p>Cadastro não encontrado.</p>;
+  if (person.deleted_at) return <DeletedRecordNotice entity="people" id={id} name={person.name} />;
+  const budgets = data.budgets.filter(
+    (b) => (!b.deleted_at && b.client_id === id) || b.architect_id === id,
+  );
+  const purchases = data.purchases.filter((p) => p.supplier_id === id);
+  const workIds = new Set([
+    ...data.works
+      .filter((w) => !w.deleted_at && (w.client_id === id || w.architect_id === id))
+      .map((w) => w.id),
+    ...purchases.map((p) => p.work_id),
+  ]);
+  const works = data.works.filter((w) => workIds.has(w.id));
+  const sums = dash?.works.filter((w) => workIds.has(w.work.id)) ?? [];
+  const entries =
+    finance?.entries.filter(
+      (e) =>
+        !e.canceled &&
+        (e.person_id === id ||
+          (person.kind === "fornecedor" &&
+            purchases.some((p) => p.id === e.payable_order_id || p.id === e.purchase_order_id))),
+    ) ?? [];
+  const settled = (direction: string) =>
+    entries
+      .filter((e) => e.direction === direction)
+      .reduce((t, e) => t + entryState(e, finance?.settlements ?? []).paid, 0);
+  const pending = entries
+    .filter((e) => e.direction === "saida")
+    .reduce((t, e) => t + entryState(e, finance?.settlements ?? []).pending, 0);
+  const commissionEntries = entries.filter((e) => e.category === "Comissão da arquiteta");
+  const paidCommission = commissionEntries.reduce(
+    (t, e) => t + entryState(e, finance?.settlements ?? []).paid,
+    0,
+  );
+  const commission = sums.reduce((t, w) => t + w.result.commission, 0);
+  const kpis: [string, number, Tone, LucideIcon, boolean?][] =
+    person.kind === "arquiteto"
+      ? [
+          [
+            "Valor das obras vinculadas",
+            sums.reduce((t, w) => t + w.result.sale, 0),
+            "neutral",
+            HardHat,
+          ],
+          ["Comissão prevista", commission, "neutral", Percent],
+          ["Comissão paga com vínculo", paidCommission, "neutral", ArrowDown],
+          [
+            "Comissão pendente",
+            Math.max(0, commission - paidCommission),
+            "alert",
+            CalendarClock,
+            true,
+          ],
+        ]
+      : person.kind === "fornecedor"
+        ? [
+            [
+              "Total comprado",
+              purchases
+                .filter((p) => p.status !== "cancelado")
+                .reduce(
+                  (t, p) => t + p.purchase_lines.reduce((s, l) => s + l.quantity * l.unit_price, 0),
+                  0,
+                ),
+              "neutral",
+              ShoppingCart,
+            ],
+            ["Pagamentos", settled("saida"), "negative", ArrowDown],
+            ["A pagar", pending, "negative", Receipt, true],
+          ]
+        : [
+            [
+              "Valores contratados",
+              sums.reduce((t, w) => t + w.result.sale, 0),
+              "neutral",
+              FileSignature,
+            ],
+            ["Recebido", sums.reduce((t, w) => t + w.totals.received, 0), "positive", ArrowUp],
+            [
+              "Saldo contratual",
+              sums.reduce((t, w) => t + w.balance.receivable, 0),
+              "positive",
+              CalendarClock,
+              true,
+            ],
+          ];
+  const contracts = data.contracts.filter((c) => !c.deleted_at && workIds.has(c.work_id));
+  const records = data.records.filter((r) => workIds.has(r.work_id));
+  const history = data.history.filter((h) => h.entity_id === id);
+  return (
+    <div className="space-y-6">
+      <Link
+        to="/cadastros"
+        search={{ kind: person.kind }}
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden /> Cadastros
+      </Link>
+      <PageHeader
+        title={person.name}
+        subtitle={`${person.kind} · ${person.active ? "Ativo" : "Arquivado"}`}
+        actions={
+          <>
+            <RecordDeleteButton entity="people" id={id} name={person.name} />
+            <Button asChild variant="outline">
+              <Link to="/cadastros" search={{ kind: person.kind, edit: id }}>
+                Editar cadastro
+              </Link>
+            </Button>
+          </>
+        }
+      />
+      {me?.canSeeCosts && (
+        <div
+          className={cn(
+            "grid grid-cols-2 gap-3 sm:gap-4",
+            kpis.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3",
+          )}
+        >
+          {kpis.map(([l, v, tone, icon, filled], i) => (
+            <KpiCard
+              key={l}
+              label={l}
+              icon={icon}
+              tone={tone}
+              filled={!!filled}
+              className={cn(kpis.length === 3 && i === 0 && "col-span-2 lg:col-span-1")}
+              value={<Money value={Number(v)} />}
+            />
+          ))}
+        </div>
+      )}
+      <dl className={cn(panelClass, "grid grid-cols-2 gap-x-6 gap-y-4 p-4 sm:grid-cols-3 sm:p-5")}>
+        {[
+          ["Telefone", person.phone && formatPhone(person.phone)],
+          ["E-mail", person.email],
+          ["CPF / CNPJ", person.document && formatCpfCnpj(person.document)],
+          ["RG", person.rg && formatRg(person.rg)],
+          [
+            "Endereço",
+            [person.endereco, person.bairro, person.cidade, person.uf].filter(Boolean).join(", "),
+          ],
+          ["Especialidade", person.specialty],
+          ["Observações", person.notes],
+        ].map(([l, v]) => (
+          <div
+            key={l}
+            className={cn(
+              "min-w-0",
+              (l === "E-mail" || l === "Endereço" || l === "Observações") &&
+                "col-span-2 sm:col-span-1",
+            )}
+          >
+            <dt className="text-xs text-muted-foreground">{l}</dt>
+            <dd className="mt-1 whitespace-pre-wrap break-words text-sm font-medium">{v || "—"}</dd>
+          </div>
+        ))}
+      </dl>
+      <Section
+        title="Obras atuais e anteriores"
+        icon={HardHat}
+        empty={<EmptyState compact icon={HardHat} title="Nenhuma obra vinculada" />}
+      >
+        {works.map((w) => {
+          const label = WORK_STATUS_LABEL[w.status] ?? w.status;
+          const variant = WORK_STATUS_VARIANT[w.status] ?? "neutral";
+          return (
+            <Link
+              key={w.id}
+              to="/obras/$id"
+              params={{ id: w.id }}
+              className={cn(rowClass, "transition-colors hover:bg-muted/50")}
+            >
+              <span className="min-w-0">
+                <span className="font-medium text-foreground">{w.name}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {data.people.find((p) => p.id === w.client_id)?.name}
+                </span>
+              </span>
+              <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Badge variant={variant}>{label}</Badge>
+                {fmtDate(w.planned_end)}
+              </span>
+            </Link>
+          );
+        })}
+      </Section>
+      {me?.canSeeCosts && (
+        <>
+          <Section title="Orçamentos" icon={FileSpreadsheet}>
+            {budgets.map((b) => (
+              <Link
+                key={b.id}
+                to="/orcamentos/$id"
+                params={{ id: b.id }}
+                className={cn(rowClass, "transition-colors hover:bg-muted/50")}
+              >
+                <span className="min-w-0 font-medium">
+                  <span className="text-muted-foreground">#{b.number}</span> · {b.title}
+                </span>
+                <Badge variant={BUDGET_STATUS_VARIANT[b.status] ?? "neutral"}>
+                  {BUDGET_STATUS_LABEL[b.status] ?? b.status}
+                </Badge>
+              </Link>
+            ))}
+          </Section>
+          <Section title="Contratos" icon={FileSignature}>
+            {contracts.map((c) => (
+              <div key={c.id} className={rowClass}>
+                <Link
+                  to="/obras/$id"
+                  params={{ id: c.work_id }}
+                  search={{ tab: "contrato" }}
+                  className="min-w-0 font-medium hover:text-primary"
+                >
+                  {works.find((w) => w.id === c.work_id)?.name}
+                </Link>
+                <span className="flex items-center gap-2">
+                  <Badge variant={c.status === "assinado" ? "positive" : "neutral"}>
+                    {c.status}
+                  </Badge>
+                  <Attachment path={c.signed_path} />
+                </span>
+              </div>
+            ))}
+          </Section>
+          {person.kind === "fornecedor" && (
+            <Section title="Compras" icon={ShoppingCart}>
+              {purchases.map((p) => (
+                <div key={p.id} className={rowClass}>
+                  <Link
+                    to="/obras/$id"
+                    params={{ id: p.work_id }}
+                    search={{ tab: "compras", record: p.id }}
+                    className="min-w-0 hover:text-primary"
+                  >
+                    <span className="font-medium">{p.description}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {works.find((w) => w.id === p.work_id)?.name}
+                    </span>
+                  </Link>
+                  <span className="flex items-center gap-2">
+                    <Badge variant={p.status === "cancelado" ? "neutral" : "info"}>
+                      {p.status}
+                    </Badge>
+                    <Money
+                      className="font-semibold"
+                      value={p.purchase_lines.reduce((t, l) => t + l.quantity * l.unit_price, 0)}
+                    />
+                    <Attachment path={p.file_path} />
+                  </span>
+                </div>
+              ))}
+            </Section>
+          )}
+          <Section title="Pagamentos e contas vinculadas" icon={Wallet}>
+            {entries.map((e) => (
+              <div key={e.id} className={rowClass}>
+                <Link
+                  to="/financeiro"
+                  search={{ work: e.work_id || "", entry: e.id }}
+                  className="flex min-w-0 items-center gap-3 hover:text-primary"
+                >
+                  <IconBubble
+                    icon={e.direction === "entrada" ? ArrowUp : ArrowDown}
+                    tone={e.direction === "entrada" ? "positive" : "negative"}
+                    className="h-8 w-8 rounded-lg"
+                  />
+                  <span className="min-w-0">
+                    <span className="font-medium">{e.description}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      parcela {e.installment_index}/{e.installment_count}
+                    </span>
+                  </span>
+                </Link>
+                <span className="text-right">
+                  <Money
+                    className="font-semibold"
+                    value={e.amount}
+                    tone={e.direction === "entrada" ? "positive" : "negative"}
+                  />
+                  <span className="block text-xs text-muted-foreground">
+                    saldo <Money value={entryState(e, finance?.settlements ?? []).pending} />
+                  </span>
+                </span>
+              </div>
+            ))}
+          </Section>
+          <Section title="Documentos das obras" icon={FileText}>
+            {records.map((r) => (
+              <div key={r.id} className={rowClass}>
+                <Link
+                  to="/obras/$id"
+                  params={{ id: r.work_id }}
+                  search={{ tab: "documento", record: r.id }}
+                  className="min-w-0 font-medium hover:text-primary"
+                >
+                  {r.title}
+                </Link>
+                <Attachment path={r.file_path} />
+              </div>
+            ))}
+          </Section>
+          <Section title="Histórico cadastral" icon={History}>
+            {history.map((h) => (
+              <p key={h.id} className="px-4 py-3 text-xs text-muted-foreground sm:px-5">
+                Alteração registrada · {fmtDate(h.changed_at)}
+              </p>
+            ))}
+          </Section>
+        </>
+      )}
+    </div>
+  );
+}

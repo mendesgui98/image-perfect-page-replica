@@ -1,0 +1,12 @@
+node_modules
+.output
+.wrangler
+.git
+work
+.env
+.env.*
+!.env.example
+infra/.env
+infra/volumes
+package-lock.json
+*.log

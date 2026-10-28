@@ -1,15 +1,46 @@
-// @lovable.dev/vite-tanstack-config already includes the following — do NOT add them manually
-// or the app will break with duplicate plugins:
-//   - TanStack devtools (dev-only, first), tanstackStart, viteReact, tailwindcss, tsConfigPaths,
-//     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
-//     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
-// You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
+import viteReact from "@vitejs/plugin-react";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { nitro } from "nitro/vite";
 
-export default defineConfig({
-  tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
-    server: { entry: "server" },
+// Configuração própria (sem o wrapper do Lovable).
+// O build gera um servidor Node em .output/ (preset node-server), usado pelo Dockerfile.
+// Para outro alvo, defina NITRO_PRESET no ambiente de build.
+// Em desenvolvimento o navegador fala só com a porta 3000: /supabase e /jmg-api são
+// repassados ao gateway (Kong) e à API. Evita CORS e bloqueios entre portas locais.
+const KONG = process.env["DEV_KONG_URL"] ?? "http://localhost:8000";
+const API = process.env["DEV_API_URL"] ?? "http://localhost:4000";
+const strip = (prefix: string) => (path: string) => path.slice(prefix.length) || "/";
+
+export default defineConfig(({ command }) => ({
+  server: {
+    host: "0.0.0.0",
+    port: 3000,
+    open: process.env["VITE_OPEN"] === "1",
+    proxy: {
+      "/supabase": { target: KONG, changeOrigin: true, ws: true, rewrite: strip("/supabase") },
+      "/jmg-api": { target: API, changeOrigin: true, rewrite: strip("/jmg-api") },
+    },
   },
-});
+  resolve: {
+    // Resolve o alias @/ do tsconfig nativamente (Vite 8).
+    tsconfigPaths: true,
+    dedupe: ["react", "react-dom", "@tanstack/react-query", "@tanstack/query-core"],
+  },
+  plugins: [
+    tailwindcss(),
+    tanstackStart({
+      // Entrada do servidor com tratamento de erros de SSR (src/server.ts).
+      server: { entry: "server" },
+      importProtection: {
+        behavior: "error",
+        client: { files: ["**/server/**"], specifiers: ["server-only"] },
+      },
+    }),
+    ...(command === "build"
+      ? [nitro({ preset: process.env["NITRO_PRESET"] ?? "node-server" })]
+      : []),
+    viteReact(),
+  ],
+}));

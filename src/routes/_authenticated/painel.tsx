@@ -4,14 +4,22 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
+import { useMfa } from "@/hooks/use-mfa";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import {dashboardSearch} from '@/components/works/dashboard';
-import {ExecutivePanel} from '@/components/management/executive';
+import { dashboardSearch } from "@/lib/dashboard-search";
+import { ExecutivePanel } from "@/components/management/executive";
+import { HideValuesScope, HideValuesToggle } from "@/components/hidden-values";
 import { WorkOverview } from "@/components/works/overview";
+import { FieldPanel } from "@/components/works/field-panel";
 
 export const Route = createFileRoute("/_authenticated/painel")({
-  validateSearch:(s:Record<string,unknown>):ReturnType<typeof dashboardSearch>&{detail?:string}=>({...dashboardSearch(s),detail:typeof s['detail']==='string'?s['detail']:''}),
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): ReturnType<typeof dashboardSearch> & { detail?: string } => ({
+    ...dashboardSearch(s),
+    detail: typeof s["detail"] === "string" ? s["detail"] : "",
+  }),
   head: () => pageMeta("Painel", "Acompanhamento de obras, propostas e alertas da JMG."),
   component: Painel,
 });
@@ -24,41 +32,71 @@ function Painel() {
     queryFn: async () => {
       const [company, pricing, budgets, people] = await Promise.all([
         supabase.from("company_settings").select("*").maybeSingle(),
-        me?.canSeeCosts ? supabase.from("pricing_settings").select("configured").maybeSingle() : Promise.resolve({ data: null }),
         me?.canSeeCosts
-          ? supabase.from("budgets").select("id,number,revision,title,client_display,status,updated_at").eq("archived", false).order("updated_at", { ascending: false }).limit(8)
+          ? supabase.from("pricing_settings").select("configured").maybeSingle()
+          : Promise.resolve({ data: null }),
+        me?.canSeeCosts
+          ? supabase
+              .from("budgets")
+              .select("id,number,revision,title,client_display,status,updated_at")
+              .is("deleted_at", null)
+              .eq("archived", false)
+              .order("updated_at", { ascending: false })
+              .limit(8)
           : Promise.resolve({ data: [] }),
-        supabase.from("people").select("kind", { count: "exact" }).eq("active", true),
+        supabase
+          .from("people")
+          .select("kind", { count: "exact" })
+          .is("deleted_at", null)
+          .eq("active", true),
       ]);
-      return { company: company.data, pricing: pricing.data, budgets: budgets.data ?? [], people: people.data ?? [] };
+      return {
+        company: company.data,
+        pricing: pricing.data,
+        budgets: budgets.data ?? [],
+        people: people.data ?? [],
+      };
     },
   });
 
+  const mfa = useMfa(!!me?.isAdmin);
   const alerts: string[] = [];
+  if (me?.isAdmin && mfa.data && !mfa.data.enabled)
+    alerts.push(
+      "Sua conta de administrador está sem verificação em duas etapas. Ative em Configurações > Segurança.",
+    );
   if (me?.canSeeCosts && data && !data.pricing?.configured)
-    alerts.push("As regras de precificação ainda não foram configuradas. Configure antes de emitir o primeiro orçamento real.");
-  if (data?.company && !data.company.email) alerts.push("O e-mail da JMG não está cadastrado nos dados da empresa.");
-
+    alerts.push(
+      "As regras de precificação ainda não foram configuradas. Configure antes de emitir o primeiro orçamento real.",
+    );
+  if (data?.company && !data.company.email)
+    alerts.push("O e-mail da JMG não está cadastrado nos dados da empresa.");
 
   return (
     <div>
       <PageHeader
         title="JMG Reformas"
-        subtitle="Visão executiva"
+        subtitle={me?.canSeeCosts ? "Visão executiva" : "Equipe de campo"}
         actions={
           me?.canSeeCosts && (
-            <Button asChild>
-              <Link to="/orcamentos">
-                <Plus className="h-4 w-4" /> Novo orçamento
-              </Link>
-            </Button>
+            <>
+              <HideValuesToggle />
+              <Button asChild>
+                <Link to="/orcamentos">
+                  <Plus className="h-4 w-4" /> Novo orçamento
+                </Link>
+              </Button>
+            </>
           )
         }
       />
       {alerts.length > 0 && (
         <div className="mb-6 space-y-2">
           {alerts.map((a) => (
-            <div key={a} className="flex items-start gap-3 rounded-lg border border-warning bg-warning/15 p-3 text-sm text-warning-foreground">
+            <div
+              key={a}
+              className="flex items-start gap-3 rounded-lg border border-warning bg-warning/15 p-3 text-sm text-warning-foreground"
+            >
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>
                 {a}{" "}
@@ -70,7 +108,16 @@ function Painel() {
           ))}
         </div>
       )}
-      {me?.canSeeCosts?<ExecutivePanel/>:<WorkOverview/>}
+      {me?.canSeeCosts ? (
+        <HideValuesScope>
+          <ExecutivePanel />
+        </HideValuesScope>
+      ) : (
+        <>
+          <FieldPanel />
+          <WorkOverview />
+        </>
+      )}
     </div>
   );
 }

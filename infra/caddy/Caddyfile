@@ -1,0 +1,26 @@
+{
+	email {$ACME_EMAIL}
+}
+
+# Aplicação (front SSR)
+{$APP_DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+	}
+	reverse_proxy web:3000
+}
+
+# API: /jmg/* vai para a API própria; o resto para o gateway do Supabase (auth, rest, storage)
+{$API_DOMAIN} {
+	encode zstd gzip
+	handle_path /jmg/* {
+		reverse_proxy api:4000
+	}
+	handle {
+		reverse_proxy kong:8000
+	}
+}

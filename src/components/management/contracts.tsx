@@ -1,10 +1,134 @@
-import {useState} from 'react';
-import {useQuery} from '@tanstack/react-query';
-import {Link} from '@tanstack/react-router';
-import {relationshipOptions} from '@/lib/relationship-data';
-import {dashboardOptions} from '@/lib/dashboard-data';
-import {fmtBRL,fmtDate} from '@/lib/format';
-import {Input} from '@/components/ui/input';
-import {selectClass,Attachment} from '@/components/works/fields';
-import {Button} from '@/components/ui/button';
-export function ContractList(){const [q,setQ]=useState('');const [status,setStatus]=useState('');const {data,error}=useQuery(relationshipOptions(true));const {data:dash}=useQuery(dashboardOptions);const rows=data?.contracts.filter(c=>(!status||c.status===status)&&((data.works.find(w=>w.id===c.work_id)?.name||'')+' '+c.status).toLowerCase().includes(q.toLowerCase()))??[];if(error)return <p className="text-destructive">{error.message}</p>;return <section className="space-y-5"><div className="flex flex-wrap gap-3"><Input className="sm:max-w-sm" aria-label="Buscar contrato" placeholder="Buscar contrato por obra" value={q} onChange={e=>setQ(e.target.value)}/><select aria-label="Status do contrato" className={selectClass+' sm:w-52'} value={status} onChange={e=>setStatus(e.target.value)}><option value="">Todos os status</option><option value="rascunho">Rascunho</option><option value="gerado">Gerado</option><option value="assinado">Assinado</option></select></div><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-y text-xs text-muted-foreground"><tr>{['Contrato / obra','Cliente','Valor','Data','Status','Documentos','Financeiro'].map(h=><th key={h} className="whitespace-nowrap p-3">{h}</th>)}</tr></thead><tbody>{rows.map(c=>{const w=data?.works.find(w=>w.id===c.work_id);const s=dash?.works.find(s=>s.work.id===c.work_id);return <tr key={c.id} className="border-b"><td className="p-3"><Link to="/obras/$id" params={{id:c.work_id}} search={{tab:'contrato',record:c.id}} className="font-medium text-primary">{w?.name||'Obra'}</Link></td><td className="p-3">{w?.client_id?<Link to="/cadastros/$id" params={{id:w.client_id}} className="text-primary">{data?.people.find(p=>p.id===w.client_id)?.name||'Cliente'}</Link>:'—'}</td><td className="whitespace-nowrap p-3 num">{s?fmtBRL(s.result.sale):'—'}</td><td className="whitespace-nowrap p-3">{fmtDate(c.signed_date||c.created_at)}</td><td className="p-3 text-xs">{c.status}</td><td className="p-3"><Attachment path={c.signed_path}/></td><td className="p-3"><Button variant="ghost" size="sm" asChild><Link to="/obras/$id" params={{id:c.work_id}} search={{tab:'financeiro'}}>Ver financeiro da obra</Link></Button></td></tr>;})}</tbody></table>{!rows.length&&<p className="py-12 text-center text-sm text-muted-foreground">Nenhum contrato neste filtro.</p>}</div></section>;}
+import { RecordDeleteButton, RecordTrash } from "@/components/management/record-deletion";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { relationshipOptions } from "@/lib/relationship-data";
+import { dashboardOptions } from "@/lib/dashboard-data";
+import { fmtDate } from "@/lib/format";
+import { Input } from "@/components/ui/input";
+import { selectClass, Attachment } from "@/components/works/fields";
+import { Button } from "@/components/ui/button";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { CONTRACT_STATUS } from "@/lib/status-badges";
+import { IconBubble, Money, type Tone } from "@/components/kpi";
+import { EmptyState } from "@/components/feedback";
+import { panelClass } from "@/lib/surface";
+import { cn } from "@/lib/utils";
+import { FileText, Wallet } from "lucide-react";
+
+export function ContractList() {
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState("");
+  const { data, error } = useQuery(relationshipOptions(true));
+  const { data: dash } = useQuery(dashboardOptions);
+  const rows =
+    data?.contracts.filter(
+      (c) =>
+        !c.deleted_at &&
+        (!status || c.status === status) &&
+        ((data.works.find((w) => w.id === c.work_id)?.name || "") + " " + c.status)
+          .toLowerCase()
+          .includes(q.toLowerCase()),
+    ) ?? [];
+  if (error) return <p className="text-destructive">{error.message}</p>;
+  return (
+    <section className="space-y-5">
+      <div
+        className={cn(
+          panelClass,
+          "grid gap-3 p-4 shadow-none sm:flex sm:flex-wrap sm:items-center",
+        )}
+      >
+        <Input
+          className="sm:max-w-sm"
+          aria-label="Buscar contrato"
+          placeholder="Buscar contrato por obra"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        <select
+          aria-label="Status do contrato"
+          className={selectClass + " sm:w-52"}
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          <option value="">Todos os status</option>
+          <option value="rascunho">Rascunho</option>
+          <option value="gerado">Gerado</option>
+          <option value="assinado">Assinado</option>
+        </select>
+        <div className="sm:ml-auto">
+          <RecordTrash entity="contracts" />
+        </div>
+      </div>
+      <div className={cn(panelClass, "divide-y divide-border/60 overflow-hidden")}>
+        {rows.map((c) => {
+          const w = data?.works.find((w) => w.id === c.work_id);
+          const s = dash?.works.find((s) => s.work.id === c.work_id);
+          const tone = CONTRACT_STATUS[c.status];
+          return (
+            <article key={c.id} className="flex gap-3 px-4 py-4 sm:px-5">
+              <IconBubble icon={FileText} tone={tone?.tone ?? "neutral"} />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <Link
+                      to="/obras/$id"
+                      params={{ id: c.work_id }}
+                      search={{ tab: "contrato", record: c.id }}
+                      className="font-semibold leading-snug text-foreground hover:text-primary"
+                    >
+                      {w?.name || "Obra"}
+                    </Link>
+                    <Badge variant={tone?.variant ?? "neutral"}>{tone?.label ?? c.status}</Badge>
+                  </div>
+                  {s ? (
+                    <Money value={s.result.sale} className="shrink-0 font-semibold" />
+                  ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                  )}
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {w?.client_id ? (
+                    <Link
+                      to="/cadastros/$id"
+                      params={{ id: w.client_id }}
+                      className="text-primary hover:underline"
+                    >
+                      {data?.people.find((p) => p.id === w.client_id)?.name || "Cliente"}
+                    </Link>
+                  ) : (
+                    "Cliente não informado"
+                  )}{" "}
+                  · {fmtDate(c.signed_date || c.created_at)}
+                </p>
+                <div className="-ml-3 mt-1 flex flex-wrap items-center gap-1">
+                  <Attachment path={c.signed_path} />
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link to="/obras/$id" params={{ id: c.work_id }} search={{ tab: "financeiro" }}>
+                      <Wallet className="h-4 w-4" />
+                      Ver financeiro da obra
+                    </Link>
+                  </Button>
+                  <RecordDeleteButton
+                    entity="contracts"
+                    id={c.id}
+                    name={`Contrato · ${w?.name || "Obra"}`}
+                  />
+                </div>
+              </div>
+            </article>
+          );
+        })}
+        {!rows.length && (
+          <EmptyState
+            compact
+            icon={FileText}
+            title="Nenhum contrato neste filtro"
+            className="py-10"
+          />
+        )}
+      </div>
+    </section>
+  );
+}
