@@ -1,3 +1,4 @@
+import type { ContractClause } from "../../../src/lib/contract-clauses.ts";
 import { SCHEDULE_DISCLAIMER, type ProposalData } from "../../../src/lib/proposal.ts";
 import { loadAssets } from "./assets.ts";
 import { contractHtml } from "./contract-html.ts";
@@ -8,7 +9,7 @@ import { htmlToPdf } from "./render.ts";
 
 export type PdfService = {
   proposal(data: ProposalData): Promise<Buffer>;
-  contract(data: ProposalData, today: string): Promise<Buffer>;
+  contract(data: ProposalData, today: string, clauses: ContractClause[]): Promise<Buffer>;
 };
 
 const footer = (d: ProposalData) =>
@@ -23,9 +24,9 @@ export function createPdfService(): PdfService {
         footerLeft: footer(d),
       });
     },
-    contract: (d, today) => {
+    contract: (d, today, clauses) => {
       const assets = loadAssets();
-      return htmlToPdf(contractHtml(d, assets, today), assets, {
+      return htmlToPdf(contractHtml(d, assets, today, clauses), assets, {
         headerRight: `Contrato · ${d.number} · ${d.client.name}`,
         footerLeft: footer(d),
       });

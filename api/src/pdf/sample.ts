@@ -1,6 +1,7 @@
 // Gera um orçamento de exemplo (dados do modelo aprovado) para conferir o visual sem banco:
 //   node --experimental-strip-types api/src/pdf/sample.ts saida.pdf [--contrato]
-import { writeFileSync } from "node:fs";
+// CLAUSES_JSON=arquivo.json usa as cláusulas exportadas do banco no lugar das de exemplo.
+import { readFileSync, writeFileSync } from "node:fs";
 import { buildProposal, DEFAULT_TERMS, SCHEDULE_DISCLAIMER } from "../../../src/lib/proposal.ts";
 import { emptyParams } from "../../../src/lib/pricing.ts";
 import { loadAssets } from "./assets.ts";
@@ -111,6 +112,22 @@ const data = buildProposal({
     payment_terms: DEFAULT_TERMS,
   },
 });
+// Cláusulas de exemplo; no sistema elas vêm de contract_clauses (Configurações → Contrato).
+const SAMPLE_CLAUSES = [
+  {
+    title: "Objetivo",
+    body: "{{N}}.1. Execução de obra civil de reforma residencial, situada no endereço {{ENDERECO_OBRA}};\n{{N}}.2. Serviços conforme o {{ORCAMENTO}}, nas etapas abaixo:\n{{TABELA_ETAPAS}}",
+  },
+  { title: "Valor", body: "{{N}}.1. O valor total é de {{VALOR}};" },
+  {
+    title: "Pagamento",
+    body: "{{N}}.1. Fluxo financeiro:\n{{TABELA_PARCELAS}}\n{{N}}.2. Pagamento para a conta da contratada:\n{{DADOS_BANCARIOS}}",
+  },
+  {
+    title: "Prazo de execução",
+    body: "{{N}}.1. Início em {{INICIO}}.\n{{N}}.1.1. Assinatura desse Contrato;\n{{N}}.2. Prazo estimado de {{PRAZO}}.\nI – atraso na entrega de materiais sob responsabilidade do CONTRATANTE;",
+  },
+];
 const assets = loadAssets();
 const out = process.argv[2] ?? "orcamento-exemplo.pdf";
 const contract = process.argv.includes("--contrato");
@@ -118,10 +135,21 @@ const footerLeft = "JMG Reformas LTDA · CNPJ 62.780.542/0001-81 · (11) 99893-7
 writeFileSync(
   out,
   contract
-    ? await htmlToPdf(contractHtml(data, assets, data.issueDate), assets, {
-        headerRight: `Contrato · ${data.number} · ${data.client.name}`,
-        footerLeft,
-      })
+    ? await htmlToPdf(
+        contractHtml(
+          data,
+          assets,
+          data.issueDate,
+          process.env["CLAUSES_JSON"]
+            ? JSON.parse(readFileSync(process.env["CLAUSES_JSON"], "utf8"))
+            : SAMPLE_CLAUSES,
+        ),
+        assets,
+        {
+          headerRight: `Contrato · ${data.number} · ${data.client.name}`,
+          footerLeft,
+        },
+      )
     : await htmlToPdf(proposalHtml(data, assets, SCHEDULE_DISCLAIMER), assets, {
         headerRight: `${data.number} · ${data.client.name}`,
         footerLeft,

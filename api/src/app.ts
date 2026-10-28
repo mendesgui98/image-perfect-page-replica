@@ -149,7 +149,14 @@ export function createApp(deps: Deps) {
       const { s, pdf, data } = await proposalData(req);
       const issues = contractIssues(data);
       if (issues.length) throw new HttpError(422, "incomplete", issues.join(" "));
-      const file = await pdf.contract(data, today());
+      const clauses = await deps.repo.contractClauses(s.claims);
+      if (!clauses.length)
+        throw new HttpError(
+          422,
+          "incomplete",
+          "Cadastre as cláusulas do contrato em Configurações → Contrato.",
+        );
+      const file = await pdf.contract(data, today(), clauses);
       log({ event: "contract_pdf", by: s.claims.sub, budget: req.params["id"] });
       return pdfReply(file, `Contrato-${data.number}.pdf`);
     })

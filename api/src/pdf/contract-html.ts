@@ -1,4 +1,5 @@
 import { dataPorExtenso, numeroPorExtenso } from "../../../src/lib/extenso.ts";
+import { renderClauses, type ContractClause } from "../../../src/lib/contract-clauses.ts";
 import type { ProposalData } from "../../../src/lib/proposal.ts";
 import type { Assets } from "./assets.ts";
 import {
@@ -15,11 +16,10 @@ import {
   stageColor,
 } from "./layout.ts";
 
-// Contrato de prestação de serviços no visual do orçamento. Cláusulas do contrato antigo da JMG
-// (modelo CONTRATO.ELIANA, escolhido pelo Guilherme) com o texto jurídico mantido; entram os
-// dados do orçamento aprovado (partes, endereço, escopo, valor por extenso, parcelas, prazo e
-// início). Ajustes no texto: a referência ao anexo vira o número do orçamento, o prazo vem do
-// cronograma e 4.1/7.2 ressalvam os materiais que o orçamento já inclui.
+// Contrato de prestação de serviços no visual do orçamento. As cláusulas vêm do modelo editável
+// (contract_clauses, carregado com o contrato antigo da JMG) e recebem os dados do orçamento
+// aprovado pelos marcadores de contract-clauses.ts (partes, endereço, escopo, valor por extenso,
+// parcelas, prazo e início).
 
 const css = `
 .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; margin-top: 7mm; }
@@ -48,12 +48,12 @@ const css = `
 .signs b { display: block; color: #16233F; font-size: 10.5pt; }
 `;
 
-function clause(n: number, title: string, body: string) {
-  return `<div class="clause"><h3><span>${n}</span>${esc(title)}</h3>${body}</div>`;
-}
-const p = (t: string, sub = false) => `<p${sub ? ` class="sub"` : ""}>${t}</p>`;
-
-export function contractHtml(d: ProposalData, assets: Assets, today: string) {
+export function contractHtml(
+  d: ProposalData,
+  assets: Assets,
+  today: string,
+  clauses: ContractClause[],
+) {
   const orc = `<b>orçamento <span class="nb">${esc(d.number)}</span> (Anexo 1)</b>`;
   const weeks = d.weeks
     ? `${d.weeks} (${numeroPorExtenso(d.weeks)}) ${d.weeks === 1 ? "semana" : "semanas"}`
@@ -95,182 +95,31 @@ ${d.stages.map((s) => `<tr><td><span class="badge dot" style="background:${stage
 ${d.payments.map((r) => `<tr><td><b>${esc(r.label)}</b>${r.when ? ` · ${esc(r.when)}` : ""}</td><td class="r">${pct(r.pct)}</td><td class="r nb">${money(r.value)}</td></tr>`).join("")}
 <tr class="t"><td>Total</td><td class="r">100%</td><td class="r nb">${money(d.totals.total)}</td></tr></tbody></table>`;
   const c = d.company;
+  const bank = `<div class="bank"><div><span>Favorecido</span><b>${esc(c.name.toUpperCase())}</b></div><div><span>CNPJ / Chave PIX</span><b>${esc(c.pix)}</b></div><div><span>Banco</span><b>${esc(c.bank)}</b></div><div><span>Agência</span><b>${esc(c.agency)}</b></div><div><span>Conta corrente</span><b>${esc(c.account)}</b></div></div>`;
+  const blocks = { TABELA_ETAPAS: scope, TABELA_PARCELAS: pay, DADOS_BANCARIOS: bank };
+  const clausesHtml = renderClauses(clauses, {
+    ORCAMENTO: orc,
+    ENDERECO_OBRA: `<b>${esc(d.site.full)}</b>`,
+    VALOR: `<b>${money(d.totals.total)} (${esc(d.totals.totalWords)})</b>`,
+    INICIO: `<b>${d.startDate ? dmy(d.startDate) : "a definir entre as partes"}</b>`,
+    PRAZO: `<b>${weeks}</b>`,
+  })
+    .map(
+      (cl) =>
+        `<div class="clause"><h3><span>${cl.number}</span>${esc(cl.title)}</h3>${cl.blocks
+          .map((b) =>
+            b.kind === "block"
+              ? blocks[b.block]
+              : `<p${b.kind === "sub" ? ` class="sub"` : ""}>${b.html}</p>`,
+          )
+          .join("")}</div>`,
+    )
+    .join("");
   const body = `<section class="page">
   ${eyebrow("Contrato de prestação de serviços")}
   <h2>Partes e objeto</h2>
   ${parties}
-  ${clause(
-    1,
-    "Objetivo",
-    p(
-      `1.1. Execução de obra civil de reforma residencial, situada no endereço <b>${esc(d.site.full)}</b>;`,
-    ) +
-      p(
-        `1.2. Todos os serviços objeto desse contrato, assim como suas especificações, quantidades e materiais inclusos, estão especificados e representados no ${orc}, e de acordo com o projeto executivo;`,
-      ) +
-      p(
-        `1.3. Fornecimento de mão de obra qualificada para execução dos serviços, quantificados e descritos no ${orc}, organizados nas etapas abaixo:`,
-      ) +
-      scope,
-  )}
-  ${clause(
-    2,
-    "Valor",
-    p(
-      `2.1. O valor a pagar pelo CONTRATANTE para a execução dos serviços listados no item 1 (OBJETIVO) deste contrato é de <b>${money(d.totals.total)} (${esc(d.totals.totalWords)})</b>;`,
-    ),
-  )}
-  ${clause(
-    3,
-    "Pagamento",
-    p("3.1. Os pagamentos deverão ser efetuados conforme o fluxo financeiro a seguir:") +
-      pay +
-      p(
-        "3.2. A confirmação dos pagamentos se dará após recebimento de comprovante de transferência.",
-      ) +
-      p(
-        "3.3. Todos e quaisquer serviços extraordinários, que não constem do presente contrato, deverão ser objeto de propostas adicionais, e após acordado o preço e prazo. As modificações na planta original serão executadas somente após concordância das partes (contratante e contratado), tanto com relação a aumento do prazo inicialmente determinado quanto com relação a preços de montagem. Ficando por conta e responsabilidade do contratante o fornecimento dos materiais necessários.",
-      ) +
-      p(
-        "3.4. Os pagamentos serão realizados através de PIX, transferência bancária ou boleto, para a conta corrente em nome da contratada:",
-      ) +
-      `<div class="bank"><div><span>Favorecido</span><b>${esc(c.name.toUpperCase())}</b></div><div><span>CNPJ / Chave PIX</span><b>${esc(c.pix)}</b></div><div><span>Banco</span><b>${esc(c.bank)}</b></div><div><span>Agência</span><b>${esc(c.agency)}</b></div><div><span>Conta corrente</span><b>${esc(c.account)}</b></div></div>`,
-  )}
-  ${clause(
-    4,
-    "Não inclusos",
-    p(
-      `4.1. O presente contrato não obriga o CONTRATADO a fornecer quaisquer materiais de acabamento previstos no projeto que não estejam relacionados no ${orc}, sendo que a compra desses materiais de acabamento é de responsabilidade do CONTRATANTE;`,
-    ) +
-      p(
-        `4.2. O CONTRATADO é responsável pela instalação desses materiais de acabamento, desde que especificados no ${orc};`,
-      ) +
-      p(
-        "4.3. O presente contrato não obriga o CONTRATADO a fornecer e instalar qualquer tipo de equipamento eletroeletrônico, sendo que a compra e a instalação desses é de responsabilidade do CONTRATANTE e o fornecedor escolhido.",
-      ),
-  )}
-  ${clause(
-    5,
-    "Prazo de execução",
-    p("5.1. A obra terá início quando todos os requisitos estiverem atendidos:") +
-      p("5.1.1. Assinatura desse Contrato;", true) +
-      p("5.1.2. Comprovação do pagamento do Sinal;", true) +
-      p("5.1.3. Emissão de RRT (Registro de Responsabilidade Técnica).", true) +
-      p(
-        `5.2. A data estipulada para início e para que todos os requisitos acima estejam em acordo é <b>${d.startDate ? dmy(d.startDate) : "a definir entre as partes"}</b>;`,
-      ) +
-      p(
-        "5.2.1. A data de início pode sofrer alteração por conta de caso fortuito e força maior, na forma da lei civil; ou não cumprimento de todos os requisitos acima;",
-        true,
-      ) +
-      p(
-        `5.3. A obra será executada conforme o Cronograma Físico-Financeiro, cujo prazo estimado é de <b>${weeks}</b> para conclusão dos serviços. Ficando desde já pactuada uma tolerância suplementar de até 20% (vinte por cento) sobre o prazo total, sem que isso configure atraso ou inadimplemento por parte do CONTRATADO.`,
-      ) +
-      p(
-        "5.3.1. O prazo contratual será automaticamente prorrogado, sem necessidade de aditivo, nas seguintes hipóteses:",
-        true,
-      ) +
-      [
-        "I – atraso na entrega de materiais sob responsabilidade do CONTRATANTE;",
-        "II – indecisão do CONTRATANTE quanto a acabamentos, cores, paginações, detalhes ou qualquer definição necessária para continuidade da obra;",
-        "III – incompatibilização entre projetos (arquitetura, marcenaria, elétrica, hidráulica, climatização ou automação);",
-        "IV – impedimento de acesso ao local pela administração do condomínio;",
-        "V – chuvas, condições climáticas adversas, caso fortuito ou força maior;",
-        "VI – paralisações determinadas por terceiros contratados diretamente pelo CONTRATANTE;",
-        "VII – serviços extras solicitados pelo CONTRATANTE e formalizados via Ordem de Serviço Extra.",
-      ]
-        .map((t) => p(t, true))
-        .join("") +
-      p(
-        "5.3.2. O atraso injustificado no cumprimento das obrigações contratuais sujeitará o contratado à multa de 1% (um por cento) ao dia, incidente sobre o valor total do contrato, limitada a 20% (vinte por cento), sem prejuízo das demais penalidades previstas.",
-        true,
-      ) +
-      p(
-        "5.3.3. Em qualquer hipótese de suspensão ou impossibilidade de continuidade da obra por motivos atribuíveis ao CONTRATANTE, o prazo ficará congelado até a completa regularização da pendência, acrescido de prazo suplementar proporcional.",
-        true,
-      ) +
-      p(
-        "5.3.4. O prazo final de entrega será revalidado no Termo de Início de Obra (ANEXO 2), podendo ser ajustado de acordo com o cronograma definitivo.",
-        true,
-      ),
-  )}
-  ${clause(
-    6,
-    "Obrigação do contratado",
-    p(
-      "6.1. O CONTRATADO deverá executar todos os serviços com o cumprimento da qualidade requerida no projeto, demonstrando conhecimento técnico e capacidade de leitura e interpretação dos projetos, aplicar mão de obra devidamente qualificada e treinada, visando obter alta qualidade geral da obra, maior durabilidade, baixa manutenção das instalações, economia de recursos e evitando desperdícios dos materiais fornecidos;",
-    ) +
-      p(
-        "6.2. O CONTRATADO se obriga a manter vigente e regular o seguro de acidentes de trabalho para seus funcionários. Obriga-se ainda a respeitar e cumprir todas as normas de segurança de trabalho e medicina do trabalho (vide portaria nº 3214 de 08/06/78 do Ministério do Trabalho), tomando todas as medidas necessárias de proteção aos empregados e terceiros durante as obras em construção, inclusive fornecer todos os materiais de proteção exigidos pela legislação vigente;",
-      ) +
-      p(
-        "6.3. Fica expressamente acordado que não se estabelece por força deste contrato qualquer relação de emprego entre o CONTRATANTE e o CONTRATADO, sendo única e exclusiva responsabilidade do CONTRATADO toda e qualquer reclamação que porventura advier de seus funcionários;",
-      ),
-  )}
-  ${clause(
-    7,
-    "Obrigação do contratante",
-    p(
-      "7.1. O CONTRATANTE deverá fornecer todos os projetos executivos desenvolvidos por arquitetos ou engenheiros;",
-    ) +
-      p(
-        `7.2. O CONTRATANTE deverá fornecer os materiais de acabamento não relacionados no ${orc}, com insumos inerentes às tarefas a serem desenvolvidas pelo CONTRATADO;`,
-      ),
-  )}
-  ${clause(
-    8,
-    "Garantia",
-    p(
-      "8.1. Todos os serviços contratados terão garantia de 12 meses, contados a partir da entrega da obra;",
-    ) +
-      p(
-        "8.2. A CONTRATADA não será responsabilizada diretamente por defeitos causados pela má utilização ou utilização indevida de nenhum dos materiais e insumos empregados na obra;",
-      ),
-  )}
-  ${clause(
-    9,
-    "Rescisão contratual",
-    p("9.1. Serão motivos de rescisão contratual:") +
-      p(
-        "9.1.1. A solicitação por requerimento das partes, com justificativa formal e por escrito;",
-        true,
-      ) +
-      p("9.1.2. O não pagamento de quaisquer das parcelas convencionadas;", true) +
-      p("9.1.3. A não execução dos serviços dentro dos prazos estipulados;", true) +
-      p(
-        "9.1.4. O não cumprimento de quaisquer das cláusulas e condições estabelecidas no presente instrumento.",
-        true,
-      ) +
-      p(
-        "9.2. Na ocorrência de quaisquer das situações contempladas descritas acima, considerar-se-á rescindido o presente contrato independente de qualquer notificação ou interpelação judicial ou extrajudicial.",
-      ) +
-      p(
-        "9.3. Ocorrendo a rescisão contratual pelos motivos contemplados acima, será efetuada medição dos serviços realizados, e avaliados para pagamento ou devolução à parte prejudicada (contratante ou contratado).",
-      ) +
-      p(
-        "9.4. Fica estipulada ao CONTRATADO uma multa de 10% sobre o saldo restante a receber caso haja infração de qualquer uma das regras ou rescisão desse contrato sem prévio consentimento da outra parte;",
-      ) +
-      p(
-        "9.5. Fica estipulada ao CONTRATANTE uma multa de 10% sobre o valor já pago caso haja infração de qualquer uma das regras ou rescisão desse contrato sem prévio consentimento da outra parte;",
-      ),
-  )}
-  ${clause(
-    10,
-    "Condições gerais",
-    p("10.1. A CONTRATADA será totalmente responsável pela execução da obra civil;") +
-      p(
-        "10.2. A CONTRATADA não é responsável pelos serviços executados por terceiros contratados diretamente pelo CONTRATANTE, nem da compatibilização dos serviços prestados por tais terceiros com os serviços firmados por este contrato e que não estejam previstos no projeto;",
-      ) +
-      p(
-        "10.3. Durante o período vigente deste contrato, em caso de desastre natural, pandemia, mudança repentina do tempo climático ou prolongação do mesmo (chuvas), que dificulte ou impeça o acesso do local ou andamento do serviço proposto, fica o tempo estimado para o término da obra suspenso, até que haja condições seguras para realização do serviço;",
-      ) +
-      p(
-        "10.4. Todas as situações descritas acima, entre outras que se encaixarem, deverão ser expressamente acordadas entre CONTRATADO e CONTRATANTE, a fim de extinguir qualquer tipo de dúvida de ambas as partes;",
-      ) +
-      p(
-        "10.5. Ao término, será assinado o Termo de Conclusão de Obra, condição obrigatória para liberação da última parcela.",
-      ),
-  )}
+  ${clausesHtml}
   <div class="closing clause">
     <p>E por estarem justas e avençadas, as partes assinam o presente instrumento em 02 vias de igual teor e forma.</p>
     <p>${esc(d.site.city || "São Paulo")}, ${dataPorExtenso(today)}.</p>

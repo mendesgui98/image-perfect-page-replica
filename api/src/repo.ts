@@ -1,6 +1,7 @@
 import type { Claims } from "./auth.ts";
 import type { Db } from "./db.ts";
 import { emptyParams } from "../../src/lib/pricing.ts";
+import type { ContractClause } from "../../src/lib/contract-clauses.ts";
 import type { ProposalInput } from "../../src/lib/proposal.ts";
 
 // Consultas SQL da API. Mantidas aqui para os handlers ficarem testáveis com um repositório falso.
@@ -30,6 +31,8 @@ export type Repo = {
   exportTables(): Promise<Record<string, unknown[]>>;
   /** Linhas do orçamento para o PDF, lidas como o usuário (RLS de custos vale aqui). */
   proposalInput(claims: Claims, budgetId: string): Promise<Omit<ProposalInput, "today"> | null>;
+  /** Cláusulas ativas do modelo de contrato, na ordem (Configurações → Contrato). */
+  contractClauses(claims: Claims): Promise<ContractClause[]>;
 };
 
 const num = (v: unknown) => Number(v ?? 0) || 0;
@@ -88,6 +91,12 @@ export function createRepo(db: Db): Repo {
       }
       return out;
     },
+    contractClauses: (claims) =>
+      db.asUser(claims, async (tx) => {
+        const rows = await tx`
+          select title, body from public.contract_clauses where active order by sort, created_at`;
+        return rows.map((r) => ({ title: String(r["title"]), body: String(r["body"] ?? "") }));
+      }),
     proposalInput: (claims, budgetId) =>
       db.asUser(claims, async (tx) => {
         const [b] = await tx`

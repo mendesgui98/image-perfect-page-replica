@@ -157,3 +157,31 @@ describe("por extenso", () => {
     expect(numeroPorExtenso(8)).toBe("oito");
   });
 });
+
+describe("cláusulas do contrato", () => {
+  const values = {
+    ORCAMENTO: "<b>orçamento ORC-2026-0007</b>",
+    ENDERECO_OBRA: "Rua A",
+    VALOR: "R$ 1,00",
+    INICIO: "16/11/2026",
+    PRAZO: "8 (oito) semanas",
+  };
+  it("numera pela ordem, troca marcadores e recua subitens", async () => {
+    const { renderClauses, unknownTokens } = await import("./contract-clauses");
+    const out = renderClauses(
+      [
+        { title: "Valor", body: "{{N}}.1. Valor de {{VALOR}} <x>" },
+        { title: " ", body: "ignorada" },
+        {
+          title: "Prazo",
+          body: "{{N}}.1. Início {{INICIO}}\n{{N}}.1.1. Assinatura\nI – atraso\n{{TABELA_PARCELAS}}",
+        },
+      ],
+      values,
+    );
+    expect(out.map((c) => c.number)).toEqual([1, 2]);
+    expect(out[0]?.blocks[0]).toEqual({ kind: "p", html: "1.1. Valor de R$ 1,00 &lt;x&gt;" });
+    expect(out[1]?.blocks.map((b) => b.kind)).toEqual(["p", "sub", "sub", "block"]);
+    expect(unknownTokens("{{N}} {{VALOR}} {{CLIENTE}} {{CLIENTE}}")).toEqual(["CLIENTE"]);
+  });
+});
