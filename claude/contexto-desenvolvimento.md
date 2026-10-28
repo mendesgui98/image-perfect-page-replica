@@ -4,6 +4,19 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Levar os dados locais para a produção (branch `claude/nifty-dijkstra-i0rmcy`)
+
+**Pedido:** o Guilherme quer copiar o que já cadastrou no banco local para a produção, sem cadastrar tudo de novo.
+
+**Decisões:**
+
+- `scripts/export-data.sh` (no computador, stack local no ar): `pg_dump --data-only` de `public.*`, `auth.users`, `auth.identities`, `auth.mfa_factors`, `storage.buckets` e `storage.objects`, mais o volume do Storage e a última migração (`jmg-export/`, no `.gitignore`).
+- `infra/vps/import-data.sh` (na VPS): recusa se a versão de migração do arquivo for diferente da produção, pede `SUBSTITUIR`, roda `backup.sh`, para web/api, faz `truncate … cascade` dessas tabelas e aplica o dump com `--disable-triggers` numa transação só (as travas de orçamento aprovado e a auditoria não disparam na cópia), troca os arquivos do Storage e religa tudo. Usuários mantêm senha, papéis e 2FA.
+- Corrigido junto: o Storage guarda tipo/etag de cada arquivo em atributos estendidos e o tar do Alpine não os copia (arquivo restaurado respondia 500). `backup.sh`, exportação e importação usam GNU tar (`debian:12-slim`) com `--xattrs`.
+- Os `docker compose exec` do import leem `/dev/null`: sem isso o exec consumia a entrada do terminal e a confirmação digitada.
+
+**Conferência:** simulado com duas stacks (local com usuário, papel, carga de materiais e foto; produção nova com outras chaves e outro admin): após a importação o usuário local entra com a senha local, o admin antigo some, 11 materiais e a foto voltam (200, `image/png`); antes da correção do tar a foto respondia 500.
+
 ### 2026-10-28 — Deploy automático na VPS da Hostinger (branch `claude/nifty-dijkstra-i0rmcy`, sobre `feat/fundacao-tecnica`)
 
 **Pedido:** o Guilherme assinou uma VPS KVM 2 na Hostinger e quer deploy automático pelo GitHub Actions, com o sistema num subdomínio (`app.jmgreformas.com.br`), deixando o domínio principal para o site institucional, e o passo a passo para configurar a VPS.

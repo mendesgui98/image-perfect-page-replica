@@ -42,3 +42,6 @@ package-lock.json
 
 # Gerado por bun run dev:all
 .env.development.local
+
+# Exportação de dados local → produção (scripts/export-data.sh)
+jmg-export/
