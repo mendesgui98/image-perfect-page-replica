@@ -4,6 +4,23 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Modelo oficial de orçamento e contrato em PDF (branch `feat/fundacao-tecnica`)
+
+**Pedido:** integrar o novo modelo oficial de orçamento da JMG Reformas (PDF aprovado `Orcamento-JMG-modelo.pdf`) para todo orçamento gerar esse PDF automaticamente, e gerar o contrato no mesmo visual a partir do orçamento aprovado. O zip com o código do modelo não veio; o Guilherme mandou seguir refazendo a partir do PDF aprovado. Contrato antigo escolhido como base: `CONTRATO.ELIANA.pdf`.
+
+**Decisões:**
+
+- Valores no PDF são preço de venda (confirmado com o Guilherme): materiais a preço de venda (fator venda ÷ custo de materiais do item, unitário arredondado e total = unitário × quantidade) e mão de obra só no total (`saleNet − materiais`), para mão de obra + materiais = valor final. Conta pura `clientPriceSheet` em `pricing.ts`; material fornecido pelo cliente não aparece.
+- `src/lib/proposal.ts` (puro, usado pela API e pela tela) monta o documento: número `ORC-<ano da criação>-<0000>`, emissão = data de geração, validade = campo ou emissão + 15 dias, responsável = campo ou quem criou (padrão Guilherme Andriola Mendes), imóvel "Apartamento · 78 m²", cronograma por semanas (`stageWeeks`, término = sexta da última semana), parcelas em centavos (`splitPayments` reescrito em centavos, diferença na última) e pendências que bloqueiam o PDF (`proposalIssues`/`contractIssues`). Padrões: parcelas 30/25/25/20 e as 4 observações. Valores e datas por extenso em `extenso.ts` (com vírgula como no modelo: "cinquenta e três mil, duzentos e …").
+- Migração `20261028000008_budget_proposal_model.sql`: orçamento ganha responsável, início previsto, prazo em semanas, tipo de imóvel, metragem e descrição; etapas ganham descrição curta, semana de início e duração. `copy_budget` copia tudo (a validade volta a vazio na cópia). A trava de aprovado já cobre os campos novos.
+- API: `POST /v1/orcamentos/:id/pdf` e `POST /v1/orcamentos/:id/contrato` (admin/financeiro; leitura como o usuário, com RLS). HTML em `api/src/pdf/` (capa B azul-marinho com a logo como marca d'água, azul #004AAD, dourado #E8A33D, etapas alternando azul forte/claro), Chromium do Playwright e cabeçalho/rodapé/paginação com pdf-lib (capa sem cabeçalho). Inter e logos embutidas. Imagem Docker da API passou para a base `mcr.microsoft.com/playwright:v1.56.1-noble`. `api/src/pdf/sample.ts` gera exemplos sem banco.
+- Contrato: cláusulas do contrato da Eliana com o texto mantido; ajustes necessários: referência ao anexo vira "orçamento ORC-… (Anexo 1)", 1.3 lista as etapas, 5.2 usa o início previsto, 5.3 usa o prazo em semanas, 3.4 cita PIX/transferência/boleto e 4.1/7.2 ressalvam os materiais que o orçamento já inclui.
+- Tela: aba "Dados e condições" com cliente/obra (título, descrição, imóvel, metragem), prazos (início, semanas, validade, responsável), parcelas com descrição, "quando" e % (aviso vermelho quando não fecha 100%) e observações uma por linha; nova aba "Cronograma" (descrição curta, semana de início e duração por etapa, com barrinha); botões "Gerar PDF" e "Gerar contrato" (só aprovado) com aviso das pendências; `/orcamentos/$id/pdf` mostra o PDF gerado pela API com "Baixar PDF".
+
+**Conferência:** lint, formatação, typecheck, testes do app e da API passando. Navegador: orçamento nº 9 preenchido pela tela (título, imóvel, início, parcelas padrão, aviso de 90%, cronograma com etapa em paralelo) e PDF gerado e exibido; contrato conferido no PDF de exemplo (não há orçamento aprovado no banco local, então a rota do contrato foi testada com teste automatizado e pelo gerador de exemplo). Encontrado e corrigido: data do banco voltando um dia no fuso de São Paulo. Não verificado: build da imagem Docker da API com Playwright.
+
+**Pendências com o Guilherme:** números reais de "Quem somos" (+120 obras, 10 anos e 100% no prazo são do exemplo, em `ABOUT_STATS`), logo em alta resolução (a atual tem 142 px e fica levemente borrada na capa) e conferir os ajustes de texto do contrato (4.1, 7.2 e 5.3).
+
 ### 2026-10-28 — Paleta do modelo de orçamento em toda a plataforma (branch `feat/fundacao-tecnica`)
 
 **Pedido:** o Guilherme quer a plataforma inteira com a mesma paleta do novo modelo de orçamento (azul da marca #004AAD, azul-marinho #112440, dourado #E8A33D), sem mexer no verde/vermelho de entradas e saídas.
