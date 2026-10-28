@@ -4,6 +4,21 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Checklist de conferência por etapa da obra (branch `feat/fundacao-tecnica`)
+
+**Pedido:** o Guilherme quer, dentro da obra, um checklist por etapa com os serviços listados na etapa, para conferir em obra marcando cada item, e um PDF de cada etapa junto com o cronograma.
+
+**Decisões:**
+
+- Tabela `work_checklist_items` (migração `20261028000007_work_checklist.sql`). Cada serviço da etapa (`work_stage_services`) vira item sozinho pelo trigger `sync_checklist_from_service` (inclusive os serviços criados na conversão do orçamento e na revisão aprovada); a descrição e a etapa seguem o serviço; excluir o serviço exclui o item (cascata). Os serviços que já existiam entraram pela própria migração.
+- A tabela guarda só a descrição: a equipe de campo (RLS igual a `work_stages`) confere sem ver valores de custo dos serviços. A equipe pode incluir e remover itens avulsos; itens de serviço não podem ser editados nem removidos à mão (trigger `guard_checklist_item`).
+- Quem e quando marcou (`checked_by`/`checked_at`) são gravados pelo banco; há observação por item. Alterações vão para `work_history`.
+- Marcar o checklist **não** muda o avanço da etapa nem o financeiro (o avanço continua vindo dos serviços).
+- Tela: aba "Checklist" na obra (`src/components/works/checklist.tsx`), um card por etapa com situação, datas do cronograma, barra de conferidos, botão PDF, itens com caixa grande de marcar e campo de observação. Lógica pura em `src/lib/work-checklist.ts` (+ testes).
+- PDF: `/obras/$id/checklist/pdf?stage=<id>` (vazio = todas as etapas): cabeçalho JMG, cliente/local, tabela do cronograma com todas as etapas (a escolhida em destaque, com conferidos), lista da etapa com caixas OK, quem conferiu, observação e linhas de assinatura e data. `workClientOptions` foi movido para `work-data.ts` para servir aos dois PDFs.
+
+**Conferência:** migração aplicada no banco local e testada (item nasce do serviço, acompanha o texto, bloqueios, marcação com data, exclusão em cascata, histórico). lint, formatação, typecheck e 173 testes passando. Navegador: aba em desktop claro e 375px escuro, item avulso incluído, marcado, PDF da etapa conferido e item apagado depois. A obra local não tem serviços nas etapas, então o item vindo de serviço só foi testado no banco.
+
 ### 2026-10-28 — Menu lateral colorido e saldo em caixa mais compacto (branch `feat/fundacao-tecnica`)
 
 **Pedido:** o Guilherme pediu um azul suave de volta no menu, mais cores no menu e o card do saldo em caixa do Painel menor, para aproveitar o espaço.

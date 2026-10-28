@@ -1,40 +1,12 @@
 import { businessDate } from "@/lib/dashboard-math";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { workOptions, scheduleVersionsOptions } from "@/lib/work-data";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { workOptions, scheduleVersionsOptions, workClientOptions } from "@/lib/work-data";
 import { pageMeta } from "@/lib/page-meta";
 import { snapshotStages, calendarDays } from "@/lib/work-schedule";
 import { fmtDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Gantt } from "@/components/works/gantt";
-const clientOptions = (id: string) =>
-  queryOptions({
-    queryKey: ["schedule-client", id],
-    queryFn: async () => {
-      const w = await supabase
-        .from("work_registry")
-        .select("client_id,linked_budget_id")
-        .eq("id", id)
-        .single();
-      if (w.error) throw w.error;
-      if (w.data.client_id) {
-        const p = await supabase.from("people").select("name").eq("id", w.data.client_id).single();
-        if (p.error) throw p.error;
-        return p.data.name;
-      }
-      if (w.data.linked_budget_id) {
-        const b = await supabase
-          .from("budgets")
-          .select("client_display")
-          .eq("id", w.data.linked_budget_id)
-          .single();
-        if (b.error) throw b.error;
-        return b.data.client_display || "Não informado";
-      }
-      return "Não informado";
-    },
-  });
 export const Route = createFileRoute("/_authenticated/obras/$id/cronograma/pdf")({
   validateSearch: (s: Record<string, unknown>): { version?: number | undefined } => ({
     version:
@@ -49,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/obras/$id/cronograma/pdf")
     await Promise.all([
       context.queryClient.ensureQueryData(workOptions(params.id)),
       context.queryClient.ensureQueryData(scheduleVersionsOptions(params.id)),
-      context.queryClient.ensureQueryData(clientOptions(params.id)),
+      context.queryClient.ensureQueryData(workClientOptions(params.id)),
     ]);
   },
   component: SchedulePdf,
@@ -59,7 +31,7 @@ function SchedulePdf() {
   const { version } = Route.useSearch();
   const { data } = useSuspenseQuery(workOptions(id));
   const { data: versions } = useSuspenseQuery(scheduleVersionsOptions(id));
-  const { data: client } = useSuspenseQuery(clientOptions(id));
+  const { data: client } = useSuspenseQuery(workClientOptions(id));
   const saved = versions.find((v) => v.version === version);
   const missing = version !== undefined && !saved;
   const stages = saved ? snapshotStages(saved.stages) : data.stages;

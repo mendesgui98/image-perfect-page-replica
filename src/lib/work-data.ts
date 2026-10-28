@@ -69,3 +69,31 @@ export async function openDocument(path: string) {
   if (r.error) throw r.error;
   window.open(r.data.signedUrl, "_blank", "noopener,noreferrer");
 }
+/** Nome do cliente da obra para as impressões (cadastro, ou o nome do orçamento). */
+export const workClientOptions = (id: string) =>
+  queryOptions({
+    queryKey: ["schedule-client", id],
+    queryFn: async () => {
+      const w = await supabase
+        .from("work_registry")
+        .select("client_id,linked_budget_id")
+        .eq("id", id)
+        .single();
+      if (w.error) throw w.error;
+      if (w.data.client_id) {
+        const p = await supabase.from("people").select("name").eq("id", w.data.client_id).single();
+        if (p.error) throw p.error;
+        return p.data.name;
+      }
+      if (w.data.linked_budget_id) {
+        const b = await supabase
+          .from("budgets")
+          .select("client_display")
+          .eq("id", w.data.linked_budget_id)
+          .single();
+        if (b.error) throw b.error;
+        return b.data.client_display || "Não informado";
+      }
+      return "Não informado";
+    },
+  });

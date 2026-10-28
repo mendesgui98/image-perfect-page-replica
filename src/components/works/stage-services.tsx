@@ -53,6 +53,7 @@ export function StageServicesPanel({
   async function after(next: StageService[]) {
     await syncStageProgress(stage, next);
     await qc.invalidateQueries({ queryKey: ["stage-services", workId] });
+    await qc.invalidateQueries({ queryKey: ["work-checklist", workId] });
     onChange();
   }
   async function update(s: StageService, patch: Partial<StageService>) {

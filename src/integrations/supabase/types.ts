@@ -1562,6 +1562,57 @@ export type Database = {
           },
         ];
       };
+      work_checklist_items: {
+        Row: {
+          checked: boolean;
+          checked_at: string | null;
+          checked_by: string | null;
+          created_at: string;
+          created_by: string | null;
+          description: string;
+          id: string;
+          note: string | null;
+          service_id: string | null;
+          sort: number;
+          stage_id: string;
+          updated_at: string;
+          updated_by: string | null;
+          work_id: string;
+        };
+        Insert: {
+          checked?: boolean;
+          checked_at?: string | null;
+          checked_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description: string;
+          id?: string;
+          note?: string | null;
+          service_id?: string | null;
+          sort?: number;
+          stage_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          work_id: string;
+        };
+        Update: {
+          checked?: boolean;
+          checked_at?: string | null;
+          checked_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          id?: string;
+          note?: string | null;
+          service_id?: string | null;
+          sort?: number;
+          stage_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          work_id?: string;
+        };
+        Relationships: [];
+      };
       work_history: {
         Row: {
           after: Json | null;

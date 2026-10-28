@@ -13,6 +13,7 @@ import { useMe } from "@/hooks/use-me";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { WorkChecklist } from "@/components/works/checklist";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
 import { Field, Memo, selectClass } from "@/components/works/fields";
 import { DeletedRecordNotice, RecordDeleteButton } from "@/components/management/record-deletion";
@@ -161,6 +162,7 @@ function Work() {
         <TabsList className="mb-5 flex h-auto flex-wrap justify-start gap-1">
           <TabsTrigger value="resumo">Visão Geral</TabsTrigger>
           <TabsTrigger value="etapas">Etapas</TabsTrigger>
+          <TabsTrigger value="checklist">Checklist</TabsTrigger>
           {me?.canSeeCosts && <TabsTrigger value="financeiro">Financeiro</TabsTrigger>}
           <TabsTrigger value="cronograma">Cronograma</TabsTrigger>
           {me?.canSeeCosts && (
@@ -187,6 +189,9 @@ function Work() {
         </TabsContent>
         <TabsContent value="etapas">
           <Schedule workId={id} stages={data.stages} records={data.records} onChange={refresh} />
+        </TabsContent>
+        <TabsContent value="checklist">
+          <WorkChecklist workId={id} stages={data.stages} />
         </TabsContent>
         <TabsContent value="fotos">
           <StagePhotos records={data.records} stages={data.stages} />
