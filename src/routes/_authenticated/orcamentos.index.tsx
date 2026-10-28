@@ -198,7 +198,7 @@ function Lista() {
             .map((b) => (
               <article
                 key={b.id}
-                className="flex gap-3 px-4 py-4 transition-colors hover:bg-muted/40 sm:px-5"
+                className="relative flex cursor-pointer gap-3 px-4 py-4 transition-colors hover:bg-muted/40 sm:px-5"
               >
                 <IconBubble icon={FileSpreadsheet} tone={b.work ? "brand" : "neutral"} />
                 <div className="min-w-0 flex-1">
@@ -207,7 +207,9 @@ function Lista() {
                       <Link
                         to="/orcamentos/$id"
                         params={{ id: b.id }}
-                        className="font-semibold text-primary hover:underline"
+                        aria-label={`Abrir orçamento nº ${b.number}`}
+                        // O card inteiro abre o orçamento (o link cobre o card).
+                        className="font-semibold text-primary after:absolute after:inset-0 after:content-[''] hover:underline"
                       >
                         {b.number}
                         {b.revision ? ` · Rev. ${b.revision}` : ""}
@@ -221,7 +223,7 @@ function Lista() {
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     {b.work ? (
-                      <Link to="/obras/$id" params={{ id: b.work.id }}>
+                      <Link to="/obras/$id" params={{ id: b.work.id }} className="relative z-10">
                         <Badge variant="positive" className="hover:opacity-80">
                           <HardHat className="h-3 w-3" /> Convertido em obra
                         </Badge>
@@ -231,7 +233,7 @@ function Lista() {
                         {STATUS_LABEL[b.status]}
                       </Badge>
                     )}
-                    <span className="ml-auto">
+                    <span className="relative z-10 ml-auto">
                       <RecordDeleteButton
                         entity="budgets"
                         id={b.id}
