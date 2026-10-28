@@ -4,6 +4,15 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-28 — Revisão aprovada atualiza os serviços das etapas da obra (branch `feat/fundacao-tecnica`)
+
+**Decisão do Guilherme:** ao aprovar a revisão, as etapas da obra acompanham o orçamento novo.
+
+- Migração `20261028000006_revision_syncs_stage_services.sql`: `budget_items.origin_item_id` (linhagem copiada por `copy_budget` só em revisões; duplicar não leva) e `work_stage_services.budget_item_id` (gravado por `convert_budget`). Nova `sync_budget_stage_services(_budget_id, _services)`: cria etapa para grupo novo, atualiza custo/descrição/etapa mantendo o avanço, cria serviços novos, apaga os que saíram (auditado); serviços manuais ficam.
+- Front: `syncBudgetStages` (work-budget.ts) roda depois de registrar a aprovação (approval.tsx), com custo de `computeBudget`, e recalcula o avanço das etapas com `syncStageProgress`. Falha na sincronização aparece em aviso sem desfazer a aprovação; pode ser rodada de novo (idempotente).
+- Testado no banco (transação desfeita: Tomadas com novo custo e 50% mantidos, Quadro removido, Hidráulica nova, manual intacto, segunda execução sem mudanças) e no navegador (converter em obra → reabrir → Tomadas 10→20 e tirar Quadro → aprovar: obra na Rev. 1, Tomadas R$ 1.000, Quadro fora). Dados de teste apagados.
+- Obras convertidas antes desta migração não têm `budget_item_id`; seus serviços não são atualizados por revisões.
+
 ### 2026-10-28 — Custo da etapa no formulário e campos em reais (branch `feat/fundacao-tecnica`)
 
 **Pedido do Guilherme:** o valor da etapa e dos materiais vai no formulário da etapa (junto de datas e responsável), não no card; o card fica só com os totais. Valores digitados aparecem como moeda.
@@ -22,7 +31,7 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 - Front: `isLockedStatus`, `openRevision`, `approvedVersion` (budget-status.ts, testados) e `budgetFamilyOptions` (budget-api.ts). Tela do orçamento: botão "Reabrir para edição" no aprovado (reaproveita revisão em aberto), aviso "Ao aprovar, esta revisão substitui a Rev. N" na revisão, e "Substituído pela Rev. N" com link na versão antiga.
 - Testado no banco (transação desfeita: edição direta bloqueada, substituição, obra e etapa religadas, contrato assinado bloqueia) e no navegador com orçamento nº 99990 (reabrir → remover serviço → aprovar com comprovante → Rev. 0 "Substituído", obra na Rev. 1); dados de teste apagados.
 
-**Limites:** serviços/custos das etapas da obra não são recalculados pela revisão (o valor do contrato na obra muda, pois vem do orçamento ligado); contrato "gerado" ainda não assinado guarda o texto antigo e precisa ser gerado de novo.
+**Limites:** contrato "gerado" ainda não assinado guarda o texto antigo e precisa ser gerado de novo. (Serviços das etapas: resolvido na task seguinte.)
 
 ### 2026-10-27 — Valor da etapa e dos materiais digitados na obra (branch `feat/fundacao-tecnica`)
 

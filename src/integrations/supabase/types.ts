@@ -103,6 +103,7 @@ export type Database = {
           labor_markup_override: number | null;
           materials: Json;
           materials_markup_override: number | null;
+          origin_item_id: string | null;
           quantity: number;
           section_id: string;
           service_id: string | null;
@@ -122,6 +123,7 @@ export type Database = {
           labor_markup_override?: number | null;
           materials?: Json;
           materials_markup_override?: number | null;
+          origin_item_id?: string | null;
           quantity?: number;
           section_id: string;
           service_id?: string | null;
@@ -141,6 +143,7 @@ export type Database = {
           labor_markup_override?: number | null;
           materials?: Json;
           materials_markup_override?: number | null;
+          origin_item_id?: string | null;
           quantity?: number;
           section_id?: string;
           service_id?: string | null;
@@ -1869,6 +1872,7 @@ export type Database = {
       };
       work_stage_services: {
         Row: {
+          budget_item_id: string | null;
           created_at: string;
           created_by: string | null;
           description: string;
@@ -1883,6 +1887,7 @@ export type Database = {
           work_id: string;
         };
         Insert: {
+          budget_item_id?: string | null;
           created_at?: string;
           created_by?: string | null;
           description: string;
@@ -1897,6 +1902,7 @@ export type Database = {
           work_id: string;
         };
         Update: {
+          budget_item_id?: string | null;
           created_at?: string;
           created_by?: string | null;
           description?: string;
@@ -2156,6 +2162,10 @@ export type Database = {
       capture_schedule_version: {
         Args: { _reason: string; _work_id: string };
         Returns: number;
+      };
+      sync_budget_stage_services: {
+        Args: { _budget_id: string; _services: Json };
+        Returns: string | null;
       };
       convert_budget: {
         Args: { _budget_id: string; _services?: Json };

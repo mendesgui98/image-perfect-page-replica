@@ -4,7 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Check, HardHat } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { convertBudgetToWork } from "@/lib/work-budget";
+import { convertBudgetToWork, syncBudgetStages } from "@/lib/work-budget";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, Attachment } from "./fields";
@@ -50,11 +50,23 @@ export function Approval({
         summary: { approval_date: text(d, "date"), path },
       });
       if (h.error) throw h.error;
+      // Revisão que substituiu a anterior: a obra já foi religada; atualiza os serviços das etapas.
+      try {
+        return { workId: await syncBudgetStages(budgetId) };
+      } catch (e) {
+        return { syncError: (e as Error).message };
+      }
     },
-    onSuccess: () => {
+    onSuccess: (r) => {
       setOpen(false);
       onChange();
-      toast.success("Aprovação registrada.");
+      qc.invalidateQueries({ queryKey: ["stage-services"] });
+      toast.success(
+        r.workId
+          ? "Aprovação registrada. A obra e as etapas passaram para esta versão."
+          : "Aprovação registrada.",
+      );
+      if (r.syncError) toast.error(`Etapas da obra não atualizadas: ${r.syncError}`);
     },
     onError: (e) => toast.error(e.message),
   });
