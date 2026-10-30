@@ -24,13 +24,14 @@ Legenda: **Depende do Guilherme** = precisa de uma informação, conta ou decis�
 - **Pronto quando:** os dois avisos amarelos somem do Painel.
 - **Depende do Guilherme:** é feito por ele na tela (2 minutos).
 
-### [ ] R1-3 · Aviso quando o deploy falhar
+### [x] R1-3 · Aviso quando o deploy falhar
 
 - **Por quê:** em 30/10 um deploy falhou na etapa "Montar infra/.env de produção" e ninguém viu; o recibo só subiu no deploy seguinte.
 - **O que fazer:** investigar a causa da falha intermitente; tornar o passo resiliente (nova tentativa) e notificar por e-mail (ou WhatsApp/Telegram) quando o deploy falhar.
 - **Onde:** `.github/workflows/ci.yml`, `infra/vps/deploy.sh`.
 - **Pronto quando:** uma falha simulada gera aviso e a etapa tenta de novo antes de desistir.
 - **Depende do Guilherme:** para onde mandar o aviso (e-mail já resolve, depois da R1-1).
+- **Feito (30/10):** a causa era o `ssh-keyscan` (desiste em 5 s) quando a VPS demorava a responder; agora tenta 6 vezes com folga e o SSH tem timeout/keepalive. Deploy com falha abre a issue "Deploy em produção falhou" (o GitHub avisa por e-mail) e o próximo deploy bom fecha a issue.
 
 ### [ ] R1-4 · Backup diário do banco fora da VPS
 
