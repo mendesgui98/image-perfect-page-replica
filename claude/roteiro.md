@@ -44,24 +44,30 @@ Legenda: **Depende do Guilherme** = precisa de uma informação, conta ou decis�
 
 ## Fase 2 — Indicadores e precificação (próximas 2 semanas)
 
-### [ ] R2-1 · Caixa projetado em 90 dias (entradas e saídas)
+### [x] R2-1 · Caixa projetado em 90 dias (entradas e saídas)
 
 - **Por quê:** o fluxo de caixa do Painel projeta só o que vai entrar; com as saídas previstas dá para ver antes um mês negativo.
 - **O que fazer:** projeção semanal/mensal de saldo = saldo atual + a receber − a pagar (contas, parcelas de compra, impostos previstos); alerta no "Atenção" quando o saldo projetado ficar negativo.
 - **Onde:** `src/lib/dashboard-home.ts` (puro, testado), `src/components/management/home-panel.tsx`.
 - **Pronto quando:** o gráfico mostra a linha de saldo projetado e o alerta aparece com dados de teste.
 
-### [ ] R2-2 · Funil comercial
+- **Feito (30/10):** cartão "Caixa projetado · 90 dias" no Painel (`cashProjection` em `src/lib/business-indicators.ts`) e alerta no "Atenção" quando o saldo projetado fica negativo.
+
+### [x] R2-2 · Funil comercial
 
 - **O que fazer:** indicadores de orçamentos por situação (elaboração, enviados, aprovados, recusados), taxa de conversão, tempo médio até aprovação, valor em propostas abertas e motivo da recusa (campo novo ao recusar).
 - **Onde:** migração para o motivo da recusa, `src/lib/` (puro), Painel e lista de Orçamentos.
 - **Pronto quando:** o Painel mostra o funil do período filtrado e a recusa pede o motivo.
 
-### [ ] R2-3 · Inadimplência
+- **Feito (30/10):** cartão "Funil comercial" no Painel (`commercialFunnel`, última revisão de cada número, período pela data de emissão) e motivo obrigatório ao marcar como recusado (migração `20261030000037`, coluna `budgets.refusal_reason`).
+
+### [x] R2-3 · Inadimplência
 
 - **O que fazer:** % vencido sobre o que deveria ter sido recebido, dias médios de atraso por cliente e por obra; destaque no Painel e no cadastro do cliente.
 - **Onde:** `src/lib/operations.ts`/`executive.ts`, Painel, perfil da pessoa.
 - **Pronto quando:** os números batem com as contas a receber vencidas.
+
+- **Feito (30/10):** cartão "Inadimplência" no Painel (`delinquency`) com taxa, atraso médio ponderado e ranking por cliente. Falta mostrar no perfil do cliente.
 
 ### [ ] R2-4 · Reserva técnica (contingência) no orçamento
 

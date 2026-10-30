@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -28,6 +29,15 @@ import {
 import { fmtDate, fmtNum } from "@/lib/format";
 import { useBRL } from "@/lib/hidden-values";
 import { lateStages } from "@/lib/schedule-dashboard";
+import {
+  FUNNEL_LABEL,
+  cashProjection,
+  commercialFunnel,
+  delinquency,
+} from "@/lib/business-indicators";
+import { commercialOptions } from "@/lib/commercial-data";
+import { inPeriod, periodRange } from "@/lib/dashboard-math";
+import type { ExecutiveData } from "@/lib/executive";
 import { WorkCard } from "@/components/works/work-card";
 import { EmptyState } from "@/components/feedback";
 import { KpiCard, Money, Segmented } from "@/components/kpi";
@@ -286,7 +296,14 @@ const ATTENTION_TONE: Record<AttentionKind, string> = {
   cronograma: "bg-primary-soft text-primary",
 };
 
-function Attention({ works }: { works: WorkSummary[] }) {
+function Attention({
+  works,
+  company = [],
+}: {
+  works: WorkSummary[];
+  /** Alertas da empresa (ex.: caixa negativo previsto), antes dos das obras. */
+  company?: { title: string; detail: string; to: string; action: string }[];
+}) {
   const brl = useBRL();
   const today = businessDate();
   const items = attentionItems(
@@ -307,19 +324,34 @@ function Attention({ works }: { works: WorkSummary[] }) {
     brl,
   );
   const [all, setAll] = useState(false);
-  const shown = all ? items : items.slice(0, 4);
+  const shown = all ? items : items.slice(0, Math.max(0, 4 - company.length));
+  const totalAlerts = items.length + company.length;
   return (
     <section className={cn(panelClass, "p-4 sm:p-5")}>
       <div className="mb-2 flex items-center justify-between">
         <h2 className="font-semibold">Atenção</h2>
-        {items.length > 0 && (
+        {totalAlerts > 0 && (
           <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-negative-soft px-2 text-xs font-bold text-negative">
-            {items.length}
+            {totalAlerts}
           </span>
         )}
       </div>
-      {items.length ? (
+      {totalAlerts ? (
         <ul className="divide-y divide-border/60">
+          {company.map((c) => (
+            <li key={c.title} className="flex gap-3 py-2.5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-negative-soft text-negative">
+                <Wallet className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 text-sm">
+                <p className="font-medium leading-snug">{c.title}</p>
+                <p className="truncate text-xs text-muted-foreground">{c.detail}</p>
+                <Link to={c.to} className="text-xs font-semibold text-primary hover:underline">
+                  {c.action} →
+                </Link>
+              </div>
+            </li>
+          ))}
           {shown.map((i) => {
             const Icon = ATTENTION_ICON[i.kind];
             return (
@@ -353,13 +385,13 @@ function Attention({ works }: { works: WorkSummary[] }) {
           Tudo em dia: nenhum alerta nas obras do filtro.
         </p>
       )}
-      {items.length > 4 && (
+      {items.length > shown.length && !all && (
         <button
           type="button"
           className="mt-1 text-xs font-medium text-primary hover:underline"
           onClick={() => setAll(!all)}
         >
-          {all ? "Mostrar menos" : `Ver todos (${items.length})`}
+          {`Ver todos (${totalAlerts})`}
         </button>
       )}
     </section>
@@ -409,10 +441,211 @@ function WorkList({ cards }: { cards: WorkSummary[] }) {
   );
 }
 
+type Projection = ReturnType<typeof cashProjection>;
+
+/** R2-1 · saldo projetado por semana (13 semanas ≈ 90 dias) com entradas e saídas previstas. */
+function ProjectionCard({ p, cash }: { p: Projection; cash: number }) {
+  const brl = useBRL();
+  const values = [cash, ...p.weeks.map((w) => w.balance)];
+  const hi = Math.max(0, ...values);
+  const lo = Math.min(0, ...values);
+  const span = hi - lo || 1;
+  const W = 520;
+  const H = 150;
+  const x = (i: number) => (i / (values.length - 1)) * W;
+  const y = (v: number) => H - ((v - lo) / span) * H;
+  const line = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const negative = !!p.firstNegative;
+  return (
+    <section className={cn(panelClass, "flex flex-col p-4 sm:p-5")}>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h2 className="font-semibold">Caixa projetado · 90 dias</h2>
+          <p className="text-xs text-muted-foreground">
+            Saldo de hoje + a receber − a pagar, pelo vencimento (vencidos contam nesta semana)
+          </p>
+        </div>
+        <Badge variant={negative ? "negative" : "positive"}>
+          {negative ? `Negativo em ${fmtDate(p.firstNegative!.start)}` : "Sem saldo negativo"}
+        </Badge>
+      </div>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        className="mt-4 h-36 w-full overflow-visible"
+        role="img"
+        aria-label={`Saldo projetado: de ${brl(cash)} hoje para ${brl(p.end)} em 90 dias`}
+      >
+        <line x1="0" x2={W} y1={y(0)} y2={y(0)} stroke="var(--border)" strokeDasharray="4 4" />
+        <polygon
+          points={`0,${y(0)} ${line} ${W},${y(0)}`}
+          fill={negative ? "var(--negative)" : "var(--primary)"}
+          opacity="0.1"
+        />
+        <polyline
+          points={line}
+          fill="none"
+          stroke={negative ? "var(--negative)" : "var(--primary)"}
+          strokeWidth="2.5"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+      <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+        <span>hoje</span>
+        <span>{fmtDate(p.weeks[6]?.start)}</span>
+        <span>{fmtDate(p.weeks.at(-1)?.start)}</span>
+      </div>
+      <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-border/60 pt-3 text-xs sm:grid-cols-4">
+        {(
+          [
+            ["Entra", p.inflow, "text-positive"],
+            ["Sai", p.outflow, "text-negative"],
+            ["Menor saldo", p.min, p.min < 0 ? "text-negative" : ""],
+            ["Em 90 dias", p.end, p.end < 0 ? "text-negative" : ""],
+          ] as const
+        ).map(([l, v, tone]) => (
+          <div key={l}>
+            <dt className="text-muted-foreground">{l}</dt>
+            <dd className={cn("text-sm font-semibold tabular-nums", tone)}>{brl(v)}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+/** R2-2 · funil comercial dos orçamentos (última revisão de cada número). */
+function FunnelCard({ f }: { f: ReturnType<typeof commercialFunnel> | null }) {
+  const brl = useBRL();
+  if (!f)
+    return (
+      <section className={cn(panelClass, "p-4 text-sm text-muted-foreground sm:p-5")}>
+        Carregando funil comercial…
+      </section>
+    );
+  const max = Math.max(1, ...f.stages.map((s) => s.count));
+  const tone: Record<string, string> = {
+    elaboracao: "bg-muted-foreground/40",
+    enviado: "bg-primary/60",
+    aprovado: "bg-positive",
+    recusado: "bg-negative/70",
+  };
+  return (
+    <section className={cn(panelClass, "flex flex-col p-4 sm:p-5")}>
+      <div className="flex items-start justify-between gap-2">
+        <h2 className="font-semibold">Funil comercial</h2>
+        <Link to="/orcamentos" className="text-xs font-semibold text-primary hover:underline">
+          Orçamentos →
+        </Link>
+      </div>
+      <ul className="mt-3 space-y-2 text-sm">
+        {f.stages.map((s) => (
+          <li key={s.stage} className="grid grid-cols-[96px_1fr_auto] items-center gap-2">
+            <span className="text-xs text-muted-foreground">{FUNNEL_LABEL[s.stage]}</span>
+            <span className="h-2.5 overflow-hidden rounded-full bg-muted">
+              <i
+                className={cn("block h-full rounded-full", tone[s.stage])}
+                style={{ width: `${(s.count / max) * 100}%` }}
+              />
+            </span>
+            <span className="text-right text-xs tabular-nums">
+              <b>{s.count}</b> · {brl(s.value)}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-border/60 pt-3 text-xs">
+        <div>
+          <dt className="text-muted-foreground">Conversão</dt>
+          <dd className="text-lg font-bold">
+            {f.conversion === null ? "—" : `${fmtNum(f.conversion)}%`}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted-foreground">Até aprovar</dt>
+          <dd className="text-lg font-bold">
+            {f.avgDaysToApprove === null ? "—" : `${f.avgDaysToApprove} dias`}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted-foreground">Em propostas abertas</dt>
+          <dd className="font-semibold">{brl(f.openValue)}</dd>
+        </div>
+        <div>
+          <dt className="text-muted-foreground">Ticket médio aprovado</dt>
+          <dd className="font-semibold">{f.averageTicket === null ? "—" : brl(f.averageTicket)}</dd>
+        </div>
+      </dl>
+      {f.reasons.length > 0 && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Recusas:{" "}
+          {f.reasons
+            .slice(0, 3)
+            .map((r) => `${r.reason} (${r.count})`)
+            .join(" · ")}
+        </p>
+      )}
+    </section>
+  );
+}
+
+/** R2-3 · inadimplência: vencido em aberto sobre o que já deveria ter entrado. */
+function DelinquencyCard({ d }: { d: ReturnType<typeof delinquency> }) {
+  const brl = useBRL();
+  const bad = d.rate >= 10;
+  return (
+    <section className={cn(panelClass, "flex flex-col p-4 sm:p-5")}>
+      <div className="flex items-start justify-between gap-2">
+        <h2 className="font-semibold">Inadimplência</h2>
+        <Badge variant={d.overdue ? (bad ? "negative" : "alert") : "positive"}>
+          {d.overdue ? `${d.count} ${d.count === 1 ? "parcela" : "parcelas"}` : "Em dia"}
+        </Badge>
+      </div>
+      <p
+        className={cn(
+          "mt-3 text-3xl font-bold tracking-tight",
+          d.overdue ? (bad ? "text-negative" : "text-alert") : "text-positive",
+        )}
+      >
+        {fmtNum(d.rate)}%
+      </p>
+      <p className="text-xs text-muted-foreground">
+        {brl(d.overdue)} vencido de {brl(d.expected)} que já deveria ter entrado
+        {d.overdue ? ` · atraso médio de ${d.avgDaysLate} dias` : ""}
+      </p>
+      {d.byClient.length > 0 && (
+        <ul className="mt-3 divide-y divide-border/60 border-t border-border/60 text-sm">
+          {d.byClient.slice(0, 4).map((c) => (
+            <li key={c.client} className="flex items-center justify-between gap-2 py-2">
+              {c.clientId ? (
+                <Link
+                  to="/cadastros/$id"
+                  params={{ id: c.clientId }}
+                  className="min-w-0 truncate font-medium hover:text-primary"
+                >
+                  {c.client}
+                </Link>
+              ) : (
+                <span className="min-w-0 truncate font-medium">{c.client}</span>
+              )}
+              <span className="shrink-0 text-right text-xs">
+                <b className="block tabular-nums text-negative">{brl(c.overdue)}</b>
+                <span className="text-muted-foreground">{c.avgDays} dias</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export function HomeDashboard({
   works,
   allWorks,
   compositions,
+  allTime,
+  data,
   onDetail,
 }: {
   /** Obras do filtro, na ordem dos cards. */
@@ -420,6 +653,9 @@ export function HomeDashboard({
   /** Obras para os seletores do filtro. */
   allWorks: WorkSummary[];
   compositions: Compositions;
+  /** Mesmas composições sem o filtro de período (projeção de caixa). */
+  allTime: Compositions;
+  data: ExecutiveData;
   onDetail: (id: Indicator) => void;
 }) {
   const brl = useBRL();
@@ -447,6 +683,42 @@ export function HomeDashboard({
   const receivableWorks = new Set(compositions.receivable.map((r) => r.workId)).size;
   const overduePayable = compositions.payable.filter((r) => (r.date ?? "") < businessDate()).length;
   const cash = total("cash");
+  const today = businessDate();
+  // R2-1: projeção a partir do saldo de hoje, sempre com todos os vencimentos (sem filtro de período).
+  const cashNow = indicatorTotal(allTime.cash) ?? 0;
+  const projection = cashProjection(cashNow, allTime.receivable, allTime.payable, today);
+  // R2-2: funil dos orçamentos emitidos no período filtrado.
+  const range =
+    search.period === "personalizado"
+      ? { from: search.from || "", to: search.to || "" }
+      : periodRange(search.period || "todos");
+  const { data: budgets } = useQuery(commercialOptions(true));
+  const funnel = budgets
+    ? commercialFunnel(budgets.filter((b) => inPeriod(b.issue_date, range.from, range.to)))
+    : null;
+  // R2-3: contas a receber das obras do filtro (ou todas, sem filtro de obra/cliente).
+  const ids = new Set(works.map((s) => s.work.id));
+  const scoped = !!(search.work || search.client || search.status);
+  const people = new Map(data.finance.people.map((p) => [p.id, p.name]));
+  const receivables = data.finance.entries
+    .filter(
+      (e) =>
+        e.direction === "entrada" &&
+        !e.canceled &&
+        (!scoped || (e.work_id !== null && ids.has(e.work_id))),
+    )
+    .map((e) => {
+      const w = data.works.find((s) => s.work.id === e.work_id);
+      const clientId = w?.work.client_id ?? e.person_id ?? null;
+      return {
+        id: e.id,
+        amount: e.amount,
+        due_date: e.due_date,
+        client: w?.client ?? (e.person_id ? (people.get(e.person_id) ?? "Cliente") : "Sem cliente"),
+        clientId,
+      };
+    });
+  const late = delinquency(receivables, data.finance.settlements, today);
   return (
     <>
       <CompactFilters works={allWorks} />
@@ -595,7 +867,27 @@ export function HomeDashboard({
             onClick={() => onDetail("extras")}
           />
         </div>
-        <Attention works={works} />
+        <Attention
+          works={works}
+          company={
+            projection.firstNegative
+              ? [
+                  {
+                    title: `Caixa negativo previsto em ${fmtDate(projection.firstNegative.start)}`,
+                    detail: `Menor saldo projetado: ${brl(projection.min)}`,
+                    to: "/financeiro",
+                    action: "Ver contas",
+                  },
+                ]
+              : []
+          }
+        />
+      </div>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-[1.55fr_1fr_1fr]">
+        <ProjectionCard p={projection} cash={cashNow} />
+        <FunnelCard f={funnel} />
+        <DelinquencyCard d={late} />
       </div>
 
       <section aria-labelledby="painel-obras" className="mt-8">

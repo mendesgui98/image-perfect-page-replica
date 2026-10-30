@@ -277,6 +277,7 @@ export type Database = {
       };
       budgets: {
         Row: {
+          refusal_reason: string | null;
           responsible: string | null;
           start_date: string | null;
           estimated_weeks: number | null;
@@ -319,6 +320,7 @@ export type Database = {
           validity_date: string | null;
         };
         Insert: {
+          refusal_reason?: string | null;
           responsible?: string | null;
           start_date?: string | null;
           estimated_weeks?: number | null;
@@ -361,6 +363,7 @@ export type Database = {
           validity_date?: string | null;
         };
         Update: {
+          refusal_reason?: string | null;
           responsible?: string | null;
           start_date?: string | null;
           estimated_weeks?: number | null;
