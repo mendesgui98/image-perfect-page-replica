@@ -47,6 +47,7 @@ import {
   saveBudgetVersion,
 } from "@/lib/budget-versions";
 import { BudgetVersions } from "@/components/budgets/budget-versions";
+import { RefuseBudget } from "@/components/budgets/refuse-budget";
 
 export const Route = createFileRoute("/_authenticated/orcamentos/$id/")({
   head: () => pageMeta("Orçamento", "Serviços, condições e aprovação da proposta JMG."),
@@ -171,9 +172,11 @@ function Editor() {
     navigate({ to: "/orcamentos/$id", params: { id: open.id } });
   }
 
-  async function setStatus(status: string) {
+  async function setStatus(status: string, refusalReason?: string) {
     if (!result) return;
-    await updBudget.mutateAsync({ status });
+    await updBudget.mutateAsync(
+      refusalReason ? { status, refusal_reason: refusalReason } : { status },
+    );
     // Falha no histórico não desfaz a mudança de situação, mas precisa aparecer.
     await budgetApi
       .logHistory({ budget_id: id, action: `status:${status}`, summary: { total: result.saleNet } })
@@ -340,10 +343,13 @@ function Editor() {
             <Button size="sm" variant="outline" onClick={() => setStatus("elaboracao")}>
               Voltar para elaboração
             </Button>
-            <Button size="sm" variant="danger" onClick={() => setStatus("recusado")}>
-              Marcar como recusado
-            </Button>
+            <RefuseBudget onRefuse={(reason) => setStatus("recusado", reason)} />
           </>
+        )}
+        {budget.status === "recusado" && budget.refusal_reason && (
+          <span className="text-sm text-muted-foreground">
+            Motivo da recusa: <b className="text-foreground">{budget.refusal_reason}</b>
+          </span>
         )}
         <Approval
           budgetId={id}

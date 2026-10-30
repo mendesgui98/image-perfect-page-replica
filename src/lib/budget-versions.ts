@@ -18,6 +18,7 @@ const VOLATILE = new Set([
   "deleted_at",
   "deleted_by",
   "superseded_by",
+  "refusal_reason",
 ]);
 
 function stable(value: unknown): unknown {

@@ -355,6 +355,8 @@ export function ExecutivePanel() {
         works={cards}
         allWorks={data.works.filter((s) => search.pilot || !s.work.is_pilot)}
         compositions={compositions}
+        allTime={executiveComposition(data, { ...search, period: "todos" })}
+        data={data}
         onDetail={(id) =>
           navigate({
             to: target,
