@@ -1667,6 +1667,48 @@ export type Database = {
           },
         ];
       };
+      work_client_materials: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          delivered: boolean;
+          description: string;
+          due_date: string;
+          id: string;
+          note: string | null;
+          stage_id: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          work_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          delivered?: boolean;
+          description: string;
+          due_date: string;
+          id?: string;
+          note?: string | null;
+          stage_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          work_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          delivered?: boolean;
+          description?: string;
+          due_date?: string;
+          id?: string;
+          note?: string | null;
+          stage_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          work_id?: string;
+        };
+        Relationships: [];
+      };
       work_checklist_items: {
         Row: {
           checked: boolean;

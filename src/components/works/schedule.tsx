@@ -14,6 +14,8 @@ import { calendarDays, endFromDuration } from "@/lib/work-schedule";
 import { scheduleVersionsOptions } from "@/lib/work-data";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { SchedulePlanning } from "./schedule-planning";
+import { ClientMaterials } from "./client-materials";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { stageStatus } from "@/lib/work-progress";
 import { uploadDocument } from "@/lib/work-data";
 import { useMe } from "@/hooks/use-me";
@@ -238,11 +240,12 @@ export function Schedule({
       setBusy(false);
     }
   }
-  return (
+  const content = (
     <section className="space-y-4">
       {mode === "cronograma" && work && (
         <SchedulePlanning
           workId={workId}
+          work={work}
           stages={stages}
           notes={work.schedule_notes}
           linkedBudgetId={work.linked_budget_id}
@@ -698,6 +701,20 @@ export function Schedule({
         </DialogContent>
       </Dialog>
     </section>
+  );
+  if (mode !== "cronograma") return content;
+  // Cronograma: planejamento e etapas numa aba; entregas de material do cliente na outra.
+  return (
+    <Tabs defaultValue="cronograma" className="space-y-4">
+      <TabsList>
+        <TabsTrigger value="cronograma">Cronograma</TabsTrigger>
+        <TabsTrigger value="materiais">Materiais do cliente</TabsTrigger>
+      </TabsList>
+      <TabsContent value="cronograma">{content}</TabsContent>
+      <TabsContent value="materiais">
+        <ClientMaterials workId={workId} stages={stages} />
+      </TabsContent>
+    </Tabs>
   );
 }
 
