@@ -34,7 +34,7 @@ export const CONTRACT_STATUS: Record<
   string,
   { label: string; variant: Variant; tone: "neutral" | "brand" | "positive" }
 > = {
-  rascunho: { label: "Rascunho", variant: "neutral", tone: "neutral" },
-  gerado: { label: "Gerado", variant: "info", tone: "brand" },
-  assinado: { label: "Assinado", variant: "positive", tone: "positive" },
+  aguardando_revisao: { label: "Aguardando revisão", variant: "alert", tone: "neutral" },
+  aguardando_assinatura: { label: "Aguardando assinatura", variant: "info", tone: "brand" },
+  assinado: { label: "Contrato assinado", variant: "positive", tone: "positive" },
 };

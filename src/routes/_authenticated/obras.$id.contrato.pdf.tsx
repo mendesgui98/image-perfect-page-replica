@@ -7,6 +7,7 @@ import { useMe } from "@/hooks/use-me";
 import { NoAccess } from "@/components/page-header";
 import { pageMeta } from "@/lib/page-meta";
 import { printContinuous } from "@/lib/continuous-print";
+import { CONTRACT_STATUS } from "@/lib/status-badges";
 export const Route = createFileRoute("/_authenticated/obras/$id/contrato/pdf")({
   head: () =>
     pageMeta(
@@ -39,7 +40,7 @@ function Pdf() {
           </Link>
         </Button>
         <span className="text-sm">
-          {data?.status === "rascunho" ? "RASCUNHO" : data?.status.toUpperCase()}
+          {data && (CONTRACT_STATUS[data.status]?.label ?? data.status).toUpperCase()}
         </span>
         <Button disabled={!data} onClick={() => printContinuous()}>
           Imprimir / salvar PDF

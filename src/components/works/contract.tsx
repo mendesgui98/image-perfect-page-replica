@@ -20,6 +20,7 @@ import { IconBubble, type Tone } from "@/components/kpi";
 import { panelClass } from "@/lib/surface";
 import { cn } from "@/lib/utils";
 import { Field, Attachment } from "./fields";
+import { ContractActions } from "@/components/management/contract-status";
 import { text } from "@/lib/form-values";
 export function Contract({
   workId,
@@ -128,7 +129,7 @@ export function Contract({
   useEffect(() => {
     if (data) setBody(data.contract?.body || data.generated);
   }, [data]);
-  async function save(status = "rascunho", d?: FormData) {
+  async function save(status = "aguardando_revisao", d?: FormData) {
     if (!me?.isAdmin) return;
     setBusy(true);
     try {
@@ -166,6 +167,43 @@ export function Contract({
   if (data?.contract?.deleted_at)
     return <DeletedRecordNotice entity="contracts" id={data.contract.id} name="Contrato" />;
   if (error) return <p className="text-destructive">{error.message}</p>;
+  // Obra com orçamento aprovado: o contrato é o PDF do modelo oficial (gerado pelo orçamento) e
+  // segue a mesma situação do menu Contratos. O editor de texto fica para contratos antigos.
+  if (budgetId && data && (!data.contract || data.contract.generated_path || !data.contract.body))
+    return (
+      <section className={cn(panelClass, "space-y-4 p-4 sm:p-5")}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <IconBubble icon={FileText} tone={status.tone} />
+            <div>
+              <h2 className="text-base font-semibold">
+                Contrato {data.contract?.code && <span>· {data.contract.code}</span>}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {data.contract?.generated_at
+                  ? `Gerado em ${fmtDate(data.contract.generated_at)} pelo modelo oficial`
+                  : "Ainda não gerado"}
+              </p>
+            </div>
+          </div>
+          {data.contract?.status !== "assinado" && (
+            <Button asChild>
+              <Link to="/orcamentos/$id/pdf" params={{ id: budgetId }} search={{ doc: "contrato" }}>
+                <FileDown className="h-4 w-4" />
+                {data.contract ? "Gerar de novo" : "Gerar contrato"}
+              </Link>
+            </Button>
+          )}
+        </div>
+        {data.contract ? (
+          <ContractActions contract={data.contract} />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Ao gerar, o contrato entra em Contratos como aguardando assinatura.
+          </p>
+        )}
+      </section>
+    );
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -215,12 +253,15 @@ export function Contract({
               <Save className="h-4 w-4" />
               Salvar rascunho
             </Button>
-            <Button disabled={busy || missing.length > 0} onClick={() => save("gerado")}>
+            <Button
+              disabled={busy || missing.length > 0}
+              onClick={() => save("aguardando_assinatura")}
+            >
               <FileCheck className="h-4 w-4" />
               Finalizar contrato
             </Button>
           </div>
-          {data?.contract?.status === "gerado" && (
+          {data?.contract?.status === "aguardando_assinatura" && (
             <form
               className={cn(panelClass, "flex flex-wrap items-end gap-3 p-4 shadow-none sm:p-5")}
               onSubmit={(e) => {

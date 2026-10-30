@@ -575,6 +575,10 @@ export type Database = {
       };
       contracts: {
         Row: {
+          budget_id: string | null;
+          code: string | null;
+          generated_at: string | null;
+          generated_path: string | null;
           deleted_at: string | null;
           deleted_by: string | null;
 
@@ -590,6 +594,10 @@ export type Database = {
           work_id: string;
         };
         Insert: {
+          budget_id?: string | null;
+          code?: string | null;
+          generated_at?: string | null;
+          generated_path?: string | null;
           deleted_at?: string | null;
           deleted_by?: string | null;
 
@@ -605,6 +613,10 @@ export type Database = {
           work_id: string;
         };
         Update: {
+          budget_id?: string | null;
+          code?: string | null;
+          generated_at?: string | null;
+          generated_path?: string | null;
           deleted_at?: string | null;
           deleted_by?: string | null;
 
@@ -2478,6 +2490,10 @@ export type Database = {
       shift_work_stages: {
         Args: { _changes: Json; _reason: string; _work_id: string };
         Returns: undefined;
+      };
+      register_generated_contract: {
+        Args: { _budget_id: string; _code: string; _path: string };
+        Returns: string;
       };
       save_standalone_schedule: {
         Args: {
