@@ -6,7 +6,8 @@ import { relationshipOptions } from "@/lib/relationship-data";
 import { dashboardOptions } from "@/lib/dashboard-data";
 import { fmtDate } from "@/lib/format";
 import { Input } from "@/components/ui/input";
-import { selectClass, Attachment } from "@/components/works/fields";
+import { selectClass } from "@/components/works/fields";
+import { ContractActions } from "@/components/management/contract-status";
 import { Button } from "@/components/ui/button";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { CONTRACT_STATUS } from "@/lib/status-badges";
@@ -26,7 +27,8 @@ export function ContractList() {
       (c) =>
         !c.deleted_at &&
         (!status || c.status === status) &&
-        ((data.works.find((w) => w.id === c.work_id)?.name || "") + " " + c.status)
+        [data.works.find((w) => w.id === c.work_id)?.name, c.code, CONTRACT_STATUS[c.status]?.label]
+          .join(" ")
           .toLowerCase()
           .includes(q.toLowerCase()),
     ) ?? [];
@@ -53,9 +55,9 @@ export function ContractList() {
           onChange={(e) => setStatus(e.target.value)}
         >
           <option value="">Todos os status</option>
-          <option value="rascunho">Rascunho</option>
-          <option value="gerado">Gerado</option>
-          <option value="assinado">Assinado</option>
+          <option value="aguardando_revisao">Aguardando revisão</option>
+          <option value="aguardando_assinatura">Aguardando assinatura</option>
+          <option value="assinado">Contrato assinado</option>
         </select>
         <div className="sm:ml-auto">
           <RecordTrash entity="contracts" />
@@ -80,6 +82,9 @@ export function ContractList() {
                     >
                       {w?.name || "Obra"}
                     </Link>
+                    {c.code && (
+                      <span className="text-xs font-medium text-muted-foreground">{c.code}</span>
+                    )}
                     <Badge variant={tone?.variant ?? "neutral"}>{tone?.label ?? c.status}</Badge>
                   </div>
                   {s ? (
@@ -100,10 +105,13 @@ export function ContractList() {
                   ) : (
                     "Cliente não informado"
                   )}{" "}
-                  · {fmtDate(c.signed_date || c.created_at)}
+                  ·{" "}
+                  {c.signed_date
+                    ? `assinado em ${fmtDate(c.signed_date)}`
+                    : `gerado em ${fmtDate(c.generated_at || c.created_at)}`}
                 </p>
-                <div className="-ml-3 mt-1 flex flex-wrap items-center gap-1">
-                  <Attachment path={c.signed_path} />
+                <div className="mt-2 flex flex-wrap items-center gap-1">
+                  <ContractActions contract={c} badge={false} />
                   <Button variant="ghost" size="sm" asChild>
                     <Link to="/obras/$id" params={{ id: c.work_id }} search={{ tab: "financeiro" }}>
                       <Wallet className="h-4 w-4" />

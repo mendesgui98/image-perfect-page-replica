@@ -4,6 +4,18 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-30 — Contratos gerados entram no menu Contratos (branch `claude/eager-hopper-auxpdq`)
+
+**Problema:** o Guilherme gerou o contrato da obra da Caroline e o menu Contratos continuou vazio. O PDF do modelo oficial era só gerado pela API e mostrado na tela; nada era gravado em `contracts`, que é o que o menu lista.
+
+**Decisões:**
+
+- Migração `20261030000036`: `contracts` ganha `budget_id`, `code` (CT-…), `generated_path` e `generated_at`; situações viram `aguardando_revisao` / `aguardando_assinatura` / `assinado` (rascunho e gerado migrados); `guard_contract` aceita o PDF gerado no lugar do texto.
+- Ao gerar o contrato em `/orcamentos/$id/pdf?doc=contrato`, o PDF vai para `jmg-documents/contracts/generated/` e a RPC `register_generated_contract` cria/atualiza o contrato da obra (novo = aguardando assinatura; existente mantém a situação; assinado não muda). Sem obra convertida, a tela avisa para gerar de novo depois da conversão.
+- `ContractActions` (situação, PDF gerado, enviar contrato assinado com data) no menu Contratos e na aba Contrato da obra.
+
+**Conferência:** orçamento aprovado de teste ligado à obra: contrato gerado aparece em Contratos, situação alterada e assinatura registrada com o documento.
+
 ### 2026-10-30 — Painel de cronogramas: lista e página do cronograma (branch `claude/eager-hopper-auxpdq`)
 
 **Pedido:** o Guilherme mandou dois mockups: a lista de Cronogramas em painel (indicadores, filtros por situação, card com linha do tempo) e a página do cronograma da obra (cabeçalho com indicadores, grade semanal previsto × executado, marcos de pagamento, materiais do cliente, revisões e "Lançar avanço").

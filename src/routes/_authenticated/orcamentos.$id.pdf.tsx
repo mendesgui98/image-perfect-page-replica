@@ -1,13 +1,15 @@
 import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Download, ExternalLink, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/kpi";
 import { PageSkeleton } from "@/components/feedback";
 import { apiConfigured, apiFile } from "@/lib/api-client";
 import { pdfLayout, type PdfLayout } from "@/lib/proposal";
+import { supabase } from "@/integrations/supabase/client";
+import { useMe } from "@/hooks/use-me";
 
 // Visualiza o PDF oficial gerado pela API (modelo JMG): orçamento ou, com ?doc=contrato, o
 // contrato do orçamento aprovado; em página contínua ou, com ?layout=paginado, em folhas A4.
@@ -54,6 +56,34 @@ function Pdf() {
     setUrl(u);
     return () => URL.revokeObjectURL(u);
   }, [data]);
+  // Contrato gerado entra no menu Contratos: o PDF vai para o bucket privado e o banco registra o
+  // contrato da obra (novo = aguardando assinatura; assinado não muda).
+  const { data: me } = useMe();
+  const registered = useRef<Blob | null>(null);
+  const [contractState, setContractState] = useState<"" | "ok" | "sem-obra" | string>("");
+  useEffect(() => {
+    if (doc !== "contrato" || !data || !me?.canSeeCosts || registered.current === data.blob) return;
+    registered.current = data.blob;
+    void (async () => {
+      try {
+        const path = `contracts/generated/${id}/${crypto.randomUUID()}.pdf`;
+        const up = await supabase.storage
+          .from("jmg-documents")
+          .upload(path, data.blob, { contentType: "application/pdf" });
+        if (up.error) throw up.error;
+        const code = /ORC-(\d{4}-\d+)/.exec(data.name)?.[1];
+        const r = await supabase.rpc("register_generated_contract", {
+          _budget_id: id,
+          _path: path,
+          _code: code ? `CT-${code}` : "",
+        });
+        if (r.error) throw r.error;
+        setContractState(r.data ? "ok" : "sem-obra");
+      } catch (e) {
+        setContractState((e as Error).message);
+      }
+    })();
+  }, [doc, data, id, me?.canSeeCosts]);
 
   // Rotas /pdf ficam fora do menu do app (route.tsx), então a página tem a própria margem.
   return (
@@ -126,6 +156,24 @@ function Pdf() {
           )}
         </div>
       </div>
+      {contractState === "ok" && (
+        <p className="rounded-xl bg-positive/10 p-4 text-sm text-positive">
+          Contrato registrado em{" "}
+          <Link to="/contratos" className="font-semibold underline">
+            Contratos
+          </Link>
+          . Lá você acompanha a situação e guarda o contrato assinado.
+        </p>
+      )}
+      {contractState === "sem-obra" && (
+        <Notice tone="alert">
+          Este orçamento ainda não virou obra: o contrato entra em Contratos depois da conversão
+          (gere o PDF de novo depois de converter).
+        </Notice>
+      )}
+      {contractState && contractState !== "ok" && contractState !== "sem-obra" && (
+        <Notice tone="negative">Não foi possível registrar o contrato: {contractState}</Notice>
+      )}
       {!apiConfigured && (
         <Notice tone="negative">A API não está configurada (VITE_API_URL).</Notice>
       )}
