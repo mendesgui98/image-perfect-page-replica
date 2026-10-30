@@ -45,14 +45,26 @@ export async function htmlToPdf(
       pdf = await PDFDocument.load(raw);
       await stampPages(pdf, stamp, logoPng);
     } else {
-      const height = await page.evaluate(() => Math.ceil(document.documentElement.scrollHeight));
-      // Arredondamentos do Chromium podem empurrar 1 px para uma segunda página: folga crescente.
-      for (const slack of [0, 2, 8, 32]) {
+      // A faixa final vai para o pé da página (.footer.pinned em layout.ts); o corpo reserva o
+      // espaço dela. Altura medida pelo corpo: com o html em overflow hidden o scroll sai menor.
+      const height = await page.evaluate(() => {
+        const footer = document.querySelector<HTMLElement>(".footer");
+        if (footer) {
+          const gap = parseFloat(getComputedStyle(footer).marginTop) || 0;
+          document.body.style.paddingBottom = `${footer.getBoundingClientRect().height + gap}px`;
+          footer.classList.add("pinned");
+        }
+        return Math.ceil(document.body.getBoundingClientRect().height);
+      });
+      // Altura em múltiplos de 8 px (6 pt), que o PDF guarda sem arredondar; se o Chromium ainda
+      // empurrar algo para uma segunda página, cresce a folga.
+      for (const slack of [0, 8, 16, 40]) {
+        const pageHeight = Math.ceil(height / 8) * 8 + slack;
         const raw = await page.pdf({
           // Mesma largura da janela: com "210mm" o Chromium arredonda a página para cima e
           // sobra um fio branco na borda direita da capa e da faixa final.
           width: `${WIDTH_PX}px`,
-          height: `${height + slack}px`,
+          height: `${pageHeight}px`,
           printBackground: true,
           margin: { top: 0, right: 0, bottom: 0, left: 0 },
         });

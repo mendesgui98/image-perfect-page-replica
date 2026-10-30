@@ -76,8 +76,9 @@ export function ContractClausesSettings({ ro }: { ro: boolean }) {
             assinados não mudam.
           </p>
           <p className="text-muted-foreground">
-            Cada linha vira um parágrafo. Linhas como “{"{{N}}"}.1.1.” e incisos romanos (I –, II –)
-            ficam recuados. Marcadores que o sistema preenche:
+            Cada linha vira um parágrafo. “{"{{N}}"}.1.” leva o número em destaque, “{"{{N}}"}.1.1.”
+            e incisos romanos (I –, II –) ficam recuados, linhas começando com “- ” viram itens e
+            **texto** sai em negrito. Marcadores que o sistema preenche com os dados do orçamento:
           </p>
           <ul className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
             {CLAUSE_TOKENS.map((t) => (

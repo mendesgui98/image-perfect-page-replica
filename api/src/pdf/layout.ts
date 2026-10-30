@@ -56,15 +56,25 @@ export function footerHtml(assets: Assets, c: ProposalData["company"]) {
 export const htmlOpen = (layout: PdfLayout) =>
   `<!doctype html><html lang="pt-BR"${layout === "paginado" ? ` class="paged"` : ""}>`;
 
+/**
+ * Página contínua: o PDF arredonda largura e altura para cima. O conteúdo passa 2 px da lateral
+ * (cortados) e a faixa final fica presa ao pé da página (render.ts reserva o espaço dela), então
+ * a folga de altura vira espaço branco antes da faixa, sem fio na borda.
+ */
+const CONTINUOUS_PAGE = `@page { margin: 0; }
+html { overflow: hidden; }
+.footer.pinned { position: fixed; left: 0; right: 0; bottom: 0; margin: 0; }
+.footer.pinned::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 12px;
+  background: linear-gradient(90deg, ${BLUE} 70%, ${GOLD} 70%); }`;
+
 export function baseCss(assets: Assets, layout: PdfLayout) {
   return `${assets.css}
-${layout === "paginado" ? "@page { size: A4; margin: 24mm 16mm 20mm 16mm; }\n@page cover { margin: 0; }" : "@page { margin: 0; }"}
+${layout === "paginado" ? "@page { size: A4; margin: 24mm 16mm 20mm 16mm; }\n@page cover { margin: 0; }" : CONTINUOUS_PAGE}
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
-/* A folga de altura do render.ts fica embaixo da faixa final: pinta com as mesmas cores. */
-html { background: linear-gradient(90deg, ${BLUE} 70%, ${GOLD} 70%); }
+
 body { background: #fff; }
-body { width: 100%; font-family: Inter, sans-serif; color: #1B2539; font-size: 10.5pt; line-height: 1.45;
+body { width: ${layout === "paginado" ? "100%" : "calc(100% + 2px)"}; font-family: Inter, sans-serif; color: #1B2539; font-size: 10.5pt; line-height: 1.45;
   -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .sec { padding: 0 16mm; }
 .cover + .sec { padding-top: 21mm; }
@@ -103,6 +113,8 @@ body { width: 100%; font-family: Inter, sans-serif; color: #1B2539; font-size: 1
 .stripe { height: 2.8mm; display: flex; }
 .stripe i:first-child { flex: 7; background: ${BLUE}; } .stripe i:last-child { flex: 3; background: ${GOLD}; }
 .cover .stripe { position: absolute; left: 0; right: 0; bottom: 0; }
+.cover.compact { height: 207.8mm; } .cover.compact .hero { top: 79.2mm; } .cover.compact .facts { top: 153.8mm; }
+.cover.compact .mark { top: 36mm; }
 .eyebrow { display: flex; align-items: center; gap: 3mm; color: ${BLUE}; font-weight: 700; letter-spacing: .2em;
   font-size: 7.6pt; text-transform: uppercase; }
 .eyebrow span { width: 5mm; height: 1px; background: #8A93A1; display: inline-block; }
@@ -126,8 +138,9 @@ th { font-size: 6.8pt; letter-spacing: .14em; color: #5B6472; font-weight: 500; 
 .footer img { width: 15mm; } .footer b { color: #fff; }
 /* Paginado: cada seção começa numa folha; o carimbo do render.ts faz cabeçalho e rodapé. */
 html.paged { background: #fff; }
-.paged .cover { page: cover; width: 210mm; height: 297mm; }
-.paged .cover .hero { top: 108mm; } .paged .cover .card { top: 212mm; } .paged .cover .facts { top: 258mm; }
+.paged .cover, .paged .cover.compact { page: cover; width: 210mm; height: 297mm; }
+.paged .cover .hero, .paged .cover.compact .hero { top: 108mm; } .paged .cover .card { top: 212mm; }
+.paged .cover .facts, .paged .cover.compact .facts { top: 258mm; } .paged .cover.compact .mark { top: 52mm; }
 .paged .sec { padding: 0; break-before: page; }
 .paged .divider, .paged .footer { display: none; }
 .paged thead { display: table-header-group; }
@@ -145,12 +158,13 @@ export function coverHtml(
     title: string;
     subtitle: string;
     chips: string[];
-    client: { name: string; sub?: string };
-    site: { line1: string; line2: string };
+    /** Sem os cartões de cliente/endereço a capa fica mais baixa (contrato). */
+    card?: { client: { name: string; sub?: string }; site: { line1: string; line2: string } };
     facts: { label: string; value: string }[];
   },
 ) {
-  return `<section class="cover">
+  const card = o.card;
+  return `<section class="cover${card ? "" : " compact"}">
   <img class="mark" src="${assets.logoWhite}" alt="">
   <div class="brand"><img src="${assets.logoWhite}" alt="JMG"><div class="sep"></div><div class="name">JMG<br>REFORMAS</div></div>
   <div class="code">${esc(o.code)}</div>
@@ -160,10 +174,14 @@ export function coverHtml(
     <div class="subtitle">${esc(o.subtitle)}</div>
     <div class="chips">${o.chips.map((c) => `<span class="chip">${esc(c)}</span>`).join("")}</div>
   </div>
-  <div class="card">
-    <div><span class="ico">${icons.user}</span><div><div class="lbl">Cliente</div><div class="val">${esc(o.client.name)}</div>${o.client.sub ? `<div class="sub">${esc(o.client.sub)}</div>` : ""}</div></div>
-    <div><span class="ico">${icons.pin}</span><div><div class="lbl">Endereço da obra</div><div class="val">${esc(o.site.line1)}</div><div class="sub">${esc(o.site.line2)}</div></div></div>
-  </div>
+  ${
+    card
+      ? `<div class="card">
+    <div><span class="ico">${icons.user}</span><div><div class="lbl">Cliente</div><div class="val">${esc(card.client.name)}</div>${card.client.sub ? `<div class="sub">${esc(card.client.sub)}</div>` : ""}</div></div>
+    <div><span class="ico">${icons.pin}</span><div><div class="lbl">Endereço da obra</div><div class="val">${esc(card.site.line1)}</div><div class="sub">${esc(card.site.line2)}</div></div></div>
+  </div>`
+      : ""
+  }
   <div class="facts">${o.facts.map((f) => `<div><div class="lbl">${esc(f.label)}</div><div class="val">${esc(f.value)}</div></div>`).join("")}</div>
   <div class="stripe"><i></i><i></i></div>
 </section>`;

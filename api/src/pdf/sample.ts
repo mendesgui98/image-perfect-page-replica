@@ -110,22 +110,15 @@ const data = buildProposal({
     payment_terms: DEFAULT_TERMS,
   },
 });
-// Cláusulas de exemplo; no sistema elas vêm de contract_clauses (Configurações → Contrato).
+// Cláusulas do modelo atual, lidas da migração que as carrega no banco (no sistema elas vêm de
+// contract_clauses, Configurações → Contrato).
+const MODEL_MIGRATION = new URL(
+  "../../../supabase/migrations/20261030000032_contract_model_2026.sql",
+  import.meta.url,
+);
 const SAMPLE_CLAUSES = [
-  {
-    title: "Objetivo",
-    body: "{{N}}.1. Execução de obra civil de reforma residencial, situada no endereço {{ENDERECO_OBRA}};\n{{N}}.2. Serviços conforme o {{ORCAMENTO}}, nas etapas abaixo:\n{{TABELA_ETAPAS}}",
-  },
-  { title: "Valor", body: "{{N}}.1. O valor total é de {{VALOR}};" },
-  {
-    title: "Pagamento",
-    body: "{{N}}.1. Fluxo financeiro:\n{{TABELA_PARCELAS}}\n{{N}}.2. Pagamento para a conta da contratada:\n{{DADOS_BANCARIOS}}",
-  },
-  {
-    title: "Prazo de execução",
-    body: "{{N}}.1. Início em {{INICIO}}.\n{{N}}.1.1. Assinatura desse Contrato;\n{{N}}.2. Prazo estimado de {{PRAZO}}.\nI – atraso na entrega de materiais sob responsabilidade do CONTRATANTE;",
-  },
-];
+  ...readFileSync(MODEL_MIGRATION, "utf8").matchAll(/\(\d+, '([^']+)', \$t\$([\s\S]*?)\$t\$\)/g),
+].map((m) => ({ title: m[1]!, body: m[2]! }));
 const out = process.argv[2] ?? "orcamento-exemplo.pdf";
 const layout = process.argv.includes("--paginado") ? "paginado" : "continuo";
 const pdf = createPdfService();

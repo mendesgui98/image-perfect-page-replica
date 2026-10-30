@@ -142,7 +142,11 @@ export interface ProposalData {
   title: string;
   description: string;
   property: string | null;
+  /** Área do imóvel, ex.: "78 m²" (null sem área). */
+  area: string | null;
   issueDate: string;
+  /** Data de emissão do orçamento (budgets.issue_date), citada no contrato. */
+  budgetDate: string;
   validUntil: string;
   validityDays: number;
   startDate: string | null;
@@ -265,7 +269,9 @@ export function buildProposal(input: ProposalInput): ProposalData {
     title: budget.title?.trim() || "Reforma",
     description: budget.description?.trim() ?? "",
     property: propertyLabel(budget.property_type, budget.property_area),
+    area: propertyLabel(null, budget.property_area),
     issueDate: today,
+    budgetDate: budget.issue_date.slice(0, 10),
     validUntil,
     validityDays: daysBetween(today, validUntil),
     startDate: start,

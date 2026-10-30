@@ -253,8 +253,7 @@ export function proposalHtml(
     title: `Orçamento<br>de <em>reforma</em>`,
     subtitle: p.title,
     chips,
-    client: { name: p.client.name },
-    site: p.site,
+    card: { client: { name: p.client.name }, site: p.site },
     facts: [
       { label: "Emissão", value: dmy(p.issueDate) },
       { label: "Válido até", value: dmy(p.validUntil) },
