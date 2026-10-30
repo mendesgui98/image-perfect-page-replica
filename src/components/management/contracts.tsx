@@ -32,6 +32,18 @@ export function ContractList() {
           .toLowerCase()
           .includes(q.toLowerCase()),
     ) ?? [];
+  // Obras com orçamento aprovado e sem contrato registrado (ex.: contrato gerado antes de o
+  // registro existir): aparecem aqui para gerar o contrato, que então entra na lista.
+  const pending =
+    data?.works.filter(
+      (w) =>
+        !w.deleted_at &&
+        w.linked_budget_id &&
+        data.budgets.some((b) => b.id === w.linked_budget_id && b.status === "aprovado") &&
+        !data.contracts.some((c) => c.work_id === w.id && !c.deleted_at) &&
+        (!status || status === "aguardando_assinatura") &&
+        w.name.toLowerCase().includes(q.toLowerCase()),
+    ) ?? [];
   if (error) return <p className="text-destructive">{error.message}</p>;
   return (
     <section className="space-y-5">
@@ -63,6 +75,42 @@ export function ContractList() {
           <RecordTrash entity="contracts" />
         </div>
       </div>
+      {pending.length > 0 && (
+        <div className={cn(panelClass, "divide-y divide-border/60 overflow-hidden")}>
+          <p className="px-4 py-3 text-sm font-medium sm:px-5">
+            Orçamento aprovado sem contrato registrado
+          </p>
+          {pending.map((w) => (
+            <article key={w.id} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5">
+              <IconBubble icon={FileText} tone="neutral" />
+              <div className="min-w-0 flex-1">
+                <Link
+                  to="/obras/$id"
+                  params={{ id: w.id }}
+                  search={{ tab: "contrato" }}
+                  className="font-semibold text-foreground hover:text-primary"
+                >
+                  {w.name}
+                </Link>
+                <p className="text-xs text-muted-foreground">
+                  {data?.people.find((p) => p.id === w.client_id)?.name || "Cliente não informado"}{" "}
+                  · gere o contrato para ele entrar aqui como aguardando assinatura
+                </p>
+              </div>
+              <Button size="sm" asChild>
+                <Link
+                  to="/orcamentos/$id/pdf"
+                  params={{ id: w.linked_budget_id! }}
+                  search={{ doc: "contrato" }}
+                >
+                  <FileText className="h-4 w-4" />
+                  Gerar contrato
+                </Link>
+              </Button>
+            </article>
+          ))}
+        </div>
+      )}
       <div className={cn(panelClass, "divide-y divide-border/60 overflow-hidden")}>
         {rows.map((c) => {
           const w = data?.works.find((w) => w.id === c.work_id);
