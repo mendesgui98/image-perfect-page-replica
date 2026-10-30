@@ -18,6 +18,7 @@ import { type Item, type Section } from "@/lib/budget-data";
 import {
   computeBudget,
   isDirectCostModel,
+  laborRatesBase,
   marginLevel,
   costBreakdown,
   priceRates,
@@ -320,7 +321,9 @@ function DirectCostPanel({
   const rates = priceRates(draft);
   const target = Number(draft.desired_margin) || 0;
   const min = Number(draft.min_margin) || 0;
-  const original = costBreakdown(sim.totalCost, rates);
+  // Materiais que levam só o imposto (percentuais só sobre a mão de obra).
+  const onlyTax = laborRatesBase(draft) ? sim.materialsCost : 0;
+  const original = costBreakdown(sim.totalCost, rates, onlyTax);
   const level = marginLevel(sim.margin, target, min);
   const dirty = JSON.stringify(draft) !== JSON.stringify(params);
   const negotiated = draft.negotiated_price != null;
@@ -404,7 +407,9 @@ function DirectCostPanel({
           <CardHeader className="pb-2">
             <CardTitle>Formação de preço</CardTitle>
             <p className="text-xs text-muted-foreground">
-              Os percentuais são partes do preço final, não um acréscimo sobre o custo.
+              {onlyTax > 0
+                ? "Os percentuais são partes do preço da mão de obra; os materiais levam só o imposto."
+                : "Os percentuais são partes do preço final, não um acréscimo sobre o custo."}
             </p>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
@@ -480,6 +485,12 @@ function DirectCostPanel({
                 </div>
                 <div className="space-y-1.5">
                   <Row l="Custo direto" v={original.directCost} muted />
+                  {onlyTax > 0 && (
+                    <>
+                      <Row l="Materiais com imposto" v={original.materialsPrice} muted />
+                      <Row l="Mão de obra (base dos percentuais)" v={original.laborPrice} muted />
+                    </>
+                  )}
                   <Row
                     l={`Estrutura JMG · ${fmtNum(rates.structure)}%`}
                     v={original.structure}
@@ -500,6 +511,7 @@ function DirectCostPanel({
             <CardTitle>Negociação</CardTitle>
             <p className="text-xs text-muted-foreground">
               Estrutura, RT e impostos acompanham o preço; o desconto sai do lucro.
+              {onlyTax > 0 && " A margem é medida sobre o preço da mão de obra."}
             </p>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
@@ -576,7 +588,8 @@ function DirectCostPanel({
         <CardHeader className="pb-2">
           <CardTitle>Simulador de preço</CardTitle>
           <p className="text-xs text-muted-foreground">
-            Mesmo custo direto, estrutura, RT e impostos; muda só a margem.
+            Mesmo custo direto, estrutura, RT e impostos; muda só a margem
+            {onlyTax > 0 && " (sobre a mão de obra; materiais só com imposto)"}.
           </p>
         </CardHeader>
         <CardContent>
@@ -588,7 +601,7 @@ function DirectCostPanel({
               </tr>
             </thead>
             <tbody>
-              {priceSimulation(sim.totalCost, rates).map((r) => (
+              {priceSimulation(sim.totalCost, rates, undefined, onlyTax).map((r) => (
                 <tr
                   key={r.margin}
                   className={cn(
