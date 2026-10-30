@@ -34,7 +34,9 @@ export async function htmlToPdf(html: string, title: string): Promise<Buffer> {
     // Arredondamentos do Chromium podem empurrar 1 px para uma segunda página: folga crescente.
     for (const slack of [0, 2, 8, 32]) {
       const raw = await page.pdf({
-        width: "210mm",
+        // Mesma largura da janela: com "210mm" o Chromium arredonda a página para cima e
+        // sobra um fio branco na borda direita da capa e da faixa final.
+        width: `${WIDTH_PX}px`,
         height: `${height + slack}px`,
         printBackground: true,
         margin: { top: 0, right: 0, bottom: 0, left: 0 },

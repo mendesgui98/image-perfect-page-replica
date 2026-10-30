@@ -56,13 +56,16 @@ export function baseCss(assets: Assets) {
   return `${assets.css}
 @page { margin: 0; }
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: #fff; }
-body { width: 210mm; font-family: Inter, sans-serif; color: #1B2539; font-size: 10.5pt; line-height: 1.45;
+html, body { margin: 0; padding: 0; }
+/* A folga de altura do render.ts fica embaixo da faixa final: pinta com as mesmas cores. */
+html { background: linear-gradient(90deg, ${BLUE} 70%, ${GOLD} 70%); }
+body { background: #fff; }
+body { width: 100%; font-family: Inter, sans-serif; color: #1B2539; font-size: 10.5pt; line-height: 1.45;
   -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .sec { padding: 0 16mm; }
 .cover + .sec { padding-top: 21mm; }
 .divider { height: 1px; margin: 20mm 16mm; background: linear-gradient(90deg, transparent, #E3E6EA 12%, #E3E6EA 88%, transparent); }
-.cover { position: relative; width: 210mm; height: 264.6mm; overflow: hidden; background: ${NAVY}; color: #fff; }
+.cover { position: relative; width: 100%; height: 264.6mm; overflow: hidden; background: ${NAVY}; color: #fff; }
 .cover .mark { position: absolute; right: -86mm; top: 52mm; width: 215mm; opacity: .07; }
 .cover .brand { position: absolute; left: 16mm; top: 15.5mm; display: flex; align-items: center; gap: 4.5mm; }
 .cover .brand img { width: 28mm; }
