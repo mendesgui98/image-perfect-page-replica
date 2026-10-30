@@ -179,13 +179,13 @@ export function ItemsEditor({
           <span className="text-xs text-muted-foreground">
             {sections.length} etapas · {items.length} serviços · {materialsCount} materiais
           </span>
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            <label className="relative">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
+            <label className="relative min-w-0 flex-1 basis-full sm:basis-auto sm:flex-none">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 aria-label="Buscar serviço"
                 placeholder="Buscar serviço..."
-                className="h-8 w-48 pl-8 text-sm"
+                className="h-8 w-full pl-8 text-sm sm:w-48"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
@@ -348,7 +348,7 @@ function SectionCard({
         </span>
         <Input
           onKeyDown={commitOnEnter}
-          className="min-w-0 flex-1 basis-40 border-transparent bg-transparent px-2 font-display font-bold uppercase shadow-none hover:border-input disabled:opacity-100"
+          className="min-w-0 flex-1 border-transparent bg-transparent px-2 font-display font-bold uppercase shadow-none hover:border-input disabled:opacity-100 sm:basis-40"
           defaultValue={section.title}
           disabled={locked}
           onBlur={(e) =>
@@ -356,24 +356,27 @@ function SectionCard({
             run(budgetApi.updateSection(section.id, { title: e.target.value }))
           }
         />
-        <span className="flex items-center gap-1.5 text-xs">
-          <span className="rounded-full bg-primary-soft px-2 py-0.5 font-medium text-primary">
-            {items.length} {items.length === 1 ? "serviço" : "serviços"}
-          </span>
-          {materials > 0 && (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
-              {materials} {materials === 1 ? "material" : "materiais"}
+        {/* Celular: contagens, custo e preço numa segunda linha (order-last), alinhados à esquerda. */}
+        <div className="order-last flex w-full flex-wrap items-center gap-x-3 gap-y-1 pl-10 sm:order-none sm:w-auto sm:flex-nowrap sm:pl-0">
+          <span className="flex items-center gap-1.5 text-xs">
+            <span className="rounded-full bg-primary-soft px-2 py-0.5 font-medium text-primary">
+              {items.length} {items.length === 1 ? "serviço" : "serviços"}
             </span>
-          )}
-        </span>
-        <span className="w-28 text-right text-xs text-muted-foreground">
-          <span className="block tabular-nums">{fmtBRL(cost)}</span>
-          custo direto
-        </span>
-        <span className="w-32 text-right text-xs text-muted-foreground">
-          <Money value={total} className="block text-base font-semibold text-foreground" />
-          preço de venda
-        </span>
+            {materials > 0 && (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+                {materials} {materials === 1 ? "material" : "materiais"}
+              </span>
+            )}
+          </span>
+          <span className="ml-auto text-right text-xs text-muted-foreground sm:w-28">
+            <span className="block tabular-nums">{fmtBRL(cost)}</span>
+            custo direto
+          </span>
+          <span className="text-right text-xs text-muted-foreground sm:w-32">
+            <Money value={total} className="block text-base font-semibold text-foreground" />
+            preço de venda
+          </span>
+        </div>
         <Button
           type="button"
           variant="ghost"

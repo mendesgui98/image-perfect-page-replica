@@ -267,7 +267,7 @@ export function ScheduleDashboard({ workId }: { workId: string }) {
 
       {tab === "cronograma" &&
         (plan ? (
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
             <section className={cn(panelClass, "min-w-0 p-4")}>
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <Button
@@ -362,7 +362,7 @@ export function ScheduleDashboard({ workId }: { workId: string }) {
                 </div>
               )}
             </aside>
-            <div className="grid gap-5 lg:grid-cols-3 xl:col-span-2">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 xl:col-span-2">
               {costs && <PaymentsCard payments={payments} today={today} />}
               <MaterialsCard
                 materials={materials}
