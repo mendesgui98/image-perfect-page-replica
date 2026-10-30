@@ -1,4 +1,5 @@
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, FileDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { RecordDeleteButton, RecordTrash } from "@/components/management/record-deletion";
 import { businessDate } from "@/lib/dashboard-math";
 import { useState } from "react";
@@ -206,6 +207,19 @@ export function ScheduleList() {
                     {fmtDate(start)} → {fmtDate(end)}
                   </p>
                 </div>
+                <Button variant="outline" size="sm" asChild className="mt-3 md:mt-0">
+                  {h.work_id ? (
+                    <Link to="/obras/$id/cronograma/pdf" params={{ id: h.work_id }}>
+                      <FileDown className="h-4 w-4" />
+                      PDF
+                    </Link>
+                  ) : (
+                    <Link to="/cronogramas/$id/pdf" params={{ id: h.id }}>
+                      <FileDown className="h-4 w-4" />
+                      PDF
+                    </Link>
+                  )}
+                </Button>
                 <div className="mt-3 flex items-center gap-3 md:mt-0 md:w-56">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between text-xs">

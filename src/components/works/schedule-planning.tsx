@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Memo, selectClass } from "./fields";
 import { text } from "@/lib/form-values";
-import { Gantt } from "./gantt";
+import { ScaledSheets } from "./schedule-sheets";
+import { useWorkSheetProps } from "@/hooks/use-work-sheet-props";
 import { scheduleVersionsOptions } from "@/lib/work-data";
 import { snapshotStages, calendarDays, type ScheduleStage } from "@/lib/work-schedule";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +19,7 @@ import { fmtDate } from "@/lib/format";
 import { useMe } from "@/hooks/use-me";
 export function SchedulePlanning({
   workId,
+  work,
   stages,
   notes,
   linkedBudgetId,
@@ -25,6 +27,7 @@ export function SchedulePlanning({
   onSelect,
 }: {
   workId: string;
+  work: { name: string; address: string | null; linked_budget_id: string | null };
   stages: ScheduleStage[];
   notes: string | null;
   linkedBudgetId: string | null;
@@ -41,6 +44,7 @@ export function SchedulePlanning({
   const v = versions.find((x) => String(x.version) === selected);
   const shown = v ? snapshotStages(v.stages) : stages;
   const original = base ? snapshotStages(base.stages) : [];
+  const sheet = useWorkSheetProps({ workId, work, stages: shown, version: v?.version });
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["schedule-versions", workId] });
     onChange();
@@ -116,7 +120,7 @@ export function SchedulePlanning({
           value={selected}
           onChange={(e) => setSelected(e.target.value)}
         >
-          <option value="current">Cronograma Atual × Original</option>
+          <option value="current">Cronograma Atual</option>
           {versions.map((x) => (
             <option key={x.id} value={x.version}>
               {x.version === 1 ? "Cronograma Original" : `Reprogramação ${x.version - 1}`} ·{" "}
@@ -125,11 +129,8 @@ export function SchedulePlanning({
           ))}
         </select>
       </label>
-      <Gantt
-        stages={shown}
-        original={selected === "current" ? original : []}
-        onSelect={selected === "current" ? onSelect : undefined}
-      />
+      {/* Mesma visualização do cronograma enviado ao cliente (folhas de 10 semanas). */}
+      <ScaledSheets {...sheet} onSelect={selected === "current" ? onSelect : undefined} />
       {base && (
         <div className="overflow-x-auto rounded-xl border border-border/60">
           <table className="w-full text-left text-xs">

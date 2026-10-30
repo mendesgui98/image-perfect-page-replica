@@ -97,3 +97,55 @@ export const workClientOptions = (id: string) =>
       return "Não informado";
     },
   });
+
+/** Materiais que o cliente entrega na obra (aba "Materiais do cliente" do cronograma). */
+export const clientMaterialsOptions = (workId: string) =>
+  queryOptions({
+    queryKey: ["client-materials", workId],
+    queryFn: async () => {
+      const r = await supabase
+        .from("work_client_materials")
+        .select("*")
+        .eq("work_id", workId)
+        .order("due_date");
+      if (r.error) throw r.error;
+      return r.data;
+    },
+  });
+
+/**
+ * Dados financeiros e de identificação do cronograma físico-financeiro: contas a receber da obra
+ * (pagamentos previstos) e o número do orçamento vinculado. Só admin/financeiro enxergam; para a
+ * equipe as listas vêm vazias.
+ */
+export const scheduleFinanceOptions = (workId: string, budgetId: string | null, enabled: boolean) =>
+  queryOptions({
+    queryKey: ["schedule-finance", workId, budgetId, enabled],
+    queryFn: async () => {
+      if (!enabled) return { payments: [], budget: null };
+      const [e, b] = await Promise.all([
+        supabase
+          .from("financial_entries")
+          .select("due_date,amount,description")
+          .eq("work_id", workId)
+          .eq("direction", "entrada")
+          .eq("canceled", false)
+          .eq("cash_only", false)
+          .order("due_date"),
+        budgetId
+          ? supabase.from("budgets").select("number,issue_date").eq("id", budgetId).single()
+          : Promise.resolve({ data: null, error: null }),
+      ]);
+      if (e.error) throw e.error;
+      if (b.error) throw b.error;
+      return {
+        payments: e.data.map((p) => ({
+          date: p.due_date,
+          // A descrição das entradas começa pelo rótulo da etapa de pagamento ("1ª medição · Obra").
+          label: p.description.split(" · ")[0] || p.description,
+          amount: Number(p.amount),
+        })),
+        budget: b.data,
+      };
+    },
+  });

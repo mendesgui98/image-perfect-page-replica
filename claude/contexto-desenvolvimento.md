@@ -4,6 +4,22 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-30 — Cronograma físico-financeiro no novo modelo (branch `claude/eager-hopper-auxpdq`)
+
+**Pedido:** o Guilherme mandou o modelo `Cronograma-JMG-obra-longa_28_semanas_3_folhas` (A4 deitado, 10 semanas por folha, semanas que sobram em cinza) para o PDF do cronograma das obras e para a aba Cronograma da plataforma; pagamentos vêm das contas a receber e materiais do cliente de uma aba nova de lançamento.
+
+**Decisões:**
+
+- `buildScheduleSheets` (puro, testado com as datas do modelo) monta as folhas: semanas a partir da segunda-feira do início, meses do cabeçalho (≥3 semanas "Janeiro de 2027", 2 "Mar/27", 1 "Mai"), barra por semanas inteiras com continuação à esquerda/direita, "concluída na Sx"/"inicia na Sx", marcos de pagamento (% sobre o total das entradas) e materiais por período.
+- `ScheduleSheets`/`ScaledSheets` desenham as folhas iguais na tela e na impressão (`@page cronograma` A4 deitado; `body:has(.cr-doc)` na mesma página nomeada para não sobrar folha em branco). Dados da obra em `useWorkSheetProps`: etapas com datas, contas a receber (`scheduleFinanceOptions`, sem caixa avulso), materiais, cliente, códigos CT/ORC do orçamento vinculado e "Rev." pela versão do cronograma.
+- Tabela `work_client_materials` (migração `20261030000033`): etapa da mesma obra, descrição, data limite, entregue; acesso de admin/financeiro/equipe e auditoria em `work_history`. Aba "Materiais do cliente" dentro da aba Cronograma da obra.
+- Aba Cronograma: o Gantt antigo do planejamento deu lugar às folhas (clicar na etapa continua abrindo a edição); a comparação original × atual segue na tabela abaixo. Cronograma avulso usa as mesmas folhas, sem financeiro/materiais.
+
+- Datas do orçamento nas etapas (migração `20261030000034`): `budget_section_dates` calcula início/fim de cada etapa a partir do início e das semanas do cronograma do orçamento; o gatilho `work_stages_budget_dates` preenche etapas sem data ao converter/sincronizar, e a migração preenche as obras existentes (e o início/término da obra quando vazios). Datas já ajustadas não mudam.
+- Menu Cronogramas: botão "PDF" em cada linha; cronograma vinculado abre só as folhas (edição na aba da obra) e o "Gerar PDF" leva ao PDF da obra; avulso troca o Gantt pelas folhas.
+
+**Conferência:** obra de teste com as 14 etapas, 7 entradas e 4 materiais do modelo, criada pelas RPCs/RLS do app: PDF em 3 folhas comparado com o modelo; avulso de 15 semanas em 2 folhas; aba conferida no desktop e no celular.
+
 ### 2026-10-30 — Novo modelo de contrato (branch `claude/eager-hopper-auxpdq`)
 
 **Pedido:** o Guilherme mandou o novo modelo de contrato (`Contrato-JMG-modelo`, página contínua) para substituir o atual; os campos (datas, valores, parcelas, prazo) continuam vindo do orçamento aprovado.

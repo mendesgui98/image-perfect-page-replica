@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { EditableStage, ScheduleHeader } from "@/lib/schedule-data";
 import { calendarDays, endFromDuration, snapshotStages } from "@/lib/work-schedule";
-import { Gantt } from "@/components/works/gantt";
+import { ScaledSheets } from "@/components/works/schedule-sheets";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, Memo, selectClass } from "@/components/works/fields";
@@ -150,7 +150,7 @@ export function StandaloneEditor({
           value={version}
           onChange={(e) => setVersion(e.target.value)}
         >
-          <option value="current">Cronograma Atual × Original</option>
+          <option value="current">Cronograma Atual</option>
           {versions.map((v) => (
             <option key={v.id} value={v.version}>
               {v.version === 1 ? "Cronograma Original" : `Reprogramação ${v.version - 1}`}
@@ -158,9 +158,18 @@ export function StandaloneEditor({
           ))}
         </select>
       </label>
-      <Gantt
-        stages={saved ? snapshotStages(saved.stages) : stages}
-        original={!saved && base ? snapshotStages(base.stages) : []}
+      {/* Mesma visualização do documento enviado ao cliente (folhas de 10 semanas). */}
+      <ScaledSheets
+        title={header.name}
+        client={header.client_name || null}
+        address={header.address}
+        codes={[]}
+        revision={`Rev. ${String(Math.max(0, (saved?.version ?? versions.at(-1)?.version ?? 1) - 1)).padStart(2, "0")}`}
+        issued={today}
+        stages={[...(saved ? snapshotStages(saved.stages) : stages)]
+          .filter((s) => s.planned_start)
+          .sort((a, b) => a.sort - b.sort)
+          .map((s) => ({ id: s.id, name: s.name, start: s.planned_start, end: s.planned_end }))}
         onSelect={
           !saved && me?.canSeeCosts
             ? (id) => begin(stages.find((s) => s.id === id) ?? null)

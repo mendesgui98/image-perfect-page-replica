@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { FileDown, FileSpreadsheet, HardHat, Link2, Settings } from "lucide-react";
+import { FileDown, FileSpreadsheet, HardHat, Link2, Pencil, Settings } from "lucide-react";
 import { scheduleOptions } from "@/lib/schedule-data";
 import { worksOptions, workOptions } from "@/lib/work-data";
 import { pageMeta } from "@/lib/page-meta";
@@ -16,7 +16,8 @@ import { Field, Memo, selectClass } from "@/components/works/fields";
 import { text } from "@/lib/form-values";
 import { NewSchedule } from "@/components/schedules/new-schedule";
 import { StandaloneEditor } from "@/components/schedules/standalone-editor";
-import { Schedule } from "@/components/works/schedule";
+import { ScaledSheets } from "@/components/works/schedule-sheets";
+import { useWorkSheetProps } from "@/hooks/use-work-sheet-props";
 import { editableStages } from "@/lib/schedule-data";
 export const Route = createFileRoute("/_authenticated/cronogramas/$id")({
   head: () =>
@@ -27,17 +28,27 @@ export const Route = createFileRoute("/_authenticated/cronogramas/$id")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(scheduleOptions(params.id)),
   component: ScheduleDetail,
 });
-function LinkedEditor({ workId, onChange }: { workId: string; onChange: () => void }) {
+// Cronograma vinculado: a página mostra o cronograma como o cliente recebe (folhas do PDF); as
+// etapas e datas são editadas na aba Cronograma da obra.
+function LinkedView({ workId }: { workId: string }) {
   const { data } = useSuspenseQuery(workOptions(workId));
+  const sheet = useWorkSheetProps({ workId, work: data.work, stages: data.stages });
   return (
-    <Schedule
-      workId={workId}
-      stages={data.stages}
-      records={data.records}
-      work={data.work}
-      mode="cronograma"
-      onChange={onChange}
-    />
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          Cronograma da obra <b className="text-foreground">{data.work.name}</b>, com as datas do
+          orçamento aprovado, os pagamentos do Financeiro e os materiais do cliente.
+        </p>
+        <Button variant="outline" asChild>
+          <Link to="/obras/$id" params={{ id: workId }} search={{ tab: "cronograma" }}>
+            <Pencil className="h-4 w-4" />
+            Editar etapas na obra
+          </Link>
+        </Button>
+      </div>
+      <ScaledSheets {...sheet} />
+    </section>
   );
 }
 function ScheduleDetail() {
@@ -100,10 +111,18 @@ function ScheduleDetail() {
           <>
             <RecordDeleteButton entity="schedules" id={id} name={h.name} />
             <Button variant="outline" asChild>
-              <Link to="/cronogramas/$id/pdf" params={{ id }}>
-                <FileDown className="h-4 w-4" />
-                Gerar PDF
-              </Link>
+              {/* Vinculado: o PDF da obra traz também pagamentos e materiais do cliente. */}
+              {h.work_id ? (
+                <Link to="/obras/$id/cronograma/pdf" params={{ id: h.work_id }}>
+                  <FileDown className="h-4 w-4" />
+                  Gerar PDF
+                </Link>
+              ) : (
+                <Link to="/cronogramas/$id/pdf" params={{ id }}>
+                  <FileDown className="h-4 w-4" />
+                  Gerar PDF
+                </Link>
+              )}
             </Button>
             {me?.canSeeCosts && <NewSchedule copyId={id} />}
           </>
@@ -175,7 +194,7 @@ function ScheduleDetail() {
         )}
       </div>
       {h.work_id ? (
-        <LinkedEditor workId={h.work_id} onChange={refresh} />
+        <LinkedView workId={h.work_id} />
       ) : (
         <StandaloneEditor
           header={h}
