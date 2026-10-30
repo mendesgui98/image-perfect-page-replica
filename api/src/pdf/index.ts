@@ -12,24 +12,17 @@ export type PdfService = {
   contract(data: ProposalData, today: string, clauses: ContractClause[]): Promise<Buffer>;
 };
 
-const footer = (d: ProposalData) =>
-  `${d.company.name} · CNPJ ${d.company.cnpj} · ${d.company.phone} · ${d.company.instagram}`;
-
 export function createPdfService(): PdfService {
   return {
-    proposal: (d) => {
-      const assets = loadAssets();
-      return htmlToPdf(proposalHtml(d, assets, SCHEDULE_DISCLAIMER), assets, {
-        headerRight: `${d.number} · ${d.client.name}`,
-        footerLeft: footer(d),
-      });
-    },
-    contract: (d, today, clauses) => {
-      const assets = loadAssets();
-      return htmlToPdf(contractHtml(d, assets, today, clauses), assets, {
-        headerRight: `Contrato · ${d.number} · ${d.client.name}`,
-        footerLeft: footer(d),
-      });
-    },
+    proposal: (d) =>
+      htmlToPdf(
+        proposalHtml(d, loadAssets(), SCHEDULE_DISCLAIMER),
+        `${d.number} · ${d.client.name}`,
+      ),
+    contract: (d, today, clauses) =>
+      htmlToPdf(
+        contractHtml(d, loadAssets(), today, clauses),
+        `Contrato · ${d.number} · ${d.client.name}`,
+      ),
   };
 }

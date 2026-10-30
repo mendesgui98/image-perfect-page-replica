@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { workOptions, scheduleVersionsOptions, workClientOptions } from "@/lib/work-data";
 import { pageMeta } from "@/lib/page-meta";
+import { printContinuous } from "@/lib/continuous-print";
 import { snapshotStages, calendarDays } from "@/lib/work-schedule";
 import { fmtDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -48,14 +49,14 @@ function SchedulePdf() {
       .at(-1) || data.work.planned_end;
   const today = businessDate();
   return (
-    <div className="bg-muted p-4">
+    <div className="print-root bg-muted p-4">
       <div className="no-print mx-auto mb-4 flex max-w-5xl flex-wrap gap-3">
         <Button asChild variant="outline">
           <Link to="/obras/$id" params={{ id }} search={{ tab: "cronograma" }}>
             ← Cronograma
           </Link>
         </Button>
-        <Button disabled={missing || !stages.length} onClick={() => window.print()}>
+        <Button disabled={missing || !stages.length} onClick={() => printContinuous()}>
           Imprimir / salvar PDF
         </Button>
       </div>
