@@ -4,6 +4,18 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-30 — Painel de cronogramas: lista e página do cronograma (branch `claude/eager-hopper-auxpdq`)
+
+**Pedido:** o Guilherme mandou dois mockups: a lista de Cronogramas em painel (indicadores, filtros por situação, card com linha do tempo) e a página do cronograma da obra (cabeçalho com indicadores, grade semanal previsto × executado, marcos de pagamento, materiais do cliente, revisões e "Lançar avanço").
+
+**Decisões:**
+
+- Contas puras em `src/lib/schedule-dashboard.ts` (+ testes): avanço previsto para hoje linear pelas datas e ponderado pelo peso das etapas (sem pesos, iguais); realizado = `physicalProgress`; diferença em p.p.; etapas atrasadas (término vencido e < 100%); próximo pagamento/soma dos próximos 30 dias e situação do marco (pago/vencido/previsto); situação na lista (elaboração/execução/atrasado/concluído, ignorando etapas sem datas); `shiftStageDates` desloca as etapas que começam depois do término antigo; `progressHistory` lê as mudanças de avanço do `work_history`.
+- Lista (`schedule-list.tsx` + `mini-timeline.tsx`): KPIs (ativos, em execução, etapas atrasadas, próximas medições só para admin/financeiro), busca, cliente, obra, situação e período; card com Rev., linha do tempo, previsto × realizado e próximo pagamento; sem etapas oferece "Importar do orçamento". Pagamentos de todas as obras por `schedulesFinanceOptions` (contas a receber).
+- Página do cronograma vinculado (`schedule-dashboard.tsx`, em `/cronogramas/$id`): grade de 10 semanas por período, as mesmas folhas do PDF (`buildScheduleSheets`), com linha HOJE, barras vermelhas nas atrasadas, losangos dos pagamentos e pontos dos materiais; abas Avanço físico, Pagamentos, Materiais do cliente e Revisões. Datas de várias etapas de uma vez vão pela RPC `shift_work_stages` (migração `20261030000035`), que grava tudo e registra UMA revisão; avanço de etapa com serviços continua vindo dos serviços. Cronograma avulso segue no editor de folhas.
+
+**Conferência:** obra de teste em execução no app local: indicadores, grade, lançamento de avanço salvo e histórico; RPC conferida no banco com o usuário de teste (datas deslocadas, uma revisão).
+
 ### 2026-10-30 — Cronograma físico-financeiro no novo modelo (branch `claude/eager-hopper-auxpdq`)
 
 **Pedido:** o Guilherme mandou o modelo `Cronograma-JMG-obra-longa_28_semanas_3_folhas` (A4 deitado, 10 semanas por folha, semanas que sobram em cinza) para o PDF do cronograma das obras e para a aba Cronograma da plataforma; pagamentos vêm das contas a receber e materiais do cliente de uma aba nova de lançamento.

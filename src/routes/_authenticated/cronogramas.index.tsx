@@ -19,8 +19,9 @@ function Schedules() {
   return (
     <div>
       <PageHeader
+        eyebrow="Execução"
         title="Cronogramas"
-        subtitle="Planejamento e acompanhamento"
+        subtitle="Planejamento, avanço físico e marcos de pagamento das obras"
         actions={me?.canSeeCosts ? <NewSchedule /> : undefined}
       />
       <ScheduleList />

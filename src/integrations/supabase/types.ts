@@ -2475,6 +2475,10 @@ export type Database = {
         Args: { _ids: string[]; _reason: string; _work_id: string };
         Returns: undefined;
       };
+      shift_work_stages: {
+        Args: { _changes: Json; _reason: string; _work_id: string };
+        Returns: undefined;
+      };
       save_standalone_schedule: {
         Args: {
           _approve?: boolean;

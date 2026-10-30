@@ -16,8 +16,7 @@ import { Field, Memo, selectClass } from "@/components/works/fields";
 import { text } from "@/lib/form-values";
 import { NewSchedule } from "@/components/schedules/new-schedule";
 import { StandaloneEditor } from "@/components/schedules/standalone-editor";
-import { ScaledSheets } from "@/components/works/schedule-sheets";
-import { useWorkSheetProps } from "@/hooks/use-work-sheet-props";
+import { ScheduleDashboard } from "@/components/schedules/schedule-dashboard";
 import { editableStages } from "@/lib/schedule-data";
 export const Route = createFileRoute("/_authenticated/cronogramas/$id")({
   head: () =>
@@ -28,29 +27,6 @@ export const Route = createFileRoute("/_authenticated/cronogramas/$id")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(scheduleOptions(params.id)),
   component: ScheduleDetail,
 });
-// Cronograma vinculado: a página mostra o cronograma como o cliente recebe (folhas do PDF); as
-// etapas e datas são editadas na aba Cronograma da obra.
-function LinkedView({ workId }: { workId: string }) {
-  const { data } = useSuspenseQuery(workOptions(workId));
-  const sheet = useWorkSheetProps({ workId, work: data.work, stages: data.stages });
-  return (
-    <section className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          Cronograma da obra <b className="text-foreground">{data.work.name}</b>, com as datas do
-          orçamento aprovado, os pagamentos do Financeiro e os materiais do cliente.
-        </p>
-        <Button variant="outline" asChild>
-          <Link to="/obras/$id" params={{ id: workId }} search={{ tab: "cronograma" }}>
-            <Pencil className="h-4 w-4" />
-            Editar etapas na obra
-          </Link>
-        </Button>
-      </div>
-      <ScaledSheets {...sheet} />
-    </section>
-  );
-}
 function ScheduleDetail() {
   const { id } = Route.useParams();
   const { data } = useSuspenseQuery(scheduleOptions(id));
@@ -96,6 +72,20 @@ function ScheduleDetail() {
     }
   }
   if (h.deleted_at) return <DeletedRecordNotice entity="schedules" id={id} name={h.name} />;
+  // Cronograma vinculado: painel da obra (datas do orçamento aprovado, pagamentos e materiais do
+  // cliente); as etapas são editadas na aba Cronograma da obra.
+  if (h.work_id)
+    return (
+      <div className="space-y-4">
+        <Link
+          to="/cronogramas"
+          className="inline-flex min-h-10 items-center text-sm text-muted-foreground hover:text-foreground"
+        >
+          ← Cronogramas
+        </Link>
+        <ScheduleDashboard workId={h.work_id} />
+      </div>
+    );
   return (
     <div className="space-y-5">
       <Link
@@ -193,16 +183,12 @@ function ScheduleDetail() {
           </>
         )}
       </div>
-      {h.work_id ? (
-        <LinkedView workId={h.work_id} />
-      ) : (
-        <StandaloneEditor
-          header={h}
-          stages={editableStages(h.standalone_stages)}
-          versions={data.versions}
-          onChange={refresh}
-        />
-      )}
+      <StandaloneEditor
+        header={h}
+        stages={editableStages(h.standalone_stages)}
+        versions={data.versions}
+        onChange={refresh}
+      />
       <Dialog open={link} onOpenChange={setLink}>
         <DialogContent>
           <DialogHeader>
