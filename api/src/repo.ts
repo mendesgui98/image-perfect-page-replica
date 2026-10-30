@@ -2,7 +2,8 @@ import type { Claims } from "./auth.ts";
 import type { Db } from "./db.ts";
 import { emptyParams } from "../../src/lib/pricing.ts";
 import type { ContractClause } from "../../src/lib/contract-clauses.ts";
-import type { ProposalInput } from "../../src/lib/proposal.ts";
+import type { ProposalInput, ProposalTerm } from "../../src/lib/proposal.ts";
+import type { ReceiptInput } from "../../src/lib/receipt.ts";
 
 // Consultas SQL da API. Mantidas aqui para os handlers ficarem testáveis com um repositório falso.
 
@@ -33,6 +34,11 @@ export type Repo = {
   proposalInput(claims: Claims, budgetId: string): Promise<Omit<ProposalInput, "today"> | null>;
   /** Cláusulas ativas do modelo de contrato, na ordem (Configurações → Contrato). */
   contractClauses(claims: Claims): Promise<ContractClause[]>;
+  /** Recebimento de uma entrada da obra e o que o recibo precisa, lido como o usuário (RLS). */
+  receiptInput(
+    claims: Claims,
+    settlementId: string,
+  ): Promise<Omit<ReceiptInput, "today" | "payer" | "transactionId"> | null>;
 };
 
 const num = (v: unknown) => Number(v ?? 0) || 0;
@@ -96,6 +102,74 @@ export function createRepo(db: Db): Repo {
         const rows = await tx`
           select title, body from public.contract_clauses where active order by sort, created_at`;
         return rows.map((r) => ({ title: String(r["title"]), body: String(r["body"] ?? "") }));
+      }),
+    receiptInput: (claims, settlementId) =>
+      db.asUser(claims, async (tx) => {
+        const [s] = await tx`
+          select s.id, s.entry_id, s.amount, s.paid_date, s.payment_method, e.work_id
+          from public.financial_settlements s
+          join public.financial_entries e on e.id = s.entry_id
+          where s.id = ${settlementId} and e.direction = 'entrada' and e.work_id is not null`;
+        if (!s) return null;
+        const workId = s["work_id"] as string;
+        const [w] = await tx`
+          select name, address, client_id, linked_budget_id from public.work_registry where id = ${workId}`;
+        if (!w) return null;
+        const entries = await tx`
+          select id, description, amount, due_date, installment_index, cash_only from public.financial_entries
+          where work_id = ${workId} and direction = 'entrada' and not canceled
+            and (not cash_only or id = ${s["entry_id"] as string})`;
+        const ids = entries.map((e) => e["id"] as string);
+        const settlements = ids.length
+          ? await tx`select id, entry_id, amount, paid_date from public.financial_settlements
+                     where entry_id in ${tx(ids)}`
+          : [];
+        const [client] = w["client_id"]
+          ? await tx`select name, document from public.people where id = ${w["client_id"] as string}`
+          : [];
+        const [b] = w["linked_budget_id"]
+          ? await tx`select number, issue_date, payment_terms from public.budgets
+                     where id = ${w["linked_budget_id"] as string}`
+          : [];
+        const [me] = await tx`select full_name from public.profiles where id = ${claims.sub}`;
+        return {
+          settlement: {
+            id: String(s["id"]),
+            entry_id: String(s["entry_id"]),
+            amount: num(s["amount"]),
+            paid_date: isoDate(s["paid_date"]) ?? "",
+            payment_method: (s["payment_method"] as string | null) ?? null,
+          },
+          entries: entries.map((e) => ({
+            id: String(e["id"]),
+            description: String(e["description"]),
+            amount: num(e["amount"]),
+            due_date: isoDate(e["due_date"]) ?? "",
+            installment_index: e["installment_index"] === null ? null : num(e["installment_index"]),
+            cash_only: e["cash_only"] === true,
+          })),
+          settlements: settlements.map((x) => ({
+            id: String(x["id"]),
+            entry_id: String(x["entry_id"]),
+            amount: num(x["amount"]),
+            paid_date: isoDate(x["paid_date"]) ?? "",
+          })),
+          work: { name: String(w["name"]), address: (w["address"] as string | null) ?? null },
+          client: client
+            ? {
+                name: String(client["name"]),
+                document: (client["document"] as string | null) ?? null,
+              }
+            : null,
+          budget: b
+            ? {
+                number: num(b["number"]),
+                issue_date: isoDate(b["issue_date"]) ?? "",
+                payment_terms: (b["payment_terms"] as ProposalTerm[] | null) ?? [],
+              }
+            : null,
+          issuer: (me?.["full_name"] as string | null) ?? null,
+        };
       }),
     proposalInput: (claims, budgetId) =>
       db.asUser(claims, async (tx) => {

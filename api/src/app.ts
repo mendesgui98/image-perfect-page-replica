@@ -11,6 +11,7 @@ import {
   pdfLayout,
   proposalIssues,
 } from "../../src/lib/proposal.ts";
+import { buildReceipt } from "../../src/lib/receipt.ts";
 
 export type Deps = {
   jwtSecret: string;
@@ -31,6 +32,16 @@ const inviteSchema = z.object({
   full_name: z.string().trim().max(120).optional(),
   role: z.enum(ROLES),
 });
+const optText = z.string().trim().max(120).optional();
+const receiptSchema = z
+  .object({
+    payer: z
+      .object({ name: optText, document: optText, bank: optText, account: optText })
+      .partial()
+      .optional(),
+    transactionId: optText,
+  })
+  .default({});
 const rolesSchema = z.object({ roles: z.array(z.enum(ROLES)).max(3) });
 
 function parse<T>(schema: z.ZodType<T>, value: unknown): T {
@@ -164,6 +175,24 @@ export function createApp(deps: Deps) {
       const file = await pdf.contract(data, today(), clauses, pdfLayout(req.query.get("layout")));
       log({ event: "contract_pdf", by: s.claims.sub, budget: req.params["id"] });
       return pdfReply(file, `Contrato-${data.number}.pdf`);
+    })
+    .add("POST", "/v1/recebimentos/:id/recibo", async (req) => {
+      const s = await session(req);
+      if (!s.roles.includes("admin") && !s.roles.includes("financeiro")) {
+        throw new HttpError(403, "forbidden", "Acesso restrito a administradores e financeiro");
+      }
+      if (!deps.pdf) throw new HttpError(503, "pdf_unavailable", "Geração de PDF indisponível");
+      const id = req.params["id"] ?? "";
+      if (!/^[0-9a-f-]{36}$/i.test(id))
+        throw new HttpError(404, "not_found", "Recebimento não encontrado");
+      const input = await deps.repo.receiptInput(s.claims, id);
+      if (!input)
+        throw new HttpError(404, "not_found", "Recebimento de entrada da obra não encontrado");
+      const extra = parse(receiptSchema, (await req.body().catch(() => ({}))) ?? {});
+      const data = buildReceipt({ ...input, ...extra, today: today() });
+      const file = await deps.pdf.receipt(data);
+      log({ event: "receipt_pdf", by: s.claims.sub, settlement: id });
+      return pdfReply(file, `Recibo-${data.number}.pdf`);
     })
     .add("GET", "/v1/admin/export", async (req) => {
       const s = await admin(req);

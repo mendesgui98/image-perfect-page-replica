@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { DEFAULT_TERMS, type ProposalData, type ProposalInput } from "../../src/lib/proposal.ts";
+import type { ReceiptData } from "../../src/lib/receipt.ts";
 import { emptyParams } from "../../src/lib/pricing.ts";
 import { fakeRepo, start, token } from "./helpers.ts";
 
@@ -52,8 +53,30 @@ const input = (status: string, pct = 30): Omit<ProposalInput, "today"> => ({
 let current = input("elaboracao");
 const rendered: ProposalData[] = [];
 const layouts: string[] = [];
+const receipts: ReceiptData[] = [];
 const repo = fakeRepo({ adm: ["admin"], eq: ["equipe"] });
 repo.proposalInput = async (_c, id) => (id === ID ? current : null);
+const SETTLEMENT = "aaaaaaaa-1111-2222-3333-444444444444";
+repo.receiptInput = async (_c, id) =>
+  id === SETTLEMENT
+    ? {
+        settlement: {
+          id,
+          entry_id: "e1",
+          amount: 1000,
+          paid_date: "2026-11-09",
+          payment_method: "Pix",
+        },
+        entries: [
+          { id: "e1", description: "Entrada na assinatura", amount: 1000, due_date: "2026-11-09" },
+        ],
+        settlements: [{ id, entry_id: "e1", amount: 1000, paid_date: "2026-11-09" }],
+        work: { name: "Obra", address: null },
+        client: { name: "Cliente", document: null },
+        budget: { number: 7, issue_date: "2026-10-28", payment_terms: DEFAULT_TERMS },
+        issuer: null,
+      }
+    : null;
 const api = await start({
   repo,
   today: () => "2026-10-28",
@@ -68,6 +91,7 @@ const api = await start({
       layouts.push(layout),
       Buffer.from("%PDF-contrato")
     ),
+    receipt: async (d) => (receipts.push(d), Buffer.from("%PDF-recibo")),
   },
 });
 after(() => api.close());
@@ -130,4 +154,30 @@ test("data do banco não muda de dia no fuso de São Paulo", async () => {
   assert.equal(isoDate(new Date("2026-11-16")), "2026-11-16");
   assert.equal(isoDate("2026-11-16"), "2026-11-16");
   assert.equal(isoDate(null), null);
+});
+
+test("recibo do recebimento de uma entrada, com os dados opcionais do pagador", async () => {
+  const r = await api.call(`/v1/recebimentos/${SETTLEMENT}/recibo`, {
+    method: "POST",
+    auth: token({ sub: "adm" }),
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ payer: { bank: "Banco Itaú" }, transactionId: "E123" }),
+  });
+  assert.equal(r.status, 200);
+  assert.match(r.headers.get("content-disposition") ?? "", /Recibo-REC-2026-0007-01\.pdf/);
+  const d = receipts.at(-1)!;
+  assert.equal(d.transactionId, "E123");
+  assert.deepEqual(
+    d.paidBy.map((x) => x.value),
+    ["Cliente", "Banco Itaú"],
+  );
+  assert.equal(d.amountWords, "mil reais");
+});
+
+test("recibo: equipe não gera e recebimento desconhecido devolve 404", async () => {
+  assert.equal((await post(`/v1/recebimentos/${SETTLEMENT}/recibo`, "eq")).status, 403);
+  assert.equal(
+    (await post("/v1/recebimentos/99999999-2222-3333-4444-555555555555/recibo")).status,
+    404,
+  );
 });

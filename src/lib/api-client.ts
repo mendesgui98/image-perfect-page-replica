@@ -70,8 +70,16 @@ export async function apiDownload(path: string, fallbackName: string) {
 }
 
 /** Gera um arquivo na API (ex.: PDF do orçamento) e devolve o conteúdo com o nome do servidor. */
-export async function apiFile(method: "GET" | "POST", path: string, fallbackName: string) {
-  const res = await request(path, { method });
+export async function apiFile(
+  method: "GET" | "POST",
+  path: string,
+  fallbackName: string,
+  body?: unknown,
+) {
+  const res = await request(path, {
+    method,
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
   const name =
     /filename="([^"]+)"/.exec(res.headers.get("content-disposition") ?? "")?.[1] ?? fallbackName;
   return { name, blob: await res.blob() };

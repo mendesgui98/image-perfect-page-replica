@@ -27,6 +27,7 @@ import { Route as AuthenticatedCronogramasIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedCronogramasIdRouteImport } from './routes/_authenticated/cronogramas.$id'
 import { Route as AuthenticatedObrasIndexRouteImport } from './routes/_authenticated/obras.index'
 import { Route as AuthenticatedOrcamentosIndexRouteImport } from './routes/_authenticated/orcamentos.index'
+import { Route as AuthenticatedRecibosIdRouteImport } from './routes/_authenticated/recibos.$id'
 import { Route as AuthenticatedCronogramasIdPdfRouteImport } from './routes/_authenticated/cronogramas.$id_.pdf'
 import { Route as AuthenticatedObrasIdIndexRouteImport } from './routes/_authenticated/obras.$id.index'
 import { Route as AuthenticatedOrcamentosIdIndexRouteImport } from './routes/_authenticated/orcamentos.$id.index'
@@ -130,6 +131,11 @@ const AuthenticatedOrcamentosIndexRoute =
     path: '/orcamentos/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedRecibosIdRoute = AuthenticatedRecibosIdRouteImport.update({
+  id: '/recibos/$id',
+  path: '/recibos/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCronogramasIdPdfRoute =
   AuthenticatedCronogramasIdPdfRouteImport.update({
     id: '/cronogramas/$id_/pdf',
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/servicos': typeof AuthenticatedServicosRoute
   '/cadastros/$id': typeof AuthenticatedCadastrosIdRoute
   '/cronogramas/$id': typeof AuthenticatedCronogramasIdRoute
+  '/recibos/$id': typeof AuthenticatedRecibosIdRoute
   '/cronogramas/': typeof AuthenticatedCronogramasIndexRoute
   '/obras/': typeof AuthenticatedObrasIndexRoute
   '/orcamentos/': typeof AuthenticatedOrcamentosIndexRoute
@@ -221,6 +228,7 @@ export interface FileRoutesByTo {
   '/servicos': typeof AuthenticatedServicosRoute
   '/cadastros/$id': typeof AuthenticatedCadastrosIdRoute
   '/cronogramas/$id': typeof AuthenticatedCronogramasIdRoute
+  '/recibos/$id': typeof AuthenticatedRecibosIdRoute
   '/cronogramas': typeof AuthenticatedCronogramasIndexRoute
   '/obras': typeof AuthenticatedObrasIndexRoute
   '/orcamentos': typeof AuthenticatedOrcamentosIndexRoute
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/_authenticated/servicos': typeof AuthenticatedServicosRoute
   '/_authenticated/cadastros_/$id': typeof AuthenticatedCadastrosIdRoute
   '/_authenticated/cronogramas/$id': typeof AuthenticatedCronogramasIdRoute
+  '/_authenticated/recibos/$id': typeof AuthenticatedRecibosIdRoute
   '/_authenticated/cronogramas/': typeof AuthenticatedCronogramasIndexRoute
   '/_authenticated/obras/': typeof AuthenticatedObrasIndexRoute
   '/_authenticated/orcamentos/': typeof AuthenticatedOrcamentosIndexRoute
@@ -279,6 +288,7 @@ export interface FileRouteTypes {
     | '/servicos'
     | '/cadastros/$id'
     | '/cronogramas/$id'
+    | '/recibos/$id'
     | '/cronogramas/'
     | '/obras/'
     | '/orcamentos/'
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/servicos'
     | '/cadastros/$id'
     | '/cronogramas/$id'
+    | '/recibos/$id'
     | '/cronogramas'
     | '/obras'
     | '/orcamentos'
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
     | '/_authenticated/servicos'
     | '/_authenticated/cadastros_/$id'
     | '/_authenticated/cronogramas/$id'
+    | '/_authenticated/recibos/$id'
     | '/_authenticated/cronogramas/'
     | '/_authenticated/obras/'
     | '/_authenticated/orcamentos/'
@@ -482,6 +494,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrcamentosIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/recibos/$id': {
+      id: '/_authenticated/recibos/$id'
+      path: '/recibos/$id'
+      fullPath: '/recibos/$id'
+      preLoaderRoute: typeof AuthenticatedRecibosIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cronogramas/$id_/pdf': {
       id: '/_authenticated/cronogramas/$id_/pdf'
       path: '/cronogramas/$id/pdf'
@@ -553,6 +572,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedServicosRoute: typeof AuthenticatedServicosRoute
   AuthenticatedCadastrosIdRoute: typeof AuthenticatedCadastrosIdRoute
   AuthenticatedCronogramasIdRoute: typeof AuthenticatedCronogramasIdRoute
+  AuthenticatedRecibosIdRoute: typeof AuthenticatedRecibosIdRoute
   AuthenticatedCronogramasIndexRoute: typeof AuthenticatedCronogramasIndexRoute
   AuthenticatedObrasIndexRoute: typeof AuthenticatedObrasIndexRoute
   AuthenticatedOrcamentosIndexRoute: typeof AuthenticatedOrcamentosIndexRoute
@@ -578,6 +598,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedServicosRoute: AuthenticatedServicosRoute,
   AuthenticatedCadastrosIdRoute: AuthenticatedCadastrosIdRoute,
   AuthenticatedCronogramasIdRoute: AuthenticatedCronogramasIdRoute,
+  AuthenticatedRecibosIdRoute: AuthenticatedRecibosIdRoute,
   AuthenticatedCronogramasIndexRoute: AuthenticatedCronogramasIndexRoute,
   AuthenticatedObrasIndexRoute: AuthenticatedObrasIndexRoute,
   AuthenticatedOrcamentosIndexRoute: AuthenticatedOrcamentosIndexRoute,
