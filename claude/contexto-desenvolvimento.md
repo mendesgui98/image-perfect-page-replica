@@ -4,6 +4,19 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-30 — Novo modelo de contrato (branch `claude/eager-hopper-auxpdq`)
+
+**Pedido:** o Guilherme mandou o novo modelo de contrato (`Contrato-JMG-modelo`, página contínua) para substituir o atual; os campos (datas, valores, parcelas, prazo) continuam vindo do orçamento aprovado.
+
+**Decisões:**
+
+- Texto: migração `20261030000032_contract_model_2026.sql` troca as cláusulas de `contract_clauses` pelas 13 do modelo (substitui também edições feitas em Configurações → Contrato). Marcadores novos: `{{OBJETO}}` (título + descrição do orçamento), `{{AREA}}`, `{{DATA_ORCAMENTO}}` (`budgets.issue_date`), `{{MAO_DE_OBRA}}`, `{{MATERIAIS}}`; `{{ORCAMENTO}}` vira "Orçamento nº ORC-…", `{{VALOR}}` deixa só o valor em negrito e `{{PRAZO}}` sai "8 semanas".
+- `renderClauses`: número do parágrafo separado (destaque em azul), incisos romanos, itens "- " e `**negrito**`.
+- `contract-html.ts` no visual do modelo: capa baixa (sem cartões) com "Instrumento particular" e código `CT-`, partes + barra de resumo, cláusulas com divisórias, parcelas no estilo do orçamento com faixa de total, dados bancários, anexos, assinaturas e testemunhas. No paginado só as partes começam folha nova.
+- Corrigido junto: fio dourado/branco na lateral e no pé da página contínua (o PDF arredonda a página para cima): o conteúdo passa 2 px da lateral, a faixa final fica fixa no pé (`render.ts` reserva o espaço) e a altura vai em múltiplos de 8 px.
+
+**Conferência:** contrato de exemplo (cláusulas lidas da migração) comparado com o modelo; paginado em 8 folhas; teste garante que as cláusulas da migração só usam marcadores conhecidos; bordas conferidas a 72 e 300 dpi sem fio.
+
 ### 2026-10-30 — Escolha entre PDF contínuo e com quebra de página (branch `claude/eager-hopper-auxpdq`)
 
 **Pedido:** poder gerar orçamento e contrato tanto em página contínua quanto com quebra de página.

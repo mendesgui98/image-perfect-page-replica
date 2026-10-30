@@ -160,13 +160,18 @@ describe("por extenso", () => {
 
 describe("cláusulas do contrato", () => {
   const values = {
-    ORCAMENTO: "<b>orçamento ORC-2026-0007</b>",
+    OBJETO: "reforma",
     ENDERECO_OBRA: "Rua A",
+    AREA: "",
+    ORCAMENTO: "<b>Orçamento nº ORC-2026-0007</b>",
+    DATA_ORCAMENTO: "01/10/2026",
     VALOR: "R$ 1,00",
+    MAO_DE_OBRA: "R$ 0,60",
+    MATERIAIS: "R$ 0,40",
     INICIO: "16/11/2026",
-    PRAZO: "8 (oito) semanas",
+    PRAZO: "8 semanas",
   };
-  it("numera pela ordem, troca marcadores e recua subitens", async () => {
+  it("numera pela ordem, troca marcadores e separa números, incisos e itens", async () => {
     const { renderClauses, unknownTokens } = await import("./contract-clauses");
     const out = renderClauses(
       [
@@ -174,14 +179,39 @@ describe("cláusulas do contrato", () => {
         { title: " ", body: "ignorada" },
         {
           title: "Prazo",
-          body: "{{N}}.1. Início {{INICIO}}\n{{N}}.1.1. Assinatura\nI – atraso\n{{TABELA_PARCELAS}}",
+          body: "{{N}}.1. Início {{INICIO}}\n{{N}}.1.1. Assinatura\nI – atraso\n- assinatura;\n2 (duas) vias em **São Paulo**\n{{TABELA_PARCELAS}}",
         },
       ],
       values,
     );
     expect(out.map((c) => c.number)).toEqual([1, 2]);
-    expect(out[0]?.blocks[0]).toEqual({ kind: "p", html: "1.1. Valor de R$ 1,00 &lt;x&gt;" });
-    expect(out[1]?.blocks.map((b) => b.kind)).toEqual(["p", "sub", "sub", "block"]);
+    expect(out[0]?.blocks[0]).toEqual({
+      kind: "p",
+      num: "1.1.",
+      html: "Valor de R$ 1,00 &lt;x&gt;",
+    });
+    expect(out[1]?.blocks).toEqual([
+      { kind: "p", num: "2.1.", html: "Início 16/11/2026" },
+      { kind: "sub", num: "2.1.1.", html: "Assinatura" },
+      { kind: "roman", num: "I", html: "atraso" },
+      { kind: "item", html: "assinatura;" },
+      { kind: "p", num: null, html: "2 (duas) vias em <b>São Paulo</b>" },
+      { kind: "block", block: "TABELA_PARCELAS" },
+    ]);
     expect(unknownTokens("{{N}} {{VALOR}} {{CLIENTE}} {{CLIENTE}}")).toEqual(["CLIENTE"]);
+  });
+
+  it("o modelo de contrato carregado no banco só usa marcadores conhecidos", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { renderClauses, unknownTokens } = await import("./contract-clauses");
+    const sql = readFileSync("supabase/migrations/20261030000032_contract_model_2026.sql", "utf8");
+    const clauses = [...sql.matchAll(/\(\d+, '([^']+)', \$t\$([\s\S]*?)\$t\$\)/g)].map((m) => ({
+      title: m[1]!,
+      body: m[2]!,
+    }));
+    expect(clauses).toHaveLength(13);
+    expect(clauses.flatMap((c) => unknownTokens(c.body))).toEqual([]);
+    const html = JSON.stringify(renderClauses(clauses, values));
+    expect(html).not.toMatch(/\{\{/);
   });
 });
