@@ -4,6 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { scheduleOptions } from "@/lib/schedule-data";
 import { pageMeta } from "@/lib/page-meta";
+import { printContinuous } from "@/lib/continuous-print";
 import { snapshotStages, calendarDays } from "@/lib/work-schedule";
 import { fmtDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -42,14 +43,14 @@ function Document() {
         .at(-1) || h.planned_end;
   const today = businessDate();
   return (
-    <div className="bg-muted p-4">
+    <div className="print-root bg-muted p-4">
       <div className="no-print mx-auto mb-4 flex max-w-5xl flex-wrap gap-3">
         <Button asChild variant="outline">
           <Link to="/cronogramas/$id" params={{ id }}>
             ← Cronograma
           </Link>
         </Button>
-        <Button disabled={missing || !stages.length} onClick={() => window.print()}>
+        <Button disabled={missing || !stages.length} onClick={() => printContinuous()}>
           Imprimir / salvar PDF
         </Button>
         <select

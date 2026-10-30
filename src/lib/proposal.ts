@@ -50,7 +50,7 @@ export const DEFAULT_NOTES = [
 ].join("\n");
 
 export const SCHEDULE_DISCLAIMER =
-  "Importante: este cronograma é uma estimativa, feita com base no escopo deste orçamento. Após a aprovação da proposta, a JMG elabora o cronograma definitivo de execução da obra, considerando a liberação do condomínio, a entrega dos materiais e eventuais ajustes de escopo.";
+  "O cronograma pode ser ajustado por fatores externos à JMG, como liberação do condomínio, entrega de materiais escolhidos pelo cliente ou alterações de escopo. Qualquer ajuste é comunicado previamente ao cliente.";
 
 const UNIT: Record<string, string> = { m2: "m²", ml: "m", un: "un", diaria: "diária", vb: "vb" };
 

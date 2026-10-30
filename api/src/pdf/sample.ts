@@ -131,7 +131,6 @@ const SAMPLE_CLAUSES = [
 const assets = loadAssets();
 const out = process.argv[2] ?? "orcamento-exemplo.pdf";
 const contract = process.argv.includes("--contrato");
-const footerLeft = "JMG Reformas LTDA · CNPJ 62.780.542/0001-81 · (11) 99893-7694 · @jmg.reformas";
 writeFileSync(
   out,
   contract
@@ -144,16 +143,12 @@ writeFileSync(
             ? JSON.parse(readFileSync(process.env["CLAUSES_JSON"], "utf8"))
             : SAMPLE_CLAUSES,
         ),
-        assets,
-        {
-          headerRight: `Contrato · ${data.number} · ${data.client.name}`,
-          footerLeft,
-        },
+        `Contrato · ${data.number} · ${data.client.name}`,
       )
-    : await htmlToPdf(proposalHtml(data, assets, SCHEDULE_DISCLAIMER), assets, {
-        headerRight: `${data.number} · ${data.client.name}`,
-        footerLeft,
-      }),
+    : await htmlToPdf(
+        proposalHtml(data, assets, SCHEDULE_DISCLAIMER),
+        `${data.number} · ${data.client.name}`,
+      ),
 );
 await closeBrowser();
 console.log(out);

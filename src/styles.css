@@ -365,3 +365,48 @@ progress.accent-warning::-moz-progress-bar {
     -webkit-print-color-adjust: exact;
   }
 }
+
+/* Impressão contínua (lib/continuous-print.ts): uma página na largura A4 com a altura do
+   documento. html.print-measure repete as regras de impressão para medir a altura antes. */
+@media print {
+  .print-root {
+    width: 210mm;
+    min-height: 0;
+    padding: 0;
+  }
+  .print-root > article {
+    margin: 0;
+  }
+}
+html.print-measure .print-root {
+  width: 210mm;
+  min-height: 0;
+  padding: 0;
+}
+html.print-measure .print-root > article {
+  margin: 0;
+}
+html.print-measure .no-print {
+  display: none !important;
+}
+html.print-measure .contract-print {
+  max-width: none;
+  box-shadow: none;
+  padding: 18mm;
+}
+html.print-measure .schedule-print {
+  padding: 14mm;
+  max-width: none;
+}
+html.print-measure .schedule-print table {
+  font-size: 9px;
+}
+html.print-measure .schedule-print .gantt-wrap {
+  overflow: visible;
+}
+html.print-measure .schedule-print .gantt-chart {
+  min-width: 0;
+}
+html.print-measure .schedule-print .gantt-chart > div {
+  grid-template-columns: 135px 1fr;
+}

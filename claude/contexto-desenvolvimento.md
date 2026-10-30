@@ -4,6 +4,19 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-30 — PDFs em página única contínua (branch `claude/eager-hopper-auxpdq`)
+
+**Pedido:** o Guilherme mandou um novo modelo de orçamento (`Orcamento-JMG-modelo-continuo`, uma página A4 de largura que cresce com o conteúdo) e quer que orçamento, contrato e cronograma saiam assim, substituindo o modelo paginado, inclusive para os orçamentos já cadastrados.
+
+**Decisões:**
+
+- `api/src/pdf/render.ts`: `htmlToPdf(html, title)` mede a altura do documento no Chromium (mídia de impressão, 794 px = 210 mm) e gera uma página só com essa altura; pdf-lib confere que saiu uma página e grava o título. Saiu o carimbo de cabeçalho/rodapé por página: a faixa da empresa (`footerHtml`) fecha o documento.
+- `layout.ts`/`proposal-html.ts` seguem o modelo: capa de 264,6 mm, seções separadas por divisórias, "Como trabalhamos", "Sobre esta obra" dentro de Etapas e serviços, caixas de total (serviços = mão de obra total; materiais) no topo das seções, observações numeradas, cronograma com "ETAPA" no cabeçalho e aviso em texto simples (`SCHEDULE_DISCLAIMER` com o texto do modelo). Números de "Quem somos" do modelo (+35 anos, 100% de satisfação). Observações padrão (`DEFAULT_NOTES`) não mudaram: as do modelo eram do orçamento de exemplo.
+- Contrato da API no mesmo formato contínuo. Os PDFs são gerados na hora, então todo orçamento existente já sai no modelo novo; versões salvas (`budget_versions`) continuam como foram geradas (imutáveis).
+- Cronogramas (obra e avulso) e contrato da obra, impressos pelo navegador: `printContinuous` (`src/lib/continuous-print.ts`) mede `.print-root` com as regras de impressão (`html.print-measure` em `styles.css`) e define `@page { size: 210mm <altura> }` antes de `window.print()`. Safari ignora `@page size` e segue em folhas A4.
+
+**Conferência:** `sample.ts` gera orçamento e contrato numa página (comparados com o modelo lado a lado); serviço real (`createPdfService`) com orçamento mínimo também em uma página; impressão do cronograma avulso simulada no Chromium com o app local (14 etapas) saiu em uma página de 730 mm sem sobra.
+
 ### 2026-10-28 — Levar os dados locais para a produção (branch `claude/nifty-dijkstra-i0rmcy`)
 
 **Pedido:** o Guilherme quer copiar o que já cadastrou no banco local para a produção, sem cadastrar tudo de novo.

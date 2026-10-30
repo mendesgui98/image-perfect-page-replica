@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useMe } from "@/hooks/use-me";
 import { NoAccess } from "@/components/page-header";
 import { pageMeta } from "@/lib/page-meta";
+import { printContinuous } from "@/lib/continuous-print";
 export const Route = createFileRoute("/_authenticated/obras/$id/contrato/pdf")({
   head: () =>
     pageMeta(
@@ -30,7 +31,7 @@ function Pdf() {
     return <DeletedRecordNotice entity="contracts" id={data.id} name="Contrato" />;
   if (me && !me.canSeeCosts) return <NoAccess />;
   return (
-    <div className="min-h-screen bg-muted p-4">
+    <div className="print-root min-h-screen bg-muted p-4">
       <div className="no-print mx-auto mb-4 flex max-w-3xl flex-wrap items-center justify-between gap-3">
         <Button variant="outline" asChild>
           <Link to="/obras/$id" params={{ id }}>
@@ -40,7 +41,7 @@ function Pdf() {
         <span className="text-sm">
           {data?.status === "rascunho" ? "RASCUNHO" : data?.status.toUpperCase()}
         </span>
-        <Button disabled={!data} onClick={() => window.print()}>
+        <Button disabled={!data} onClick={() => printContinuous()}>
           Imprimir / salvar PDF
         </Button>
       </div>
