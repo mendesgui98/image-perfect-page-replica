@@ -113,6 +113,52 @@ export const clientMaterialsOptions = (workId: string) =>
     },
   });
 
+/** Contas a receber das obras (pagamentos previstos), com o que já foi recebido. */
+async function receivables(workId: string | null) {
+  let q = supabase
+    .from("financial_entries")
+    .select("id,work_id,due_date,amount,description")
+    .eq("direction", "entrada")
+    .eq("canceled", false)
+    .eq("cash_only", false)
+    .not("work_id", "is", null)
+    .order("due_date");
+  if (workId) q = q.eq("work_id", workId);
+  const e = await q;
+  if (e.error) throw e.error;
+  const ids = e.data.map((x) => x.id);
+  const st = ids.length
+    ? await supabase
+        .from("financial_settlements")
+        .select("entry_id,amount,paid_date")
+        .in("entry_id", ids)
+    : { data: [], error: null };
+  if (st.error) throw st.error;
+  return e.data.map((p) => {
+    const mine = (st.data ?? []).filter((x) => x.entry_id === p.id);
+    return {
+      workId: p.work_id!,
+      date: p.due_date,
+      // A descrição das entradas começa pelo rótulo da etapa de pagamento ("1ª medição · Obra").
+      label: p.description.split(" · ")[0] || p.description,
+      amount: Number(p.amount),
+      paid: mine.reduce((n, x) => n + Number(x.amount), 0),
+      paidDate:
+        mine
+          .map((x) => x.paid_date)
+          .sort()
+          .at(-1) ?? null,
+    };
+  });
+}
+
+/** Pagamentos previstos de todas as obras (lista de cronogramas); vazio para a equipe. */
+export const schedulesFinanceOptions = (enabled: boolean) =>
+  queryOptions({
+    queryKey: ["schedules-finance", enabled],
+    queryFn: async () => (enabled ? receivables(null) : []),
+  });
+
 /**
  * Dados financeiros e de identificação do cronograma físico-financeiro: contas a receber da obra
  * (pagamentos previstos) e o número do orçamento vinculado. Só admin/financeiro enxergam; para a
@@ -123,29 +169,31 @@ export const scheduleFinanceOptions = (workId: string, budgetId: string | null, 
     queryKey: ["schedule-finance", workId, budgetId, enabled],
     queryFn: async () => {
       if (!enabled) return { payments: [], budget: null };
-      const [e, b] = await Promise.all([
-        supabase
-          .from("financial_entries")
-          .select("due_date,amount,description")
-          .eq("work_id", workId)
-          .eq("direction", "entrada")
-          .eq("canceled", false)
-          .eq("cash_only", false)
-          .order("due_date"),
+      const [payments, b] = await Promise.all([
+        receivables(workId),
         budgetId
           ? supabase.from("budgets").select("number,issue_date").eq("id", budgetId).single()
           : Promise.resolve({ data: null, error: null }),
       ]);
-      if (e.error) throw e.error;
       if (b.error) throw b.error;
-      return {
-        payments: e.data.map((p) => ({
-          date: p.due_date,
-          // A descrição das entradas começa pelo rótulo da etapa de pagamento ("1ª medição · Obra").
-          label: p.description.split(" · ")[0] || p.description,
-          amount: Number(p.amount),
-        })),
-        budget: b.data,
-      };
+      return { payments, budget: b.data };
+    },
+  });
+
+/** Histórico das etapas da obra (work_history), para o "Histórico da etapa" do cronograma. */
+export const stageHistoryOptions = (workId: string, enabled: boolean) =>
+  queryOptions({
+    queryKey: ["stage-history", workId, enabled],
+    queryFn: async () => {
+      if (!enabled) return [];
+      const r = await supabase
+        .from("work_history")
+        .select("entity_id,before,after,changed_by,changed_at")
+        .eq("work_id", workId)
+        .eq("entity", "work_stages")
+        .order("changed_at", { ascending: false })
+        .limit(500);
+      if (r.error) throw r.error;
+      return r.data;
     },
   });

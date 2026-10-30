@@ -31,14 +31,20 @@ export function PageHeader({
   title,
   subtitle,
   actions,
+  eyebrow,
 }: {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
+  /** Linha curta acima do título (ex.: "Execução"). */
+  eyebrow?: string;
 }) {
   return (
     <PageBand className="flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
+        {eyebrow && (
+          <p className="mb-1 text-xs font-bold uppercase tracking-[0.22em] text-gold">{eyebrow}</p>
+        )}
         <h1 className="text-[26px] font-bold leading-tight tracking-tight md:text-[32px]">
           {title}
         </h1>

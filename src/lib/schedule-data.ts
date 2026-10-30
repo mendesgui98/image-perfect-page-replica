@@ -37,7 +37,7 @@ export function editableStages(json: Json): EditableStage[] {
 export const schedulesOptions = queryOptions({
   queryKey: ["schedules"],
   queryFn: async () => {
-    const [h, s, w, o] = await Promise.all([
+    const [h, s, w, o, wv, sv] = await Promise.all([
       supabase
         .from("schedules")
         .select("*")
@@ -47,12 +47,22 @@ export const schedulesOptions = queryOptions({
       supabase.from("work_stages").select("*").eq("removed", false),
       supabase.from("work_registry").select("*").eq("archived", false).is("deleted_at", null),
       supabase.from("work_openings").select("work_id,progress"),
+      supabase.from("work_schedule_versions").select("work_id,version"),
+      supabase.from("schedule_versions").select("schedule_id,version"),
     ]);
-    for (const r of [h, s, w, o]) if (r.error) throw r.error;
+    for (const r of [h, s, w, o, wv, sv]) if (r.error) throw r.error;
     return (h.data ?? []).map((header) => {
       const work = w.data?.find((w) => w.id === header.work_id);
       return {
         initialProgress: o.data?.find((x) => x.work_id === header.work_id)?.progress ?? 0,
+        // Revisão = última versão aprovada − 1 (Rev. 00 é o cronograma original).
+        revision: Math.max(
+          0,
+          ...(header.work_id
+            ? (wv.data ?? []).filter((v) => v.work_id === header.work_id)
+            : (sv.data ?? []).filter((v) => v.schedule_id === header.id)
+          ).map((v) => v.version - 1),
+        ),
         header: work
           ? {
               ...header,
