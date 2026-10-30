@@ -12,6 +12,8 @@ import { ExecutivePanel } from "@/components/management/executive";
 import { HideValuesScope, HideValuesToggle } from "@/components/hidden-values";
 import { WorkOverview } from "@/components/works/overview";
 import { FieldPanel } from "@/components/works/field-panel";
+import { businessDate } from "@/lib/dashboard-math";
+import { greeting, longDate } from "@/lib/dashboard-home";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   validateSearch: (
@@ -74,36 +76,51 @@ function Painel() {
 
   return (
     <div>
-      <PageHeader
-        title="JMG Reformas"
-        subtitle={me?.canSeeCosts ? "Visão executiva" : "Equipe de campo"}
-        actions={
-          me?.canSeeCosts && (
-            <>
-              <HideValuesToggle />
-              <Button asChild>
-                <Link to="/orcamentos">
-                  <Plus className="h-4 w-4" /> Novo orçamento
-                </Link>
-              </Button>
-            </>
-          )
-        }
-      />
+      {me?.canSeeCosts ? (
+        <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+              {greeting(new Date().getHours())}
+              {me.name ? `, ${me.name.split(/[\s@]/)[0]}` : ""}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {longDate(businessDate())} · visão geral da JMG Reformas
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <HideValuesToggle />
+            <Button variant="outline" asChild>
+              <Link to="/financeiro" search={{ view: "lancamentos", novo: "entrada" }}>
+                <Plus className="h-4 w-4 text-positive" /> Lançar entrada
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/financeiro" search={{ view: "lancamentos", novo: "saida" }}>
+                <Plus className="h-4 w-4 text-negative" /> Lançar saída
+              </Link>
+            </Button>
+            <Button className="bg-gold text-hero-end hover:bg-gold/90" asChild>
+              <Link to="/orcamentos">
+                <Plus className="h-4 w-4" /> Novo orçamento
+              </Link>
+            </Button>
+          </div>
+        </header>
+      ) : (
+        <PageHeader title="JMG Reformas" subtitle="Equipe de campo" />
+      )}
       {alerts.length > 0 && (
-        <div className="mb-6 space-y-2">
+        <div className="mb-5 space-y-2">
           {alerts.map((a) => (
             <div
               key={a}
-              className="flex items-start gap-3 rounded-lg border border-warning bg-warning/15 p-3 text-sm text-warning-foreground"
+              className="flex flex-wrap items-center gap-3 rounded-xl border border-warning bg-warning/15 px-4 py-2.5 text-sm text-warning-foreground"
             >
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                {a}{" "}
-                <Link to="/configuracoes" className="font-semibold underline">
-                  Abrir configurações
-                </Link>
-              </span>
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span className="min-w-0 flex-1">{a}</span>
+              <Link to="/configuracoes" className="font-semibold underline">
+                Abrir configurações
+              </Link>
             </div>
           ))}
         </div>

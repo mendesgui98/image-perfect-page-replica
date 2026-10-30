@@ -1,13 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, HardHat, MapPin, User } from "lucide-react";
+import { CalendarDays, ChevronRight, MapPin, User, Wallet } from "lucide-react";
 import type { WorkSummary } from "@/lib/dashboard-data";
 import { progressAttention } from "@/lib/work-progress";
-import { WORK_STATUS_VARIANT } from "@/lib/status-badges";
 import { fmtNum } from "@/lib/format";
 import { useBRL } from "@/lib/hidden-values";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Meter, Money } from "@/components/kpi";
-import { cn } from "@/lib/utils";
 
 const STATUS_LABEL: Record<string, string> = {
   execucao: "Em execução",
@@ -16,17 +14,10 @@ const STATUS_LABEL: Record<string, string> = {
   concluida: "Finalizada",
 };
 
-/** Faixa do topo na cor da situação (azul em execução, laranja pausada, verde finalizada). */
-const STATUS_BAND: Record<string, string> = {
-  execucao: "bg-primary-soft text-primary",
-  contratacao: "bg-neutral-soft text-muted-foreground",
-  pausada: "bg-alert-soft text-alert",
-  concluida: "bg-positive-soft text-positive",
-};
-
 /**
  * Card de uma obra no Painel: valor, recebido e custo realizado já calculados em
- * dashboard-data; os percentuais vêm de balance.financialProgress e progressAttention.
+ * dashboard-data; os percentuais vêm de balance.financialProgress e progressAttention. Faixa azul
+ * com a situação e o anel de avanço físico; atalhos para cronograma, financeiro e a obra.
  */
 export function WorkCard({ s }: { s: WorkSummary }) {
   const brl = useBRL();
@@ -37,32 +28,51 @@ export function WorkCard({ s }: { s: WorkSummary }) {
     s.incurred,
     unconfirmed ? null : s.result.cost,
   );
-  const band = STATUS_BAND[s.work.status] ?? STATUS_BAND["contratacao"];
+  const progress = Math.min(100, Math.max(0, s.progress));
+  const minMargin = Number(s.budget.params?.min_margin) || 0;
+  const lowMargin =
+    !unconfirmed && s.result.sale > 0 && minMargin > 0 && s.result.margin * 100 < minMargin;
   return (
-    <Link
-      to="/obras/$id"
-      params={{ id: s.work.id }}
-      aria-label={`Abrir obra ${s.work.name}`}
-      className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card transition-shadow hover:shadow-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-    >
-      <div className={cn("relative flex items-center gap-2.5 overflow-hidden px-5 py-4", band)}>
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -top-10 -right-6 h-32 w-32 rounded-full border-[14px] border-current opacity-[0.07]"
-        />
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-foreground text-background">
-          <HardHat className="h-5 w-5" />
-        </span>
-        <Badge variant={WORK_STATUS_VARIANT[s.work.status] ?? "neutral"} className="bg-card">
-          {STATUS_LABEL[s.work.status] ?? s.work.status}
-        </Badge>
-        <span className="ml-auto rounded-full bg-card/80 px-2.5 py-1 text-xs font-semibold text-foreground num">
-          Avanço {fmtNum(s.progress)}%
-        </span>
+    <article className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card transition-shadow hover:shadow-elevated">
+      <div className="flex items-start justify-between gap-2 bg-gradient-to-br from-hero to-hero-end px-5 py-4 text-hero-foreground">
+        <div className="flex flex-wrap gap-1.5">
+          <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold">
+            {STATUS_LABEL[s.work.status] ?? s.work.status}
+          </span>
+          {lowMargin && (
+            <span className="rounded-full bg-gold px-2.5 py-1 text-xs font-semibold text-hero-end">
+              Margem {fmtNum(Math.round(s.result.margin * 1000) / 10)}%
+            </span>
+          )}
+          {s.overdue > 0 && (
+            <span className="rounded-full bg-negative px-2.5 py-1 text-xs font-semibold text-white">
+              {brl(s.overdue)} vencido
+            </span>
+          )}
+        </div>
+        <div className="flex shrink-0 flex-col items-center">
+          <span
+            className="flex h-14 w-14 items-center justify-center rounded-full"
+            style={{
+              background: `conic-gradient(var(--gold) ${progress * 3.6}deg, rgba(255,255,255,.18) 0)`,
+            }}
+            aria-label={`Avanço ${fmtNum(s.progress)}%`}
+          >
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-hero-end text-xs font-bold num">
+              {fmtNum(Math.round(s.progress))}%
+            </span>
+          </span>
+          <span className="mt-0.5 text-[10px] text-hero-foreground/70">avanço</span>
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-4 p-5">
-        <div className="flex items-start justify-between gap-3">
+        <Link
+          to="/obras/$id"
+          params={{ id: s.work.id }}
+          aria-label={`Abrir obra ${s.work.name}`}
+          className="flex items-start justify-between gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        >
           <div className="min-w-0">
             <h3 className="text-lg font-bold uppercase leading-tight tracking-tight break-words">
               {s.work.name}
@@ -72,12 +82,21 @@ export function WorkCard({ s }: { s: WorkSummary }) {
               {s.work.is_pilot ? " · Piloto — teste" : ""}
             </p>
           </div>
-          <ArrowUpRight
+          <ChevronRight
             aria-hidden
-            className="mt-1 h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            className="mt-1 h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
           />
+        </Link>
+        <div className="-mt-2 space-y-1 text-sm text-muted-foreground">
+          <p className="flex items-center gap-2">
+            <User className="h-4 w-4 shrink-0" />
+            <span className="truncate">{s.client}</span>
+          </p>
+          <p className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 shrink-0" />
+            <span className="truncate">{s.work.address || "Local não informado"}</span>
+          </p>
         </div>
-
         <div className="space-y-2.5">
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
@@ -119,17 +138,26 @@ export function WorkCard({ s }: { s: WorkSummary }) {
           </p>
         </div>
 
-        <div className="mt-auto space-y-1.5 border-t border-border/60 pt-3 text-sm text-muted-foreground">
-          <p className="flex items-center gap-2">
-            <User className="h-4 w-4 shrink-0" />
-            <span className="truncate">{s.client}</span>
-          </p>
-          <p className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 shrink-0" />
-            <span className="truncate">{s.work.address || "Local não informado"}</span>
-          </p>
+        <div className="mt-auto grid grid-cols-3 gap-2 border-t border-border/60 pt-3">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/obras/$id" params={{ id: s.work.id }} search={{ tab: "cronograma" }}>
+              <CalendarDays className="h-4 w-4" />
+              Cronograma
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/obras/$id" params={{ id: s.work.id }} search={{ tab: "financeiro" }}>
+              <Wallet className="h-4 w-4" />
+              Financeiro
+            </Link>
+          </Button>
+          <Button size="sm" asChild>
+            <Link to="/obras/$id" params={{ id: s.work.id }}>
+              Abrir obra
+            </Link>
+          </Button>
         </div>
       </div>
-    </Link>
+    </article>
   );
 }
