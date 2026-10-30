@@ -1,4 +1,5 @@
 import { ReceiptButton } from "@/components/works/finance";
+import { HomeDashboard } from "@/components/management/home-panel";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch, useLocation } from "@tanstack/react-router";
@@ -350,78 +351,17 @@ export function ExecutivePanel() {
   );
   return (
     <section>
-      <ManagementFilters works={data.works.filter((s) => search.pilot || !s.work.is_pilot)} />
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        {indicators.map(({ id, label, icon, tone, filled, span }) => {
-          const value = indicatorTotal(compositions[id]);
-          const scope = ["active", "value", "extras", "result"].includes(id)
-            ? "Posição acumulada"
-            : search.period && search.period !== "todos"
-              ? "Período selecionado"
-              : "Todo o período";
-          return (
-            <KpiCard
-              key={id}
-              ariaLabel={`Detalhar ${label}`}
-              label={label}
-              icon={icon}
-              tone={tone}
-              filled={!!filled}
-              hero={id === "cash"}
-              className={span}
-              value={
-                value === null ? (
-                  <span className="text-base font-semibold text-muted-foreground">
-                    Não conferido
-                  </span>
-                ) : id === "active" ? (
-                  <span className="num">{fmtNum(value)}</span>
-                ) : (
-                  <Money value={value} tone={id === "result" ? "auto" : "inherit"} />
-                )
-              }
-              hint={scope}
-              onClick={() =>
-                navigate({
-                  to: target,
-                  search: (old: Record<string, unknown>) => ({ ...old, detail: id }),
-                })
-              }
-            />
-          );
-        })}
-      </div>
-      <section aria-labelledby="painel-obras" className="mt-8">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 id="painel-obras" className="text-lg font-semibold">
-              Obras
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              {cards.length} {cards.length === 1 ? "obra" : "obras"} no filtro
-            </p>
-          </div>
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/obras">
-              Todas as obras
-              <ArrowUpRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-        {cards.length ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {cards.map((s) => (
-              <WorkCard key={s.work.id} s={s} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            icon={HardHat}
-            title="Nenhuma obra neste filtro"
-            description="Ajuste os filtros acima ou cadastre uma nova obra."
-          />
-        )}
-      </section>
+      <HomeDashboard
+        works={cards}
+        allWorks={data.works.filter((s) => search.pilot || !s.work.is_pilot)}
+        compositions={compositions}
+        onDetail={(id) =>
+          navigate({
+            to: target,
+            search: (old: Record<string, unknown>) => ({ ...old, detail: id }),
+          })
+        }
+      />
       <Dialog
         open={!!detail}
         onOpenChange={(v) => {

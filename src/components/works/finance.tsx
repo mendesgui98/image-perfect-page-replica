@@ -1,5 +1,5 @@
 import { businessDate, periodRange, inPeriod } from "@/lib/dashboard-math";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -72,7 +72,7 @@ export function Finance({ workId }: { workId?: string }) {
   const brl = useBRL();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const search = useSearch({ strict: false }) as { work?: string; entry?: string };
+  const search = useSearch({ strict: false }) as { work?: string; entry?: string; novo?: string };
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
   const { data, error } = useQuery(financeOptions);
   const [dialog, setDialog] = useState("");
@@ -231,6 +231,22 @@ export function Finance({ workId }: { workId?: string }) {
     setRequestId(crypto.randomUUID());
     setDialog(name);
   }
+  // "Lançar entrada/saída" do Painel chega com ?novo=entrada|saida e abre o lançamento no caixa.
+  const novo = search.novo;
+  useEffect(() => {
+    if (novo !== "entrada" && novo !== "saida") return;
+    open("cash", novo);
+    void navigate({
+      to: ".",
+      search: ((old: Record<string, unknown>) => {
+        const rest = { ...old };
+        delete rest["novo"];
+        return rest;
+      }) as never,
+      replace: true,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [novo]);
   async function save(d: FormData) {
     setBusy(true);
     try {

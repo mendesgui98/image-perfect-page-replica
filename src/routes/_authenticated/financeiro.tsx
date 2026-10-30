@@ -12,11 +12,17 @@ import { HideValuesScope, HideValuesToggle } from "@/components/hidden-values";
 export const Route = createFileRoute("/_authenticated/financeiro")({
   validateSearch: (
     s: Record<string, unknown>,
-  ): ReturnType<typeof dashboardSearch> & { view?: string; entry?: string; detail?: string } => ({
+  ): ReturnType<typeof dashboardSearch> & {
+    view?: string;
+    entry?: string;
+    detail?: string;
+    novo?: string;
+  } => ({
     ...dashboardSearch(s),
     view: typeof s["view"] === "string" ? s["view"] : "lancamentos",
     entry: typeof s["entry"] === "string" ? s["entry"] : "",
     detail: typeof s["detail"] === "string" ? s["detail"] : "",
+    ...(s["novo"] === "entrada" || s["novo"] === "saida" ? { novo: s["novo"] } : {}),
   }),
   head: () => pageMeta("Financeiro", "Contas, caixa, pagamentos, recebimentos e rateios da JMG."),
   component: Page,
