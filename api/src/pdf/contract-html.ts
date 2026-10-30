@@ -1,6 +1,6 @@
 import { dataPorExtenso, numeroPorExtenso } from "../../../src/lib/extenso.ts";
 import { renderClauses, type ContractClause } from "../../../src/lib/contract-clauses.ts";
-import type { ProposalData } from "../../../src/lib/proposal.ts";
+import type { PdfLayout, ProposalData } from "../../../src/lib/proposal.ts";
 import type { Assets } from "./assets.ts";
 import {
   BLUE,
@@ -11,6 +11,7 @@ import {
   esc,
   eyebrow,
   footerHtml,
+  htmlOpen,
   money,
   pad2,
   pct,
@@ -54,6 +55,7 @@ export function contractHtml(
   assets: Assets,
   today: string,
   clauses: ContractClause[],
+  layout: PdfLayout = "continuo",
 ) {
   const orc = `<b>orçamento <span class="nb">${esc(d.number)}</span> (Anexo 1)</b>`;
   const weeks = d.weeks
@@ -130,6 +132,6 @@ ${d.payments.map((r) => `<tr><td><b>${esc(r.label)}</b>${r.when ? ` · ${esc(r.w
     </div>
   </div>
 </section>`;
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Contrato ${esc(d.number)}</title>
-<style>${baseCss(assets)}${css}</style></head><body>${cover}${body}${footerHtml(assets, c)}</body></html>`;
+  return `${htmlOpen(layout)}<head><meta charset="utf-8"><title>Contrato ${esc(d.number)}</title>
+<style>${baseCss(assets, layout)}${css}</style></head><body>${cover}${body}${footerHtml(assets, c)}</body></html>`;
 }

@@ -4,6 +4,19 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-30 — Escolha entre PDF contínuo e com quebra de página (branch `claude/eager-hopper-auxpdq`)
+
+**Pedido:** poder gerar orçamento e contrato tanto em página contínua quanto com quebra de página.
+
+**Decisões:**
+
+- `PdfLayout` (`"continuo"` padrão, `"paginado"`) e `pdfLayout` em `src/lib/proposal.ts`, compartilhados por API e app. A API lê `?layout=paginado` em `/pdf` e `/contrato`; valor desconhecido cai no contínuo.
+- Mesmo HTML nos dois formatos: `html.paged` troca as regras (`@page` A4 com margens, capa de folha inteira, cada seção em folha nova, sem divisórias nem faixa final, `break-inside: avoid` nos blocos) e o `render.ts` volta a carimbar cabeçalho/rodapé com pdf-lib em todas as páginas menos a capa.
+- Tela `/orcamentos/$id/pdf`: botões "Página contínua" / "Com quebra de página" (fica em `?layout=` na URL). "Salvar versão" continua gerando o contínuo.
+- Corrigido junto: fio branco na borda direita da capa/faixa (página em 794 px, conteúdo 100%) e folga do pé da página pintada com as cores da faixa.
+
+**Conferência:** exemplos gerados nos dois formatos (orçamento 1 página contínua / 9 folhas A4; contrato 1 / 3); teste de API cobre o parâmetro; troca de formato conferida no app local (a URL e a chamada à API mudam).
+
 ### 2026-10-30 — PDFs em página única contínua (branch `claude/eager-hopper-auxpdq`)
 
 **Pedido:** o Guilherme mandou um novo modelo de orçamento (`Orcamento-JMG-modelo-continuo`, uma página A4 de largura que cresce com o conteúdo) e quer que orçamento, contrato e cronograma saiam assim, substituindo o modelo paginado, inclusive para os orçamentos já cadastrados.

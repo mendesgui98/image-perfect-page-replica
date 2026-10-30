@@ -1,4 +1,4 @@
-import type { ProposalData } from "../../../src/lib/proposal.ts";
+import type { PdfLayout, ProposalData } from "../../../src/lib/proposal.ts";
 import { dataPorExtenso } from "../../../src/lib/extenso.ts";
 import type { Assets } from "./assets.ts";
 import {
@@ -13,6 +13,7 @@ import {
   esc,
   eyebrow,
   footerHtml,
+  htmlOpen,
   icons,
   money,
   num,
@@ -231,7 +232,12 @@ function gantt(p: ProposalData) {
 const sumBox = (label: string, value: number, sub: string) =>
   `<div class="sum"><span>${esc(label)}</span><b>${money(value)}</b><small>${esc(sub)}</small></div>`;
 
-export function proposalHtml(p: ProposalData, assets: Assets, disclaimer: string) {
+export function proposalHtml(
+  p: ProposalData,
+  assets: Assets,
+  disclaimer: string,
+  layout: PdfLayout = "continuo",
+) {
   const stagesLabel = plural(p.stages.length, "etapa", "etapas");
   const chips = [
     p.property,
@@ -328,6 +334,6 @@ export function proposalHtml(p: ProposalData, assets: Assets, disclaimer: string
   <div class="signs"><div><b>${esc(p.client.name)}</b>Contratante${doc}</div>
     <div><b>${esc(p.responsible)}</b>Responsável técnico · JMG Reformas</div></div>
 </section>`;
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(p.number)}</title>
-<style>${baseCss(assets)}${css}</style></head><body>${cover}${[about, scope, materials, invest, schedule, acceptance].join(divider)}${footerHtml(assets, p.company)}</body></html>`;
+  return `${htmlOpen(layout)}<head><meta charset="utf-8"><title>${esc(p.number)}</title>
+<style>${baseCss(assets, layout)}${css}</style></head><body>${cover}${[about, scope, materials, invest, schedule, acceptance].join(divider)}${footerHtml(assets, p.company)}</body></html>`;
 }

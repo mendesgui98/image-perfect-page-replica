@@ -5,7 +5,12 @@ import type { AuthAdmin } from "./gotrue.ts";
 import { HttpError, Router, json, readJson, send, type Reply, type Request } from "./http.ts";
 import { ROLES, type Repo, type Role } from "./repo.ts";
 import type { PdfService } from "./pdf/index.ts";
-import { buildProposal, contractIssues, proposalIssues } from "../../src/lib/proposal.ts";
+import {
+  buildProposal,
+  contractIssues,
+  pdfLayout,
+  proposalIssues,
+} from "../../src/lib/proposal.ts";
 
 export type Deps = {
   jwtSecret: string;
@@ -141,7 +146,7 @@ export function createApp(deps: Deps) {
       const { s, pdf, data } = await proposalData(req);
       const issues = proposalIssues(data);
       if (issues.length) throw new HttpError(422, "incomplete", issues.join(" "));
-      const file = await pdf.proposal(data);
+      const file = await pdf.proposal(data, pdfLayout(req.query.get("layout")));
       log({ event: "proposal_pdf", by: s.claims.sub, budget: req.params["id"] });
       return pdfReply(file, `${data.number}.pdf`);
     })
@@ -156,7 +161,7 @@ export function createApp(deps: Deps) {
           "incomplete",
           "Cadastre as cláusulas do contrato em Configurações → Contrato.",
         );
-      const file = await pdf.contract(data, today(), clauses);
+      const file = await pdf.contract(data, today(), clauses, pdfLayout(req.query.get("layout")));
       log({ event: "contract_pdf", by: s.claims.sub, budget: req.params["id"] });
       return pdfReply(file, `Contrato-${data.number}.pdf`);
     })
