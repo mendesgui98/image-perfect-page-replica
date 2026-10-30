@@ -4,6 +4,18 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 
 ## Tasks concluídas
 
+### 2026-10-30 — Recibo de pagamento das entradas (branch `claude/eager-hopper-auxpdq`)
+
+**Pedido:** o Guilherme mandou `Recibo-JMG-modelo` e pediu que toda entrada da obra gere um recibo em PDF para o cliente, pelo caixa/fluxo de caixa. (Na conversa anterior o recibo só tinha sido proposto, não construído.)
+
+**Decisões:**
+
+- `buildReceipt` (puro, testado com os valores do modelo) monta número, valor por extenso, parcela (nome sem o "· obra", % e "quando" do `payment_terms` do orçamento) e a situação financeira do contrato até a data do pagamento. Entrada avulsa do caixa não entra no valor do contrato.
+- API `POST /v1/recebimentos/:id/recibo` (admin/financeiro, RLS do usuário) gera o PDF no visual do orçamento; titular, banco, agência/conta e ID da transação são opcionais no corpo e não são gravados.
+- App: página `/recibos/$id` (gera, atualiza com os dados opcionais e baixa); botão "Recibo" no caixa e nas baixas das contas a receber; ao registrar recebimento ou entrada da obra, o aviso traz "Gerar recibo".
+
+**Conferência:** recibo da entrada já recebida e de uma entrada nova pelo caixa gerados no app local com a API; PDF comparado com o modelo.
+
 ### 2026-10-30 — Contratos gerados entram no menu Contratos (branch `claude/eager-hopper-auxpdq`)
 
 **Problema:** o Guilherme gerou o contrato da obra da Caroline e o menu Contratos continuou vazio. O PDF do modelo oficial era só gerado pela API e mostrado na tela; nada era gravado em `contracts`, que é o que o menu lista.

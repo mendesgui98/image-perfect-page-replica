@@ -7,6 +7,8 @@ import {
 import { loadAssets } from "./assets.ts";
 import { contractHtml } from "./contract-html.ts";
 import { proposalHtml } from "./proposal-html.ts";
+import { receiptHtml } from "./receipt-html.ts";
+import type { ReceiptData } from "../../../src/lib/receipt.ts";
 import { htmlToPdf } from "./render.ts";
 
 // Serviço de documentos da API: recebe os dados já montados (proposal.ts) e devolve o PDF.
@@ -19,6 +21,7 @@ export type PdfService = {
     clauses: ContractClause[],
     layout: PdfLayout,
   ): Promise<Buffer>;
+  receipt(data: ReceiptData): Promise<Buffer>;
 };
 
 const footer = (d: ProposalData) =>
@@ -45,6 +48,17 @@ export function createPdfService(): PdfService {
         title,
         layout,
         { headerRight: title, footerLeft: footer(d) },
+        assets.logoBlue,
+      );
+    },
+    receipt: (d) => {
+      const assets = loadAssets();
+      const title = `${d.number} · ${d.client.name}`;
+      return htmlToPdf(
+        receiptHtml(d, assets),
+        title,
+        "continuo",
+        { headerRight: title, footerLeft: `${d.company.name} · CNPJ ${d.company.cnpj}` },
         assets.logoBlue,
       );
     },
