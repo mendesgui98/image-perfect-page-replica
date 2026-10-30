@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { priceBreakdown, priceFromCost } from "@/lib/pricing";
+import { costBreakdown } from "@/lib/pricing";
 import { fmtBRL } from "@/lib/format";
 import { apiConfigured } from "@/lib/api-client";
 import { UsersAdmin } from "@/components/admin/users-admin";
@@ -241,7 +241,8 @@ function Precos({ ro }: { ro: boolean }) {
     taxes: Number(f.tax_rate) || 0,
     margin: Number(f.desired_margin) || 0,
   };
-  const example = priceFromCost(12000, rates);
+  // Exemplo: R$ 10.000 de mão de obra e R$ 5.000 de materiais (materiais levam só o imposto).
+  const example = costBreakdown(15000, rates, 5000);
   return (
     <SubmitForm
       onSubmit={() => save.mutate()}
@@ -252,8 +253,9 @@ function Precos({ ro }: { ro: boolean }) {
         <CardHeader className="p-4 sm:p-6">
           <CardTitle>Formação de preço · padrões da JMG</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Preço = custo direto ÷ [1 − (estrutura + RT + impostos + margem)]. Mudar aqui não altera
-            orçamentos já criados.
+            Mão de obra = custo da mão de obra ÷ [1 − (estrutura + RT + impostos + margem)];
+            materiais = custo ÷ (1 − impostos). Preço = mão de obra + materiais. Mudar aqui não
+            altera orçamentos já criados.
           </p>
         </CardHeader>
         <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
@@ -278,7 +280,7 @@ function Precos({ ro }: { ro: boolean }) {
         <CardHeader className="p-4 sm:p-6">
           <CardTitle>Exemplo com estes padrões</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Uma obra com custo direto de R$ 12.000,00 (mão de obra + materiais).
+            Uma obra com R$ 10.000,00 de mão de obra e R$ 5.000,00 de materiais.
           </p>
         </CardHeader>
         <CardContent className="space-y-2 p-4 pt-0 text-sm sm:p-6 sm:pt-0">
@@ -289,16 +291,18 @@ function Precos({ ro }: { ro: boolean }) {
             </p>
           ) : (
             (() => {
-              const b = priceBreakdown(example, 12000, rates);
+              const b = example;
               return (
                 <dl className="divide-y divide-border/60">
                   {(
                     [
                       ["Custo direto", b.directCost],
-                      [`Estrutura JMG · ${rates.structure}%`, b.structure],
-                      [`RT · ${rates.rt}%`, b.rt],
-                      [`Impostos · ${rates.taxes}%`, b.taxes],
-                      [`Lucro · ${rates.margin}%`, b.profit],
+                      ["Materiais com imposto", b.materialsPrice],
+                      ["Mão de obra", b.laborPrice],
+                      [`Estrutura JMG · ${rates.structure}% da mão de obra`, b.structure],
+                      [`RT · ${rates.rt}% da mão de obra`, b.rt],
+                      [`Impostos · ${rates.taxes}% do preço`, b.taxes],
+                      [`Lucro · ${rates.margin}% da mão de obra`, b.profit],
                     ] as const
                   ).map(([l, v]) => (
                     <div key={l} className="flex justify-between gap-3 py-2">

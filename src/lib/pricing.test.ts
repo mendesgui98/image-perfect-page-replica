@@ -314,3 +314,83 @@ describe("precificação pelo custo direto", () => {
     expect(w.result).toBeCloseTo(base.result, 6);
   });
 });
+
+describe("custo direto com percentuais só sobre a mão de obra", () => {
+  const rates = { structure: 12.5, rt: 10, taxes: 8, margin: 15 };
+  const params = {
+    ...emptyParams,
+    model: "custo_direto" as const,
+    rates_base: "mao_de_obra" as const,
+    structure_rate: 12.5,
+    architect_commission: 10,
+    tax_rate: 8,
+    desired_margin: 15,
+    min_margin: 10,
+  };
+  // MO R$ 10.000 + materiais R$ 5.000.
+  const material = mat({ consumption: 1, loss_pct: 0, conversion: 1, price: 5000 });
+  const obra = [{ quantity: 1, labor_cost_unit: 10000, materials: [material] }];
+
+  it("MO leva todos os percentuais e o material só o imposto", () => {
+    expect(priceFromCost(15000, rates, 5000)).toBe(23783.41);
+    expect(costBreakdown(15000, rates, 5000)).toMatchObject({
+      price: 23783.41,
+      laborPrice: 18348.63,
+      materialsPrice: 5434.78,
+      structure: 2293.58,
+      rt: 1834.86,
+      taxes: 1902.67,
+      profit: 2752.3,
+    });
+  });
+
+  it("orçamento: margem sobre a MO, material com imposto e o total centavo a centavo", () => {
+    const r = computeBudget(obra, params);
+    expect(r.saleNet).toBe(23783.41);
+    expect(r.materialsNet).toBe(5434.78);
+    expect(r.laborNet).toBe(18348.63);
+    expect(r.items[0]!.total).toBeCloseTo(23783.41, 6);
+    expect(r.structure).toBe(2293.58);
+    expect(r.commission).toBe(1834.86);
+    expect(r.taxesTotal).toBe(1902.67);
+    expect(r.result).toBe(2752.3);
+    expect(r.margin).toBeCloseTo(0.15, 4);
+    expect(r.belowDesired).toBe(false);
+    expect(marginLevel(r.margin, 15, 10)).toBe("saudavel");
+  });
+
+  it("MO repartida pelo custo da MO de cada serviço; material só com imposto", () => {
+    const r = computeBudget(
+      [
+        { quantity: 1, labor_cost_unit: 10000, materials: [] },
+        { quantity: 1, labor_cost_unit: 0, materials: [material] },
+      ],
+      params,
+    );
+    expect(r.items[0]!.total).toBeCloseTo(18348.63, 1);
+    expect(r.items[1]!.laborNet).toBeCloseTo(0, 6);
+    expect(r.items[1]!.materialsNet).toBeCloseTo(5434.78, 1);
+  });
+
+  it("preço negociado: a diferença sai da MO e o lucro cai", () => {
+    const r = computeBudget(obra, { ...params, negotiated_price: 22000 });
+    expect(r.saleNet).toBe(22000);
+    expect(r.materialsNet).toBe(5434.78);
+    expect(r.laborNet).toBe(16565.22);
+    expect(r.taxesTotal).toBe(1760);
+    expect(r.result).toBeLessThan(2752.29);
+    expect(r.structure + r.commission + r.taxesTotal + r.result + 15000).toBeCloseTo(22000, 6);
+  });
+
+  it("PDF do cliente: materiais com o imposto e MO com o restante", () => {
+    const sheet = clientPriceSheet([{ group: "Etapa 1", ...obra[0]! }], params);
+    expect(sheet.total).toBe(23783.41);
+    expect(sheet.materialsTotal).toBe(5434.78);
+    expect(sheet.laborTotal).toBe(18348.63);
+  });
+
+  it("simulador e margem mínima usam a mesma base", () => {
+    expect(priceSimulation(15000, rates, [15], 5000)[0]!.price).toBe(23783.41);
+    expect(computeBudget(obra, params).maxExtraDiscount).toBeGreaterThan(0);
+  });
+});

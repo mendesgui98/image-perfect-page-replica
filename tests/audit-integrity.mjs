@@ -57,6 +57,19 @@ const client = await value(
 await rejects("INSERT INTO public.budgets(status) VALUES('aprovado')", [], /elaboração/);
 const b1 = await value("INSERT INTO public.budgets(title) VALUES('Draft one') RETURNING id");
 const b2 = await value("INSERT INTO public.budgets(title) VALUES('Draft two') RETURNING id");
+// Orçamentos novos e revisões abertas: percentuais só sobre a mão de obra.
+assert.equal(
+  await value("SELECT params->>'rates_base' FROM public.budgets WHERE id=$1", [b1]),
+  "mao_de_obra",
+);
+assert.equal(
+  await value(
+    `INSERT INTO public.budgets(title, params) VALUES('Direct', '{"model":"custo_direto","desired_margin":20}')
+     RETURNING params->>'rates_base' || '/' || (params->>'desired_margin')`,
+  ),
+  "mao_de_obra/20",
+);
+await db.query("DELETE FROM public.budgets WHERE title='Direct'");
 const section = await value(
   "INSERT INTO public.budget_sections(budget_id,title) VALUES($1,'Scope') RETURNING id",
   [b1],

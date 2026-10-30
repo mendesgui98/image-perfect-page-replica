@@ -100,6 +100,7 @@ function Lista() {
       const params = pricing
         ? {
             model: "custo_direto",
+            rates_base: "mao_de_obra",
             structure_rate: pricing.structure_rate,
             architect_commission: pricing.architect_commission,
             apply_rt: !!architectId,

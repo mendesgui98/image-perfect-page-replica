@@ -26,6 +26,12 @@
  *  - Preço final            = preço negociado (se houver) ou o calculado
  *  - Estrutura, RT, impostos = % × preço final; lucro = preço final − custo direto − os três
  *  - Materiais vão ao cliente a custo; a mão de obra de venda é o restante do preço final
+ *  Com params.rates_base = "mao_de_obra" (orçamentos abertos e novos), os percentuais só incidem
+ *  sobre a mão de obra e o material leva apenas o imposto:
+ *  - Preço da MO            = custo MO ÷ [1 − (estrutura + RT + impostos + margem)]
+ *  - Preço dos materiais    = custo materiais ÷ (1 − impostos)
+ *  - Estrutura, RT, margem  = % × preço da MO; impostos = % × preço final
+ *  - Margem                 = lucro ÷ preço da MO
  */
 
 export type TaxBase = "venda" | "mao_de_obra";
@@ -46,6 +52,8 @@ export interface PricingParams {
   taxes: Tax[];
   /** "custo_direto" = modelo atual; ausente = acréscimos sobre custo (orçamentos antigos). */
   model?: "custo_direto" | undefined;
+  /** "mao_de_obra" = percentuais só sobre a MO e materiais só com imposto (custo direto). */
+  rates_base?: "mao_de_obra" | undefined;
   /** Custo estrutural JMG (% do preço). */
   structure_rate?: number | undefined;
   /** Impostos (% do preço). */
@@ -175,6 +183,10 @@ export interface PriceRates {
 export const isDirectCostModel = (params: Pick<PricingParams, "model">) =>
   params.model === "custo_direto";
 
+/** Custo direto com os percentuais só sobre a mão de obra (materiais levam só o imposto). */
+export const laborRatesBase = (params: Pick<PricingParams, "model" | "rates_base">) =>
+  isDirectCostModel(params) && params.rates_base === "mao_de_obra";
+
 /** Percentuais do orçamento no modelo do custo direto (RT zerada quando não se aplica). */
 export function priceRates(params: PricingParams): PriceRates {
   return {
@@ -186,25 +198,33 @@ export function priceRates(params: PricingParams): PriceRates {
 }
 
 /**
- * Preço de venda = custo direto ÷ [1 − (estrutura + RT + impostos + margem)].
+ * Preço de venda = (custo direto − materiais) ÷ [1 − (estrutura + RT + impostos + margem)]
+ * + materiais ÷ (1 − impostos). `materials` = custo dos materiais que levam só o imposto
+ * (0 = todos os percentuais sobre o custo direto inteiro).
  * null quando a soma dos percentuais chega a 100% (não existe preço).
  */
-export function priceFromCost(directCost: number, rates: PriceRates) {
-  const raw = rawPrice(directCost, rates);
+export function priceFromCost(directCost: number, rates: PriceRates, materials = 0) {
+  const raw = rawPrice(directCost, rates, materials);
   return raw === null ? null : r2(raw);
 }
-function rawPrice(directCost: number, rates: PriceRates) {
+function rawPrice(directCost: number, rates: PriceRates, materials = 0) {
   const share = pct(rates.structure) + pct(rates.rt) + pct(rates.taxes) + pct(rates.margin);
   if (share >= 1 - 1e-9) return null;
-  return (Number(directCost) || 0) / (1 - share);
+  const m = Number(materials) || 0;
+  return ((Number(directCost) || 0) - m) / (1 - share) + materialsPrice(m, rates);
+}
+/** Materiais com só o imposto: custo ÷ (1 − impostos). */
+function materialsPrice(materials: number, rates: Pick<PriceRates, "taxes">) {
+  return (Number(materials) || 0) / (1 - pct(rates.taxes));
 }
 
 /** Preço sugerido: o calculado arredondado para a centena mais próxima. */
 export const suggestedPrice = (price: number) => Math.round(price / 100) * 100;
 
 /**
- * Abertura de um preço: estrutura, RT e impostos são % do preço; o lucro é a sobra, para a soma
- * bater centavo a centavo com o preço.
+ * Abertura de um preço: impostos são % do preço; estrutura e RT são % do preço da mão de obra
+ * (o preço inteiro quando `materials` = 0); o lucro é a sobra, para a soma bater centavo a
+ * centavo com o preço. A margem é o lucro sobre o preço da mão de obra.
  */
 export function priceBreakdown(
   price: number,
@@ -212,36 +232,46 @@ export function priceBreakdown(
   rates: Omit<PriceRates, "margin">,
   /** Preço sem arredondar (o calculado), para os percentuais baterem com a conta exata. */
   exactPrice: number = price,
+  /** Custo dos materiais que levam só o imposto. */
+  materials = 0,
 ) {
   const p = r2(Number(price) || 0);
   const basis = Number(exactPrice) || 0;
-  const structure = r2(basis * pct(rates.structure));
-  const rt = r2(basis * pct(rates.rt));
+  const matPrice = materialsPrice(materials, rates);
+  const laborBasis = basis - matPrice;
+  const structure = r2(laborBasis * pct(rates.structure));
+  const rt = r2(laborBasis * pct(rates.rt));
   const taxes = r2(basis * pct(rates.taxes));
   const profit = r2(p - (Number(directCost) || 0) - structure - rt - taxes);
+  const laborPrice = p - r2(matPrice);
   return {
     price: p,
     directCost: r2(directCost),
+    materialsPrice: r2(matPrice),
+    laborPrice: r2(laborPrice),
     structure,
     rt,
     taxes,
     profit,
-    margin: p > 0 ? profit / p : 0,
+    margin: laborPrice > 0 ? profit / laborPrice : 0,
   };
 }
 
 /** Abertura do preço calculado para um custo direto (null se os percentuais somam 100%+). */
-export function costBreakdown(directCost: number, rates: PriceRates) {
-  const raw = rawPrice(directCost, rates);
-  return raw === null ? null : priceBreakdown(r2(raw), directCost, rates, raw);
+export function costBreakdown(directCost: number, rates: PriceRates, materials = 0) {
+  const raw = rawPrice(directCost, rates, materials);
+  return raw === null ? null : priceBreakdown(r2(raw), directCost, rates, raw, materials);
 }
+
+/** Folga dos centavos arredondados ao comparar a margem com a meta (0,01 ponto percentual). */
+const MARGIN_TOLERANCE = 1e-4;
 
 export type MarginLevel = "saudavel" | "atencao" | "alerta" | "prejuizo";
 /** Faixa da margem: meta ou acima, entre mínima e meta, abaixo da mínima, negativa. */
 export function marginLevel(margin: number, target: number, min: number): MarginLevel {
   if (margin < 0) return "prejuizo";
-  if (margin < pct(min) - 1e-9) return "alerta";
-  if (margin < pct(target) - 1e-9) return "atencao";
+  if (margin < pct(min) - MARGIN_TOLERANCE) return "alerta";
+  if (margin < pct(target) - MARGIN_TOLERANCE) return "atencao";
   return "saudavel";
 }
 
@@ -250,10 +280,11 @@ export function priceSimulation(
   directCost: number,
   rates: PriceRates,
   margins: number[] = [5, 8, 10, 12, 15, 20],
+  materials = 0,
 ) {
   return margins.map((margin) => ({
     margin,
-    price: priceFromCost(directCost, { ...rates, margin }),
+    price: priceFromCost(directCost, { ...rates, margin }, materials),
   }));
 }
 
@@ -268,46 +299,63 @@ function computeDirectCost(items: PricingItem[], params: PricingParams): BudgetR
   const laborCost = pre.reduce((s, p) => s + p.laborCost, 0);
   const materialsCost = pre.reduce((s, p) => s + p.materialsCost, 0);
   const totalCost = laborCost + materialsCost;
-  const exact = rawPrice(totalCost, rates) ?? 0;
+  // Materiais que levam só o imposto (0 = percentuais sobre o custo direto inteiro).
+  const onlyTax = laborRatesBase(params) ? materialsCost : 0;
+  const exact = rawPrice(totalCost, rates, onlyTax) ?? 0;
   const calculated = r2(exact);
   const negotiated = params.negotiated_price;
   const isNegotiated = negotiated != null && Number(negotiated) >= 0;
   const price = isNegotiated ? r2(Number(negotiated)) : calculated;
-  const b = priceBreakdown(price, totalCost, rates, isNegotiated ? price : exact);
-  // Materiais a custo; o que o preço tem além do custo direto vai para a mão de obra de cada
-  // item, proporcional ao custo direto do item.
-  const spread = price - totalCost;
+  const b = priceBreakdown(price, totalCost, rates, isNegotiated ? price : exact, onlyTax);
+  // Materiais a custo (ou com só o imposto); o que o preço tem além disso e do custo da MO vai
+  // para a mão de obra de cada item, proporcional ao custo direto do item (ou ao custo da MO,
+  // quando os percentuais são só sobre ela).
+  const materialsFactor = onlyTax > 0 ? 1 / (1 - pct(rates.taxes)) : 1;
+  const materialsSale = materialsCost * materialsFactor;
+  const spread = price - materialsSale - laborCost;
   const itemResults: ItemResult[] = pre.map((p) => {
     const direct = p.laborCost + p.materialsCost;
-    const share = totalCost > 0 ? direct / totalCost : pre.length ? 1 / pre.length : 0;
+    const share =
+      onlyTax > 0 && laborCost > 0
+        ? p.laborCost / laborCost
+        : totalCost > 0
+          ? direct / totalCost
+          : pre.length
+            ? 1 / pre.length
+            : 0;
     const laborNet = p.laborCost + spread * share;
+    const materialsNet = p.materialsCost * materialsFactor;
     return {
       id: p.id,
       laborCost: p.laborCost,
       materialsCost: p.materialsCost,
       laborList: laborNet,
-      materialsList: p.materialsCost,
+      materialsList: materialsNet,
       laborNet,
-      materialsNet: p.materialsCost,
-      total: laborNet + p.materialsCost,
+      materialsNet,
+      total: laborNet + materialsNet,
     };
   });
   const discount = Math.max(0, calculated - price);
-  const minPrice = priceFromCost(totalCost, { ...rates, margin: Number(params.min_margin) || 0 });
+  const minPrice = priceFromCost(
+    totalCost,
+    { ...rates, margin: Number(params.min_margin) || 0 },
+    onlyTax,
+  );
   return {
     items: itemResults,
     laborCost: r2(laborCost),
     materialsCost: r2(materialsCost),
     totalCost: r2(totalCost),
-    laborList: r2(calculated - materialsCost),
-    materialsList: r2(materialsCost),
+    laborList: r2(calculated - materialsSale),
+    materialsList: r2(materialsSale),
     listTotal: r2(calculated),
     reserveAmount: 0,
     itemDiscounts: 0,
     generalDiscount: r2(discount),
     totalDiscount: r2(discount),
-    laborNet: r2(price - materialsCost),
-    materialsNet: r2(materialsCost),
+    laborNet: r2(price - materialsSale),
+    materialsNet: r2(materialsSale),
     saleNet: price,
     taxes: [
       { name: "Impostos", base: "venda", rate: rates.taxes, baseValue: price, amount: b.taxes },
@@ -317,8 +365,8 @@ function computeDirectCost(items: PricingItem[], params: PricingParams): BudgetR
     result: b.profit,
     margin: b.margin,
     reinvestment: r2(Math.max(b.profit, 0) * pct(params.reinvestment_share)),
-    belowMin: price > 0 && b.margin < pct(params.min_margin) - 1e-9,
-    belowDesired: price > 0 && b.margin < pct(params.desired_margin) - 1e-9,
+    belowMin: price > 0 && b.margin < pct(params.min_margin) - MARGIN_TOLERANCE,
+    belowDesired: price > 0 && b.margin < pct(params.desired_margin) - MARGIN_TOLERANCE,
     maxExtraDiscount:
       minPrice === null ? 0 : Math.max(0, Math.floor((price - minPrice) * 100) / 100),
     structure: b.structure,
