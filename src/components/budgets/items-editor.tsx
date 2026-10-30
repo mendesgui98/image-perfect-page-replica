@@ -31,6 +31,7 @@ import {
 import { type Item, type Section } from "@/lib/budget-data";
 import type { Database } from "@/integrations/supabase/types";
 import {
+  materialCost,
   materialPackages,
   materialQty,
   type BudgetResult,
@@ -318,7 +319,8 @@ function SectionCard({
 }) {
   const rows = items.map((i) => result.items.find((r) => r.id === i.id));
   const total = rows.reduce((s, r) => s + (r?.total ?? 0), 0);
-  const cost = rows.reduce((s, r) => s + (r?.laborCost ?? 0) + (r?.materialsCost ?? 0), 0);
+  const materialsCost = rows.reduce((s, r) => s + (r?.materialsCost ?? 0), 0);
+  const laborCost = rows.reduce((s, r) => s + (r?.laborCost ?? 0), 0);
   const materials = new Set(items.flatMap((i) => i.materials.map((m) => m.material_id ?? m.name)))
     .size;
   function autoMaterials() {
@@ -356,27 +358,16 @@ function SectionCard({
             run(budgetApi.updateSection(section.id, { title: e.target.value }))
           }
         />
-        {/* Celular: contagens, custo e preço numa segunda linha (order-last), alinhados à esquerda. */}
-        <div className="order-last flex w-full flex-wrap items-center gap-x-3 gap-y-1 pl-10 sm:order-none sm:w-auto sm:flex-nowrap sm:pl-0">
-          <span className="flex items-center gap-1.5 text-xs">
-            <span className="rounded-full bg-primary-soft px-2 py-0.5 font-medium text-primary">
-              {items.length} {items.length === 1 ? "serviço" : "serviços"}
+        <span className="flex items-center gap-1.5 text-xs">
+          <span className="rounded-full bg-primary-soft px-2 py-0.5 font-medium text-primary">
+            {items.length} {items.length === 1 ? "serviço" : "serviços"}
+          </span>
+          {materials > 0 && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+              {materials} {materials === 1 ? "material" : "materiais"}
             </span>
-            {materials > 0 && (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
-                {materials} {materials === 1 ? "material" : "materiais"}
-              </span>
-            )}
-          </span>
-          <span className="ml-auto text-right text-xs text-muted-foreground sm:w-28">
-            <span className="block tabular-nums">{fmtBRL(cost)}</span>
-            custo direto
-          </span>
-          <span className="text-right text-xs text-muted-foreground sm:w-32">
-            <Money value={total} className="block text-base font-semibold text-foreground" />
-            preço de venda
-          </span>
-        </div>
+          )}
+        </span>
         <Button
           type="button"
           variant="ghost"
@@ -402,6 +393,7 @@ function SectionCard({
           </Button>
         )}
       </div>
+      <StageSummary materials={materialsCost} labor={laborCost} price={total} />
       {open && (
         <div className="px-4 pb-4 sm:px-6">
           <div className="divide-y divide-border/60">
@@ -460,6 +452,100 @@ function SectionCard({
   );
 }
 
+/** Resumo da etapa: materiais, mão de obra, custo direto e preço de venda, com a proporção. */
+function StageSummary({
+  materials,
+  labor,
+  price,
+}: {
+  materials: number;
+  labor: number;
+  price: number;
+}) {
+  const cost = materials + labor;
+  const materialsShare = cost > 0 ? Math.round((materials / cost) * 100) : 0;
+  return (
+    <div className="px-3 pb-3 sm:px-4">
+      <div className="grid grid-cols-2 overflow-hidden rounded-xl border sm:grid-cols-4 [&>div]:min-w-0 [&>div]:px-3 [&>div]:py-2">
+        <div>
+          <SummaryLabel dot="bg-gold">Materiais</SummaryLabel>
+          <Money value={materials} className="font-semibold" />
+        </div>
+        <div className="border-l">
+          <SummaryLabel dot="bg-primary">Mão de obra</SummaryLabel>
+          <Money value={labor} className="font-semibold" />
+        </div>
+        <div className="border-t sm:border-l sm:border-t-0">
+          <SummaryLabel>Custo direto</SummaryLabel>
+          <Money value={cost} className="font-semibold" />
+        </div>
+        <div className="border-l border-t bg-primary-soft sm:border-t-0">
+          <SummaryLabel>Preço de venda</SummaryLabel>
+          <Money value={price} className="text-base font-bold text-primary" />
+        </div>
+      </div>
+      {cost > 0 && (
+        <>
+          <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+            <span className="bg-gold" style={{ width: `${materialsShare}%` }} />
+            <span className="flex-1 bg-primary" />
+          </div>
+          <div className="mt-1 flex justify-between text-xs text-muted-foreground num">
+            <span>Materiais {materialsShare}%</span>
+            <span>Mão de obra {100 - materialsShare}%</span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function SummaryLabel({ dot, children }: { dot?: string; children: React.ReactNode }) {
+  return (
+    <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      {dot && <span className={cn("h-2 w-2 shrink-0 rounded-sm", dot)} />}
+      {children}
+    </span>
+  );
+}
+
+/** Ficha do serviço: a conta montada do custo até o preço de venda. */
+function ServiceCostSheet({
+  item,
+  r,
+}: {
+  item: Item;
+  r?: BudgetResult["items"][number] | undefined;
+}) {
+  const materials = r?.materialsCost ?? 0;
+  const labor = r?.laborCost ?? 0;
+  return (
+    <div className="space-y-1.5 rounded-xl border bg-muted/40 p-3 text-sm num">
+      <div className="flex justify-between gap-2">
+        <SummaryLabel dot="bg-gold">Materiais</SummaryLabel>
+        <Money value={materials} />
+      </div>
+      <div className="flex justify-between gap-2">
+        <span className="flex flex-wrap items-baseline gap-x-1">
+          <SummaryLabel dot="bg-primary">Mão de obra</SummaryLabel>
+          <span className="text-xs text-muted-foreground">
+            ({fmtNum(item.quantity)} × {fmtBRL(item.labor_cost_unit)})
+          </span>
+        </span>
+        <Money value={labor} />
+      </div>
+      <div className="flex justify-between gap-2 border-t border-dashed pt-1.5 font-semibold">
+        <span>Custo direto</span>
+        <Money value={materials + labor} />
+      </div>
+      <div className="flex justify-between gap-2 border-t pt-1.5 font-bold text-primary">
+        <span>Preço de venda</span>
+        <Money value={r?.total ?? 0} className="text-base" />
+      </div>
+    </div>
+  );
+}
+
 function ItemRow({
   item,
   r,
@@ -484,57 +570,62 @@ function ItemRow({
   const num = (v: string) => (v === "" ? null : Number(v));
   const setMat = (i: number, p: Partial<ItemMaterial>) =>
     upd({ materials: item.materials.map((m, j) => (j === i ? { ...m, ...p } : m)) });
+  const cellInput = "h-8 w-20 text-right";
 
   return (
-    <div className="py-4">
-      <div className="grid grid-cols-12 gap-2">
-        <Textarea
-          rows={1}
-          className="col-span-12 min-h-10 md:col-span-6"
-          defaultValue={item.description}
-          disabled={locked}
-          onBlur={(e) =>
-            e.target.value !== item.description && upd({ description: e.target.value })
-          }
-        />
-        <div className="col-span-4 md:col-span-2">
-          <Input
-            onKeyDown={commitOnEnter}
-            type="number"
-            step="any"
-            defaultValue={item.quantity}
+    <div className="space-y-3 py-4">
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="min-w-0 space-y-2">
+          <Textarea
+            rows={1}
+            className="min-h-10 font-medium"
+            defaultValue={item.description}
             disabled={locked}
             onBlur={(e) =>
-              Number(e.target.value) !== item.quantity && upd({ quantity: Number(e.target.value) })
+              e.target.value !== item.description && upd({ description: e.target.value })
             }
           />
-          <div className="mt-0.5 text-xs text-muted-foreground">{UNIT_LABEL[item.unit]}</div>
-        </div>
-        <div className="col-span-4 md:col-span-2">
-          <Input
-            onKeyDown={commitOnEnter}
-            type="number"
-            step="0.01"
-            defaultValue={item.labor_cost_unit}
-            disabled={locked}
-            onBlur={(e) =>
-              Number(e.target.value) !== item.labor_cost_unit &&
-              upd({ labor_cost_unit: Number(e.target.value) })
-            }
-          />
-          <div className="mt-0.5 text-xs text-muted-foreground">custo MO / un</div>
-        </div>
-        <div className="col-span-4 text-right md:col-span-2">
-          <Money value={r?.total ?? 0} className="font-semibold" />
-          <div className="text-xs text-muted-foreground num">
-            custo {fmtBRL((r?.laborCost ?? 0) + (r?.materialsCost ?? 0))}
+          <div className="flex flex-wrap gap-3">
+            <div className="w-32">
+              <Label className="text-xs text-muted-foreground">
+                Quantidade ({UNIT_LABEL[item.unit]})
+              </Label>
+              <Input
+                onKeyDown={commitOnEnter}
+                type="number"
+                step="any"
+                defaultValue={item.quantity}
+                disabled={locked}
+                onBlur={(e) =>
+                  Number(e.target.value) !== item.quantity &&
+                  upd({ quantity: Number(e.target.value) })
+                }
+              />
+            </div>
+            <div className="w-32">
+              <Label className="text-xs text-muted-foreground">
+                Custo MO / {UNIT_LABEL[item.unit]}
+              </Label>
+              <Input
+                onKeyDown={commitOnEnter}
+                type="number"
+                step="0.01"
+                defaultValue={item.labor_cost_unit}
+                disabled={locked}
+                onBlur={(e) =>
+                  Number(e.target.value) !== item.labor_cost_unit &&
+                  upd({ labor_cost_unit: Number(e.target.value) })
+                }
+              />
+            </div>
           </div>
         </div>
+        <ServiceCostSheet item={item} r={r} />
       </div>
-      <div className="mt-2 flex items-center gap-3">
+      <div className="flex items-center gap-3">
         <button
           type="button"
-          className="flex min-h-8 items-center gap-1 text-xs font-medium text-primary hover:underline"
+          className="flex min-h-8 items-center gap-2 text-sm font-semibold text-primary hover:underline"
           onClick={() => setOpen(!open)}
         >
           {open ? (
@@ -542,7 +633,11 @@ function ItemRow({
           ) : (
             <ChevronRight className="h-3.5 w-3.5" />
           )}
-          Materiais ({item.materials.length}){legacy && ", percentuais e desconto"}
+          Materiais do serviço{legacy && ", percentuais e desconto"}
+          <span className="rounded-full bg-gold-soft px-2 py-0.5 text-xs font-semibold text-foreground num">
+            {item.materials.length} {item.materials.length === 1 ? "item" : "itens"} ·{" "}
+            {fmtBRL(r?.materialsCost ?? 0)}
+          </span>
         </button>
         {!locked && (
           <Button
@@ -557,8 +652,8 @@ function ItemRow({
         )}
       </div>
       {open && (
-        <div className="mt-3 space-y-3 rounded-xl bg-muted/40 p-3 text-sm">
-          <div className="grid gap-2 sm:grid-cols-4">
+        <div className="space-y-3 text-sm">
+          <div className="grid gap-2 rounded-xl bg-muted/40 p-3 sm:grid-cols-4">
             <div>
               <Label className="text-xs">Unidade</Label>
               <select
@@ -621,84 +716,124 @@ function ItemRow({
               </>
             )}
           </div>
-          {item.materials.map((m, i) => (
-            <div
-              key={i}
-              className="grid grid-cols-12 items-end gap-2 border-t border-border/60 pt-3"
-            >
-              <div className="col-span-12 text-sm font-medium sm:col-span-4">
-                {m.name}
-                <div className="text-xs text-muted-foreground">
-                  <MaterialConsumption material={m} quantity={item.quantity} />
-                </div>
-              </div>
-              <div className="col-span-4 sm:col-span-2">
-                <Label className="text-xs">Consumo/un</Label>
-                <Input
-                  onKeyDown={commitOnEnter}
-                  type="number"
-                  step="any"
-                  defaultValue={m.consumption}
-                  disabled={locked}
-                  onBlur={(e) =>
-                    Number(e.target.value) !== m.consumption &&
-                    setMat(i, { consumption: Number(e.target.value) })
-                  }
-                />
-              </div>
-              <div className="col-span-4 sm:col-span-2">
-                <Label className="text-xs">Perda %</Label>
-                <Input
-                  onKeyDown={commitOnEnter}
-                  type="number"
-                  step="any"
-                  defaultValue={m.loss_pct}
-                  disabled={locked}
-                  onBlur={(e) =>
-                    Number(e.target.value) !== m.loss_pct &&
-                    setMat(i, { loss_pct: Number(e.target.value) })
-                  }
-                />
-              </div>
-              <div className="col-span-4 sm:col-span-2">
-                <Label className="text-xs">Preço compra</Label>
-                <Input
-                  onKeyDown={commitOnEnter}
-                  type="number"
-                  step="0.01"
-                  defaultValue={m.price}
-                  disabled={locked}
-                  onBlur={(e) =>
-                    Number(e.target.value) !== m.price &&
-                    setMat(i, { price: Number(e.target.value) })
-                  }
-                />
-              </div>
-              <div className="col-span-12 sm:col-span-2">
-                <Label className="text-xs">Fornece</Label>
-                <select
-                  className={selectClass}
-                  value={m.supplied_by}
-                  disabled={locked}
-                  onChange={(e) => setMat(i, { supplied_by: e.target.value as "jmg" | "cliente" })}
-                >
-                  <option value="jmg">JMG</option>
-                  <option value="cliente">Cliente</option>
-                </select>
-              </div>
-              {!locked && (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="danger"
-                  className="col-span-12 justify-self-end"
-                  onClick={() => upd({ materials: item.materials.filter((_, j) => j !== i) })}
-                >
-                  Remover material
-                </Button>
-              )}
+          {item.materials.length > 0 && (
+            <div className="overflow-x-auto rounded-xl border">
+              <table className="w-full min-w-[44rem] text-sm num">
+                <thead className="bg-muted/60 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <tr className="[&>th]:px-3 [&>th]:py-2 [&>th]:font-semibold">
+                    <th>Material</th>
+                    <th>Fornece</th>
+                    <th className="text-right">Consumo / un</th>
+                    <th className="text-right">Perda %</th>
+                    <th>Quantidade</th>
+                    <th className="text-right">Preço compra</th>
+                    <th className="text-right">Total</th>
+                    {!locked && <th className="w-10" />}
+                  </tr>
+                </thead>
+                <tbody className="divide-y [&_td]:px-3 [&_td]:py-2 [&_td]:align-middle">
+                  {item.materials.map((m, i) => (
+                    <tr key={i}>
+                      <td className="font-medium">{m.name}</td>
+                      <td>
+                        <select
+                          className={cn(selectClass, "h-8 w-24")}
+                          aria-label="Quem fornece"
+                          value={m.supplied_by}
+                          disabled={locked}
+                          onChange={(e) =>
+                            setMat(i, { supplied_by: e.target.value as "jmg" | "cliente" })
+                          }
+                        >
+                          <option value="jmg">JMG</option>
+                          <option value="cliente">Cliente</option>
+                        </select>
+                      </td>
+                      <td className="text-right">
+                        <Input
+                          onKeyDown={commitOnEnter}
+                          type="number"
+                          step="any"
+                          aria-label="Consumo por unidade"
+                          className={cn(cellInput, "ml-auto")}
+                          defaultValue={m.consumption}
+                          disabled={locked}
+                          onBlur={(e) =>
+                            Number(e.target.value) !== m.consumption &&
+                            setMat(i, { consumption: Number(e.target.value) })
+                          }
+                        />
+                      </td>
+                      <td className="text-right">
+                        <Input
+                          onKeyDown={commitOnEnter}
+                          type="number"
+                          step="any"
+                          aria-label="Perda %"
+                          className={cn(cellInput, "ml-auto w-16")}
+                          defaultValue={m.loss_pct}
+                          disabled={locked}
+                          onBlur={(e) =>
+                            Number(e.target.value) !== m.loss_pct &&
+                            setMat(i, { loss_pct: Number(e.target.value) })
+                          }
+                        />
+                      </td>
+                      <td className="text-xs text-muted-foreground">
+                        <MaterialConsumption material={m} quantity={item.quantity} />
+                      </td>
+                      <td className="text-right">
+                        <Input
+                          onKeyDown={commitOnEnter}
+                          type="number"
+                          step="0.01"
+                          aria-label="Preço de compra"
+                          className={cn(cellInput, "ml-auto w-24")}
+                          defaultValue={m.price}
+                          disabled={locked}
+                          onBlur={(e) =>
+                            Number(e.target.value) !== m.price &&
+                            setMat(i, { price: Number(e.target.value) })
+                          }
+                        />
+                      </td>
+                      <td className="whitespace-nowrap text-right font-semibold">
+                        {m.supplied_by === "cliente" ? (
+                          <span className="font-normal text-muted-foreground">não entra</span>
+                        ) : (
+                          fmtBRL(materialCost(m, item.quantity))
+                        )}
+                      </td>
+                      {!locked && (
+                        <td>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Remover material"
+                            onClick={() =>
+                              upd({ materials: item.materials.filter((_, j) => j !== i) })
+                            }
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-gold-soft font-bold [&>td]:px-3 [&>td]:py-2">
+                    <td colSpan={6}>Total de materiais do serviço</td>
+                    <td className="whitespace-nowrap text-right">
+                      {fmtBRL(r?.materialsCost ?? 0)}
+                    </td>
+                    {!locked && <td />}
+                  </tr>
+                </tfoot>
+              </table>
             </div>
-          ))}
+          )}
           {!locked && (
             <div className="flex flex-wrap items-center gap-2">
               <select
@@ -735,8 +870,6 @@ function ItemRow({
     </div>
   );
 }
-
-/* ---------------- Dados ---------------- */
 
 function MaterialConsumption({
   material: m,
