@@ -106,28 +106,36 @@ export function createRepo(db: Db): Repo {
     receiptInput: (claims, settlementId) =>
       db.asUser(claims, async (tx) => {
         const [s] = await tx`
-          select s.id, s.entry_id, s.amount, s.paid_date, s.payment_method, e.work_id
+          select s.id, s.entry_id, s.amount, s.paid_date, s.payment_method, e.work_id, e.person_id
           from public.financial_settlements s
           join public.financial_entries e on e.id = s.entry_id
-          where s.id = ${settlementId} and e.direction = 'entrada' and e.work_id is not null`;
+          where s.id = ${settlementId} and e.direction = 'entrada' and not e.canceled`;
         if (!s) return null;
-        const workId = s["work_id"] as string;
-        const [w] = await tx`
-          select name, address, client_id, linked_budget_id from public.work_registry where id = ${workId}`;
-        if (!w) return null;
-        const entries = await tx`
-          select id, description, amount, due_date, installment_index, cash_only from public.financial_entries
-          where work_id = ${workId} and direction = 'entrada' and not canceled
-            and (not cash_only or id = ${s["entry_id"] as string})`;
+        const workId = (s["work_id"] as string | null) ?? null;
+        const [w] = workId
+          ? await tx`select name, address, client_id, linked_budget_id
+                     from public.work_registry where id = ${workId}`
+          : [];
+        // Entrada de obra: todas as parcelas da obra; entrada geral: só ela mesma.
+        const entries = w
+          ? await tx`
+              select id, description, amount, due_date, installment_index, cash_only
+              from public.financial_entries
+              where work_id = ${workId} and direction = 'entrada' and not canceled
+                and (not cash_only or id = ${s["entry_id"] as string})`
+          : await tx`
+              select id, description, amount, due_date, installment_index, cash_only
+              from public.financial_entries where id = ${s["entry_id"] as string}`;
         const ids = entries.map((e) => e["id"] as string);
         const settlements = ids.length
           ? await tx`select id, entry_id, amount, paid_date from public.financial_settlements
                      where entry_id in ${tx(ids)}`
           : [];
-        const [client] = w["client_id"]
-          ? await tx`select name, document from public.people where id = ${w["client_id"] as string}`
+        const personId = (w?.["client_id"] as string | null) ?? (s["person_id"] as string | null);
+        const [client] = personId
+          ? await tx`select name, document from public.people where id = ${personId}`
           : [];
-        const [b] = w["linked_budget_id"]
+        const [b] = w?.["linked_budget_id"]
           ? await tx`select number, issue_date, payment_terms from public.budgets
                      where id = ${w["linked_budget_id"] as string}`
           : [];
@@ -154,7 +162,9 @@ export function createRepo(db: Db): Repo {
             amount: num(x["amount"]),
             paid_date: isoDate(x["paid_date"]) ?? "",
           })),
-          work: { name: String(w["name"]), address: (w["address"] as string | null) ?? null },
+          work: w
+            ? { name: String(w["name"]), address: (w["address"] as string | null) ?? null }
+            : null,
           client: client
             ? {
                 name: String(client["name"]),

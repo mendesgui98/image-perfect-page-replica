@@ -103,3 +103,25 @@ it("entrada avulsa do caixa não entra no valor do contrato", () => {
   expect(r.summary).toMatchObject({ contract: 46879, paid: 25783.45, balance: 21095.55 });
   expect(r.ref.label).toBe("1ª medição");
 });
+
+it("entrada geral, sem obra: recibo sem situação do contrato", () => {
+  const e = {
+    id: "g1",
+    description: "Entrada",
+    amount: 10000,
+    due_date: "2026-10-30",
+    cash_only: true,
+  };
+  const pay = { id: "sg", entry_id: "g1", amount: 10000, paid_date: "2026-10-30" };
+  const r = buildReceipt({
+    ...input,
+    settlement: { ...pay, payment_method: "Pix" },
+    entries: [e],
+    settlements: [pay],
+    work: null,
+    budget: null,
+  });
+  expect(r.hasContract).toBe(false);
+  expect(r.number).toBe("REC-2026-0000-01");
+  expect(r.amountWords).toBe("dez mil reais");
+});

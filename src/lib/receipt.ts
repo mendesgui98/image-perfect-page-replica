@@ -30,7 +30,8 @@ export interface ReceiptInput {
   entries: ReceiptEntry[];
   /** Todos os recebimentos dessas entradas. */
   settlements: ReceiptSettlement[];
-  work: { name: string; address: string | null };
+  /** Obra da entrada; null para entrada geral da JMG (sem contrato). */
+  work: { name: string; address: string | null } | null;
   client: { name: string; document: string | null } | null;
   budget: { number: number; issue_date: string; payment_terms: ProposalTerm[] } | null;
   issuer: string | null;
@@ -52,7 +53,9 @@ export interface ReceiptData {
   amountWords: string;
   ref: { label: string; when: string | null; pct: number };
   client: { name: string; document: string | null };
-  work: { name: string; address: string | null };
+  work: { name: string; address: string | null } | null;
+  /** Mostra a situação financeira do contrato (entrada de obra com parcelas). */
+  hasContract: boolean;
   paidBy: { label: string; value: string }[];
   receivedIn: { label: string; value: string }[];
   transactionId: string | null;
@@ -174,6 +177,7 @@ export function buildReceipt(input: ReceiptInput): ReceiptData {
     },
     client,
     work: input.work,
+    hasContract: !!input.work && ordered.some((e) => !e.cash_only),
     paidBy,
     receivedIn: [
       { label: "Favorecido", value: c.name },

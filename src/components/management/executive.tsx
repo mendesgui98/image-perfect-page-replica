@@ -1,3 +1,4 @@
+import { ReceiptButton } from "@/components/works/finance";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch, useLocation } from "@tanstack/react-router";
@@ -284,6 +285,11 @@ export function CompositionTable({
               <td className="min-w-48 p-3">
                 {r.description}
                 {r.method && <p className="mt-1 text-xs text-muted-foreground">{r.method}</p>}
+                {r.status === "recebido" && (
+                  <div className="mt-1.5">
+                    <ReceiptButton id={r.id} small />
+                  </div>
+                )}
                 {indicator === "extras" && (
                   <p className="mt-1 text-xs text-muted-foreground">
                     Recebido / saldo: {r.paid === null ? "sem vínculo individual" : brl(r.paid)}
