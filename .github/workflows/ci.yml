@@ -157,6 +157,8 @@ jobs:
     permissions:
       contents: read
       packages: read
+      # Abre/fecha a issue "Deploy em produção falhou" (aviso por e-mail do GitHub).
+      issues: write
     environment:
       name: production
       url: https://${{ vars.APP_DOMAIN }}
@@ -231,7 +233,22 @@ jobs:
           install -d -m 700 ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          # A VPS pode demorar a responder (ex.: logo após outro deploy). O ssh-keyscan desiste em 5 s
+          # por padrão e derrubava o deploy sem mensagem; agora tenta várias vezes com folga.
+          printf 'Host *\n  ConnectTimeout 20\n  ConnectionAttempts 3\n  ServerAliveInterval 15\n  ServerAliveCountMax 8\n' > ~/.ssh/config
+          chmod 600 ~/.ssh/config
+          for i in 1 2 3 4 5 6; do
+            if keys=$(ssh-keyscan -T 15 -p "$VPS_PORT" -H "$VPS_HOST" 2>/dev/null) && [ -n "$keys" ]; then
+              printf '%s\n' "$keys" >> ~/.ssh/known_hosts
+              break
+            fi
+            if [ "$i" = 6 ]; then
+              echo "::error::A VPS ($VPS_HOST:$VPS_PORT) não respondeu ao SSH depois de 6 tentativas."
+              exit 1
+            fi
+            echo "VPS sem resposta no SSH (tentativa $i de 6); nova tentativa em 15 s."
+            sleep 15
+          done
 
       - name: Enviar configuração para a VPS
         run: |
@@ -259,3 +276,27 @@ jobs:
           curl -fsS -o /dev/null --retry 12 --retry-delay 10 --retry-all-errors "https://$APP_DOMAIN/"
           curl -fsS --retry 12 --retry-delay 10 --retry-all-errors "https://$API_DOMAIN/jmg/health"
           echo "No ar: https://$APP_DOMAIN"
+
+      - name: Avisar falha do deploy
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "Deploy em produção falhou";
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = `O deploy do commit ${context.sha.slice(0, 7)} falhou: ${run}\n\nO sistema no ar continua na versão anterior até um deploy passar.`;
+            const { data } = await github.rest.issues.listForRepo({ ...context.repo, state: "open", per_page: 50 });
+            const open = data.find((i) => i.title === title && !i.pull_request);
+            if (open) await github.rest.issues.createComment({ ...context.repo, issue_number: open.number, body });
+            else await github.rest.issues.create({ ...context.repo, title, body });
+
+      - name: Fechar aviso de falha anterior
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data } = await github.rest.issues.listForRepo({ ...context.repo, state: "open", per_page: 50 });
+            for (const i of data.filter((i) => i.title === "Deploy em produção falhou" && !i.pull_request)) {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: i.number, body: `Deploy voltou a funcionar no commit ${context.sha.slice(0, 7)}.` });
+              await github.rest.issues.update({ ...context.repo, issue_number: i.number, state: "closed" });
+            }
