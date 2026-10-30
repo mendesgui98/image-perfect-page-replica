@@ -250,7 +250,7 @@ export function ScheduleDashboard({ workId }: { workId: string }) {
       </section>
 
       <nav
-        className="flex flex-wrap gap-1 rounded-xl bg-muted p-1"
+        className="flex max-w-full gap-1 overflow-x-auto rounded-xl bg-muted p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>button]:shrink-0 [&>button]:whitespace-nowrap"
         aria-label="Seções do cronograma"
       >
         {tabs.map((x) => (
@@ -541,7 +541,7 @@ function WeekGrid({
   const now = pos(t(today) + DAY / 2);
   // Em telas menores as colunas de datas somem para as semanas caberem ao lado do painel.
   const cols =
-    "grid-cols-[minmax(130px,1.2fr)_64px_minmax(440px,5fr)] 2xl:grid-cols-[minmax(150px,1.6fr)_76px_76px_44px_64px_minmax(440px,5fr)]";
+    "grid-cols-[minmax(170px,1.4fr)_64px_minmax(440px,5fr)] 2xl:grid-cols-[minmax(190px,1.8fr)_76px_76px_44px_64px_minmax(440px,5fr)]";
   const dateCol = "hidden 2xl:block";
   return (
     <div className="overflow-x-auto">
@@ -648,8 +648,8 @@ function WeekGrid({
           );
         })}
         {sh.payments.length > 0 && (
-          <div className={cn("grid items-center gap-x-2 py-2", cols)}>
-            <span className="col-span-2 2xl:col-span-5 text-xs font-medium text-muted-foreground">
+          <div className={cn("grid items-center gap-x-2 pt-2.5", cols)}>
+            <span className="col-span-2 self-start text-xs font-medium leading-3 text-muted-foreground 2xl:col-span-5">
               Marcos de pagamento
             </span>
             <div className="relative h-8">
@@ -884,14 +884,14 @@ function ProgressPanel({
 function PaymentsCard({ payments, today }: { payments: DashPayment[]; today: string }) {
   return (
     <section className={cn(panelClass, "p-4")}>
-      <h2 className="mb-3 text-sm font-semibold">Marcos de pagamento</h2>
+      <h2 className="mb-3 flex h-8 items-center text-sm font-semibold">Marcos de pagamento</h2>
       {payments.length ? (
         <ul className="space-y-2 text-sm">
           {[...payments]
             .sort((a, b) => a.date.localeCompare(b.date))
             .slice(0, 6)
             .map((p, i) => (
-              <li key={i} className="flex items-center justify-between gap-2">
+              <li key={i} className="flex items-start justify-between gap-2">
                 <span className="min-w-0">
                   <b className="block truncate">{p.label}</b>
                   <span className="text-xs text-muted-foreground">{fmtDate(p.date)}</span>
@@ -921,9 +921,9 @@ function MaterialsCard({
 }) {
   return (
     <section className={cn(panelClass, "p-4")}>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex h-8 items-center justify-between">
         <h2 className="text-sm font-semibold">Materiais do cliente</h2>
-        <Button type="button" variant="ghost" size="sm" onClick={onOpen}>
+        <Button type="button" variant="ghost" size="sm" className="-mr-2" onClick={onOpen}>
           Lançar
         </Button>
       </div>
@@ -933,14 +933,14 @@ function MaterialsCard({
             .sort((a, b) => a.due_date.localeCompare(b.due_date))
             .slice(0, 6)
             .map((m) => (
-              <li key={m.id} className="flex items-center justify-between gap-2">
+              <li key={m.id} className="flex items-start justify-between gap-2">
                 <span className="min-w-0">
                   <b className="block truncate">{m.description}</b>
                   <span className="text-xs text-muted-foreground">
                     {stages.find((s) => s.id === m.stage_id)?.name ?? "Sem etapa"}
                   </span>
                 </span>
-                <span className="shrink-0 text-xs">{fmtDate(m.due_date)}</span>
+                <span className="shrink-0 pt-0.5 text-xs tabular-nums">{fmtDate(m.due_date)}</span>
               </li>
             ))}
         </ul>
@@ -985,7 +985,7 @@ function VersionsList({ workId, versions }: { workId: string; versions: Version[
 function VersionsCard({ workId, versions }: { workId: string; versions: Version[] }) {
   return (
     <section className={cn(panelClass, "p-4")}>
-      <h2 className="mb-3 text-sm font-semibold">Revisões</h2>
+      <h2 className="mb-3 flex h-8 items-center text-sm font-semibold">Revisões</h2>
       <VersionsList workId={workId} versions={versions.slice(-5)} />
     </section>
   );

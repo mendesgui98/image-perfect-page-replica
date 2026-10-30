@@ -159,7 +159,7 @@ export function ScheduleList() {
 
       <div className={cn(panelClass, "flex flex-wrap items-center gap-3 p-3 shadow-none")}>
         <Input
-          className="min-w-56 flex-1"
+          className="w-full sm:min-w-56 sm:flex-1"
           aria-label="Buscar cronograma"
           placeholder="Buscar projeto, cliente ou local"
           value={q}
@@ -167,7 +167,7 @@ export function ScheduleList() {
         />
         <select
           aria-label="Filtrar cliente"
-          className={cn(selectClass, "w-auto")}
+          className={cn(selectClass, "w-full sm:w-auto")}
           value={client}
           onChange={(e) => setClient(e.target.value)}
         >
@@ -178,7 +178,7 @@ export function ScheduleList() {
         </select>
         <select
           aria-label="Filtrar obra"
-          className={cn(selectClass, "w-auto")}
+          className={cn(selectClass, "w-full sm:w-auto")}
           value={work}
           onChange={(e) => setWork(e.target.value)}
         >
@@ -343,22 +343,39 @@ export function ScheduleList() {
                   value={r.ind.realized}
                   tone={behind ? "negative" : "positive"}
                 />
-                <p className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-                  <Banknote className="mr-1.5 inline h-3.5 w-3.5 text-positive" />
+                <div className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
                   {!r.dated.length ? (
-                    "Defina a data de início para gerar o cronograma"
+                    <p className="flex items-center gap-1.5">
+                      <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                      Defina a data de início para gerar o cronograma
+                    </p>
                   ) : r.next ? (
-                    <>
-                      Próxima: <b className="text-foreground">{r.next.label}</b>
-                      {me?.canSeeCosts && ` · ${fmtBRL(r.next.amount - (r.next.paid ?? 0))}`} ·{" "}
-                      {fmtDate(r.next.date)}
-                    </>
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5">
+                      <span className="flex items-center gap-1.5 whitespace-nowrap">
+                        <Banknote className="h-3.5 w-3.5 shrink-0 text-positive" />
+                        Próxima parcela
+                      </span>
+                      <span className="whitespace-nowrap text-right tabular-nums">
+                        {fmtDate(r.next.date)}
+                      </span>
+                      <b className="truncate text-foreground" title={r.next.label}>
+                        {r.next.label}
+                      </b>
+                      {me?.canSeeCosts ? (
+                        <b className="text-right tabular-nums text-foreground">
+                          {fmtBRL(r.next.amount - (r.next.paid ?? 0))}
+                        </b>
+                      ) : (
+                        <span />
+                      )}
+                    </div>
                   ) : (
-                    <>
+                    <p className="flex items-center gap-1.5">
+                      <CalendarDays className="h-3.5 w-3.5 shrink-0" />
                       Início em <b className="text-foreground">{fmtDate(r.start)}</b>
-                    </>
+                    </p>
                   )}
-                </p>
+                </div>
               </div>
 
               <div className="flex flex-row gap-2 lg:w-32 lg:flex-col">
@@ -380,7 +397,7 @@ export function ScheduleList() {
                     </Link>
                   )}
                 </Button>
-                <div className="flex justify-center">
+                <div className="flex flex-1 items-center justify-center lg:flex-none">
                   <RecordDeleteButton entity="schedules" id={h.id} name={h.name} />
                 </div>
               </div>
