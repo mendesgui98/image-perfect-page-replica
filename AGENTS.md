@@ -2,6 +2,8 @@
 
 Desenvolvimento direto pelo GitHub (sem Lovable). Trabalhe em branches e abra PR para a `main`; o CI precisa passar. Merge na `main` faz o deploy automático na VPS (`.github/workflows/ci.yml` publica as imagens no GHCR e roda `infra/vps/deploy.sh`; guia em `docs/deploy-vps.md`). O `infra/.env` de produção é montado pelo workflow a partir das variáveis/segredos do GitHub: configuração nova de produção entra lá e no workflow, nunca só na VPS.
 
+Roteiro de melhorias priorizado (tarefas R1-1, R2-1…, com critério de pronto e dependências) em `claude/roteiro.md`; ao concluir uma, marque `[x]` e registre em `claude/contexto-desenvolvimento.md`.
+
 ## Project rules
 
 - All price/margin math lives in `src/lib/pricing.ts` (pure, tested in `pricing.test.ts`); UI and PDF only call `computeBudget` — never duplicate formulas.
