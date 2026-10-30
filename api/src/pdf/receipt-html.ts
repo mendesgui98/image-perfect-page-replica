@@ -105,7 +105,9 @@ export function receiptHtml(d: ReceiptData, assets: Assets) {
   );
   const extra = [
     ...(d.transactionId ? [{ label: "ID da transação", value: d.transactionId }] : []),
-    { label: "Obra", value: [d.work.name, d.work.address].filter(Boolean).join(" · ") },
+    ...(d.work
+      ? [{ label: "Obra", value: [d.work.name, d.work.address].filter(Boolean).join(" · ") }]
+      : []),
   ];
   const facts = [
     { label: "Data do pagamento", value: dmy(d.paidDate) },
@@ -131,18 +133,22 @@ export function receiptHtml(d: ReceiptData, assets: Assets) {
   <div class="hero">
     <div class="amount"><span>Valor recebido</span><b>${money(d.amount)}</b><i>(${esc(d.amountWords)})</i></div>
     <div class="refer"><span>Referente a</span><b>${esc(d.ref.label)}</b>${d.ref.when ? `<small>${esc(d.ref.when)}</small>` : ""}
-      ${d.ref.pct ? `<div class="pill">${num(d.ref.pct)}% do contrato</div>` : ""}</div>
+      ${d.hasContract && d.ref.pct ? `<div class="pill">${num(d.ref.pct)}% do contrato</div>` : ""}</div>
   </div>
   <p class="text">Recebemos de <b>${esc(d.client.name)}</b>${doc ? `, CPF/CNPJ ${esc(doc)}` : ""}, a importância de <b>${money(d.amount)}</b>
-  (${esc(d.amountWords)}), referente à <b>${esc(d.ref.label)}</b> da obra <b>${esc(d.work.name.toLowerCase())}</b>${
-    d.work.address ? ` localizada em ${esc(d.work.address)}` : ""
-  }${d.contractCode ? `, conforme o Contrato nº ${esc(d.contractCode)}` : ""}, pelo que damos plena quitação desta parcela.</p>
+  (${esc(d.amountWords)}), referente à <b>${esc(d.ref.label)}</b>${
+    d.work
+      ? ` da obra <b>${esc(d.work.name.toLowerCase())}</b>${d.work.address ? ` localizada em ${esc(d.work.address)}` : ""}`
+      : ""
+  }${d.contractCode ? `, conforme o Contrato nº ${esc(d.contractCode)}` : ""}, pelo que damos plena quitação ${d.hasContract ? "desta parcela" : "deste valor"}.</p>
   <div class="parts">
     <div class="box"><h4><i style="background:${GOLD}"></i>Pago por</h4>${dl(paidBy)}</div>
     <div class="box"><h4><i style="background:${BLUE}"></i>Recebido em</h4>${dl(d.receivedIn)}</div>
   </div>
-  <div class="box wide">${dl(extra, "ID da transação")}</div>
-  <section class="fin">
+  ${extra.length ? `<div class="box wide">${dl(extra, "ID da transação")}</div>` : ""}
+  ${
+    d.hasContract
+      ? `<section class="fin">
     <div class="t"><b>Situação financeira do contrato</b><small>atualizada em ${dmy(d.paidDate)}</small></div>
     <div class="bar"><i style="width:${s.paidPct}%"></i></div>
     <div class="kpis3">
@@ -159,7 +165,9 @@ export function receiptHtml(d: ReceiptData, assets: Assets) {
           }</td><td class="r nb">${money(r.amount)}</td><td class="c">${r.paidDate ? dmy(r.paidDate) : "—"}</td><td class="r"><span class="st ${r.state}">${STATE[r.state]}</span></td></tr>`,
       )
       .join("")}</tbody></table>
-  </section>
+  </section>`
+      : ""
+  }
   <div class="end">
     <div class="note"><span>Recibo nº</span><b>${esc(d.number)}</b>emitido em ${dmy(d.issued)} por ${esc(d.issuer)}.<br>
       Este documento comprova apenas o valor e a parcela aqui descritos.</div>

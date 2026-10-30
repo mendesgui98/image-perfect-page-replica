@@ -288,7 +288,7 @@ export function Finance({ workId }: { workId?: string }) {
           .select("id")
           .single();
         r = ins;
-        if (!ins.error && entry.direction === "entrada" && entry.work_id) receiptFor = ins.data.id;
+        if (!ins.error && entry.direction === "entrada") receiptFor = ins.data.id;
       } else if (dialog === "transfer") {
         r = await supabase.from("account_transfers").insert({
           from_account_id: text(d, "from"),
@@ -315,8 +315,8 @@ export function Finance({ workId }: { workId?: string }) {
           .eq(dialog === "cash" ? "id" : "group_id", requestId);
         if (link.error) throw Error(link.error.message);
       }
-      // Entrada à vista de uma obra: a baixa criada junto tem a conta com o id da requisição.
-      if (dialog === "cash" && entryDirection === "entrada" && (workId || text(d, "work"))) {
+      // Entrada à vista: a baixa criada junto tem a conta com o id da requisição.
+      if (dialog === "cash" && entryDirection === "entrada") {
         const st = await supabase
           .from("financial_settlements")
           .select("id")
@@ -757,7 +757,7 @@ export function Finance({ workId }: { workId?: string }) {
                 )}
                 <div className="-ml-3 mt-1 flex flex-wrap items-center gap-1">
                   <Attachment path={m.file_path} />
-                  {m.direction === "entrada" && m.work_id && <ReceiptButton id={m.id} />}
+                  {m.direction === "entrada" && <ReceiptButton id={m.id} />}
                   <Button
                     size="sm"
                     variant="ghost"
@@ -923,7 +923,7 @@ export function Finance({ workId }: { workId?: string }) {
                     {s.account_id &&
                       ` · ${data?.accounts.find((a) => a.id === s.account_id)?.name ?? "Conta"}`}
                     <Attachment path={s.file_path} />
-                    {e.direction === "entrada" && e.work_id && <ReceiptButton id={s.id} />}
+                    {e.direction === "entrada" && <ReceiptButton id={s.id} small />}
                     <button
                       type="button"
                       className="text-primary hover:underline"
@@ -1139,13 +1139,18 @@ function OverdueHint({ value }: { value: number }) {
   );
 }
 
-/** Recibo de pagamento (modelo JMG) de um recebimento de entrada da obra. */
-function ReceiptButton({ id }: { id: string }) {
+/** Recibo de pagamento (modelo JMG) de um recebimento de entrada. */
+export function ReceiptButton({ id, small }: { id: string; small?: boolean }) {
   return (
-    <Button size="sm" variant="ghost" className="text-primary" asChild>
+    <Button
+      size="sm"
+      variant="outline"
+      className={cn("border-primary/40 text-primary", small && "h-7 px-2 text-xs")}
+      asChild
+    >
       <Link to="/recibos/$id" params={{ id }}>
         <ReceiptText className="h-4 w-4" />
-        Recibo
+        Gerar recibo
       </Link>
     </Button>
   );
