@@ -49,6 +49,10 @@ export const DEFAULT_NOTES = [
   "Horário de execução conforme regulamento do condomínio, de segunda a sexta-feira.",
 ].join("\n");
 
+/** Formato do PDF: página única contínua (padrão) ou folhas A4 com quebra de página. */
+export type PdfLayout = "continuo" | "paginado";
+export const pdfLayout = (v: unknown): PdfLayout => (v === "paginado" ? "paginado" : "continuo");
+
 export const SCHEDULE_DISCLAIMER =
   "O cronograma pode ser ajustado por fatores externos à JMG, como liberação do condomínio, entrega de materiais escolhidos pelo cliente ou alterações de escopo. Qualquer ajuste é comunicado previamente ao cliente.";
 

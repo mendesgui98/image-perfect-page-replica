@@ -1,13 +1,11 @@
 // Gera um orçamento de exemplo (dados do modelo aprovado) para conferir o visual sem banco:
-//   node --experimental-strip-types api/src/pdf/sample.ts saida.pdf [--contrato]
+//   node --experimental-strip-types api/src/pdf/sample.ts saida.pdf [--contrato] [--paginado]
 // CLAUSES_JSON=arquivo.json usa as cláusulas exportadas do banco no lugar das de exemplo.
 import { readFileSync, writeFileSync } from "node:fs";
-import { buildProposal, DEFAULT_TERMS, SCHEDULE_DISCLAIMER } from "../../../src/lib/proposal.ts";
+import { buildProposal, DEFAULT_TERMS } from "../../../src/lib/proposal.ts";
 import { emptyParams } from "../../../src/lib/pricing.ts";
-import { loadAssets } from "./assets.ts";
-import { contractHtml } from "./contract-html.ts";
-import { proposalHtml } from "./proposal-html.ts";
-import { closeBrowser, htmlToPdf } from "./render.ts";
+import { createPdfService } from "./index.ts";
+import { closeBrowser } from "./render.ts";
 
 const mat = (name: string, unit: string, price: number, consumption: number) => ({
   name,
@@ -128,27 +126,21 @@ const SAMPLE_CLAUSES = [
     body: "{{N}}.1. Início em {{INICIO}}.\n{{N}}.1.1. Assinatura desse Contrato;\n{{N}}.2. Prazo estimado de {{PRAZO}}.\nI – atraso na entrega de materiais sob responsabilidade do CONTRATANTE;",
   },
 ];
-const assets = loadAssets();
 const out = process.argv[2] ?? "orcamento-exemplo.pdf";
-const contract = process.argv.includes("--contrato");
+const layout = process.argv.includes("--paginado") ? "paginado" : "continuo";
+const pdf = createPdfService();
 writeFileSync(
   out,
-  contract
-    ? await htmlToPdf(
-        contractHtml(
-          data,
-          assets,
-          data.issueDate,
-          process.env["CLAUSES_JSON"]
-            ? JSON.parse(readFileSync(process.env["CLAUSES_JSON"], "utf8"))
-            : SAMPLE_CLAUSES,
-        ),
-        `Contrato · ${data.number} · ${data.client.name}`,
+  process.argv.includes("--contrato")
+    ? await pdf.contract(
+        data,
+        data.issueDate,
+        process.env["CLAUSES_JSON"]
+          ? JSON.parse(readFileSync(process.env["CLAUSES_JSON"], "utf8"))
+          : SAMPLE_CLAUSES,
+        layout,
       )
-    : await htmlToPdf(
-        proposalHtml(data, assets, SCHEDULE_DISCLAIMER),
-        `${data.number} · ${data.client.name}`,
-      ),
+    : await pdf.proposal(data, layout),
 );
 await closeBrowser();
 console.log(out);

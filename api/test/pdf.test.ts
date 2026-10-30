@@ -51,14 +51,23 @@ const input = (status: string, pct = 30): Omit<ProposalInput, "today"> => ({
 
 let current = input("elaboracao");
 const rendered: ProposalData[] = [];
+const layouts: string[] = [];
 const repo = fakeRepo({ adm: ["admin"], eq: ["equipe"] });
 repo.proposalInput = async (_c, id) => (id === ID ? current : null);
 const api = await start({
   repo,
   today: () => "2026-10-28",
   pdf: {
-    proposal: async (d) => (rendered.push(d), Buffer.from("%PDF-orcamento")),
-    contract: async (d) => (rendered.push(d), Buffer.from("%PDF-contrato")),
+    proposal: async (d, layout) => (
+      rendered.push(d),
+      layouts.push(layout),
+      Buffer.from("%PDF-orcamento")
+    ),
+    contract: async (d, _today, _clauses, layout) => (
+      rendered.push(d),
+      layouts.push(layout),
+      Buffer.from("%PDF-contrato")
+    ),
   },
 });
 after(() => api.close());
@@ -76,6 +85,15 @@ test("gera o PDF do orçamento com os dados do banco", async () => {
   assert.equal(d.issueDate, "2026-10-28");
   assert.equal(d.validUntil, "2026-11-12");
   assert.equal(d.totals.total, 500);
+});
+
+test("PDF sai contínuo por padrão e paginado quando pedido", async () => {
+  assert.equal((await post(`/v1/orcamentos/${ID}/pdf`)).status, 200);
+  assert.equal(layouts.at(-1), "continuo");
+  assert.equal((await post(`/v1/orcamentos/${ID}/pdf?layout=paginado`)).status, 200);
+  assert.equal(layouts.at(-1), "paginado");
+  assert.equal((await post(`/v1/orcamentos/${ID}/pdf?layout=qualquer`)).status, 200);
+  assert.equal(layouts.at(-1), "continuo");
 });
 
 test("equipe não gera PDF com valores", async () => {
@@ -98,6 +116,9 @@ test("contrato só sai de orçamento aprovado", async () => {
   const ok = await post(`/v1/orcamentos/${ID}/contrato`);
   assert.equal(ok.status, 200);
   assert.match(ok.headers.get("content-disposition") ?? "", /Contrato-ORC-2026-0007/);
+  assert.equal(layouts.at(-1), "continuo");
+  assert.equal((await post(`/v1/orcamentos/${ID}/contrato?layout=paginado`)).status, 200);
+  assert.equal(layouts.at(-1), "paginado");
 });
 
 test("orçamento inexistente devolve 404", async () => {

@@ -1,4 +1,4 @@
-import type { ProposalData } from "../../../src/lib/proposal.ts";
+import type { PdfLayout, ProposalData } from "../../../src/lib/proposal.ts";
 import type { Assets } from "./assets.ts";
 
 // Identidade visual comum ao orçamento e ao contrato (modelo contínuo aprovado pelo Guilherme):
@@ -52,17 +52,24 @@ export function footerHtml(assets: Assets, c: ProposalData["company"]) {
   ${esc(c.phone)} · ${esc(c.instagram)}</div></div><div class="stripe"><i></i><i></i></div></footer>`;
 }
 
-export function baseCss(assets: Assets) {
+/** Raiz do documento: no modo paginado a classe troca as regras de página (pagedCss). */
+export const htmlOpen = (layout: PdfLayout) =>
+  `<!doctype html><html lang="pt-BR"${layout === "paginado" ? ` class="paged"` : ""}>`;
+
+export function baseCss(assets: Assets, layout: PdfLayout) {
   return `${assets.css}
-@page { margin: 0; }
+${layout === "paginado" ? "@page { size: A4; margin: 24mm 16mm 20mm 16mm; }\n@page cover { margin: 0; }" : "@page { margin: 0; }"}
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: #fff; }
-body { width: 210mm; font-family: Inter, sans-serif; color: #1B2539; font-size: 10.5pt; line-height: 1.45;
+html, body { margin: 0; padding: 0; }
+/* A folga de altura do render.ts fica embaixo da faixa final: pinta com as mesmas cores. */
+html { background: linear-gradient(90deg, ${BLUE} 70%, ${GOLD} 70%); }
+body { background: #fff; }
+body { width: 100%; font-family: Inter, sans-serif; color: #1B2539; font-size: 10.5pt; line-height: 1.45;
   -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .sec { padding: 0 16mm; }
 .cover + .sec { padding-top: 21mm; }
 .divider { height: 1px; margin: 20mm 16mm; background: linear-gradient(90deg, transparent, #E3E6EA 12%, #E3E6EA 88%, transparent); }
-.cover { position: relative; width: 210mm; height: 264.6mm; overflow: hidden; background: ${NAVY}; color: #fff; }
+.cover { position: relative; width: 100%; height: 264.6mm; overflow: hidden; background: ${NAVY}; color: #fff; }
 .cover .mark { position: absolute; right: -86mm; top: 52mm; width: 215mm; opacity: .07; }
 .cover .brand { position: absolute; left: 16mm; top: 15.5mm; display: flex; align-items: center; gap: 4.5mm; }
 .cover .brand img { width: 28mm; }
@@ -117,6 +124,16 @@ th { font-size: 6.8pt; letter-spacing: .14em; color: #5B6472; font-weight: 500; 
 .footer { margin-top: 16mm; background: ${NAVY}; color: rgba(255,255,255,.8); }
 .footer .in { padding: 10mm 16mm; display: flex; gap: 4.5mm; align-items: center; font-size: 7.6pt; line-height: 1.75; }
 .footer img { width: 15mm; } .footer b { color: #fff; }
+/* Paginado: cada seção começa numa folha; o carimbo do render.ts faz cabeçalho e rodapé. */
+html.paged { background: #fff; }
+.paged .cover { page: cover; width: 210mm; height: 297mm; }
+.paged .cover .hero { top: 108mm; } .paged .cover .card { top: 212mm; } .paged .cover .facts { top: 258mm; }
+.paged .sec { padding: 0; break-before: page; }
+.paged .divider, .paged .footer { display: none; }
+.paged thead { display: table-header-group; }
+.paged tr, .paged .stage-head, .paged .feature, .paged .how-steps, .paged .obra, .paged .pay, .paged .notes,
+.paged .valid, .paged .signs, .paged .kpis, .paged .party, .paged .bank, .paged .sum { break-inside: avoid; }
+.paged h2, .paged h3, .paged h4, .paged .head { break-after: avoid; }
 `;
 }
 

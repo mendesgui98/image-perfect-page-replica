@@ -7,32 +7,43 @@ import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/kpi";
 import { PageSkeleton } from "@/components/feedback";
 import { apiConfigured, apiFile } from "@/lib/api-client";
+import { pdfLayout, type PdfLayout } from "@/lib/proposal";
 
 // Visualiza o PDF oficial gerado pela API (modelo JMG): orçamento ou, com ?doc=contrato, o
-// contrato do orçamento aprovado. Custos internos nunca entram nesses documentos.
+// contrato do orçamento aprovado; em página contínua ou, com ?layout=paginado, em folhas A4.
+// Custos internos nunca entram nesses documentos.
 
 type Doc = "orcamento" | "contrato";
 
+const LAYOUTS: { value: PdfLayout; label: string }[] = [
+  { value: "continuo", label: "Página contínua" },
+  { value: "paginado", label: "Com quebra de página" },
+];
+
 export const Route = createFileRoute("/_authenticated/orcamentos/$id/pdf")({
   head: () => pageMeta("PDF do orçamento", "Documento oficial da JMG gerado pelo sistema."),
-  validateSearch: (s: Record<string, unknown>): { doc?: Doc } =>
-    s["doc"] === "contrato" ? { doc: "contrato" } : {},
+  validateSearch: (s: Record<string, unknown>): { doc?: Doc; layout?: "paginado" } => ({
+    ...(s["doc"] === "contrato" ? { doc: "contrato" as const } : {}),
+    ...(pdfLayout(s["layout"]) === "paginado" ? { layout: "paginado" as const } : {}),
+  }),
   component: Pdf,
 });
 
 function Pdf() {
   const { id } = Route.useParams();
-  const { doc = "orcamento" } = Route.useSearch();
+  const search = Route.useSearch();
+  const { doc = "orcamento" } = search;
+  const layout = pdfLayout(search.layout);
   const label = doc === "contrato" ? "Contrato" : "Orçamento";
   const { data, error, isFetching, refetch } = useQuery({
-    queryKey: ["budget-pdf", id, doc],
+    queryKey: ["budget-pdf", id, doc, layout],
     enabled: apiConfigured,
     retry: false,
     gcTime: 0,
     queryFn: () =>
       apiFile(
         "POST",
-        `/v1/orcamentos/${id}/${doc === "contrato" ? "contrato" : "pdf"}`,
+        `/v1/orcamentos/${id}/${doc === "contrato" ? "contrato" : "pdf"}${layout === "paginado" ? "?layout=paginado" : ""}`,
         `${label}.pdf`,
       ),
   });
@@ -64,6 +75,33 @@ function Pdf() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <div
+            role="group"
+            aria-label="Formato do PDF"
+            className="flex gap-1 rounded-lg border p-1"
+          >
+            {LAYOUTS.map((l) => (
+              <Button
+                key={l.value}
+                size="sm"
+                variant={layout === l.value ? "default" : "ghost"}
+                aria-pressed={layout === l.value}
+                asChild
+              >
+                <Link
+                  to="/orcamentos/$id/pdf"
+                  params={{ id }}
+                  search={{
+                    ...(doc === "contrato" ? { doc } : {}),
+                    ...(l.value === "paginado" ? { layout: "paginado" as const } : {}),
+                  }}
+                  replace
+                >
+                  {l.label}
+                </Link>
+              </Button>
+            ))}
+          </div>
           <Button
             type="button"
             variant="outline"
