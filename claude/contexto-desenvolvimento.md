@@ -15,6 +15,9 @@ Registro das tasks feitas pelo Claude neste repositório. Regras gerais do proje
 - Tabela `work_client_materials` (migração `20261030000033`): etapa da mesma obra, descrição, data limite, entregue; acesso de admin/financeiro/equipe e auditoria em `work_history`. Aba "Materiais do cliente" dentro da aba Cronograma da obra.
 - Aba Cronograma: o Gantt antigo do planejamento deu lugar às folhas (clicar na etapa continua abrindo a edição); a comparação original × atual segue na tabela abaixo. Cronograma avulso usa as mesmas folhas, sem financeiro/materiais.
 
+- Datas do orçamento nas etapas (migração `20261030000034`): `budget_section_dates` calcula início/fim de cada etapa a partir do início e das semanas do cronograma do orçamento; o gatilho `work_stages_budget_dates` preenche etapas sem data ao converter/sincronizar, e a migração preenche as obras existentes (e o início/término da obra quando vazios). Datas já ajustadas não mudam.
+- Menu Cronogramas: botão "PDF" em cada linha; cronograma vinculado abre só as folhas (edição na aba da obra) e o "Gerar PDF" leva ao PDF da obra; avulso troca o Gantt pelas folhas.
+
 **Conferência:** obra de teste com as 14 etapas, 7 entradas e 4 materiais do modelo, criada pelas RPCs/RLS do app: PDF em 3 folhas comparado com o modelo; avulso de 15 semanas em 2 folhas; aba conferida no desktop e no celular.
 
 ### 2026-10-30 — Novo modelo de contrato (branch `claude/eager-hopper-auxpdq`)
