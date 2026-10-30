@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { ChevronDown, ChevronRight, Layers, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronDown, ChevronRight, ChevronUp, Layers, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   activeMaterialsOptions,
@@ -42,6 +42,7 @@ import { fmtBRL, fmtNum, UNIT_LABEL } from "@/lib/format";
 import { selectClass } from "@/components/works/fields";
 import { EmptyState } from "@/components/feedback";
 import { Money } from "@/components/kpi";
+import { cn } from "@/lib/utils";
 
 type CatalogMaterial = Database["public"]["Tables"]["materials"]["Row"];
 
@@ -70,6 +71,43 @@ export function ItemsEditor({
   const [svcId, setSvcId] = useState("");
   const [custom, setCustom] = useState<CustomItemDraft>(emptyCustomItem);
   const [adding, setAdding] = useState(false);
+  // Etapas abertas (recolher/expandir), lembradas neste aparelho por orçamento.
+  const storeKey = `jmg-budget-open:${budgetId}`;
+  const [open, setOpen] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem(storeKey);
+      if (saved) return new Set(JSON.parse(saved) as string[]);
+    } catch {
+      /* sem armazenamento: começa com a primeira etapa aberta */
+    }
+    return new Set(sections[0] ? [sections[0].id] : []);
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(storeKey, JSON.stringify([...open]));
+    } catch {
+      /* ignora */
+    }
+  }, [open, storeKey]);
+  const [query, setQuery] = useState("");
+  const toggle = (id: string) =>
+    setOpen((o) => {
+      const n = new Set(o);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const q = query.trim().toLowerCase();
+  const matches = (i: Item) => !q || i.description.toLowerCase().includes(q);
+  const shown = sections.filter(
+    (s) =>
+      !q ||
+      s.title.toLowerCase().includes(q) ||
+      items.some((i) => i.section_id === s.id && matches(i)),
+  );
+  const materialsCount = new Set(
+    items.flatMap((i) => i.materials.map((m) => m.material_id ?? m.name)),
+  ).size;
 
   const run = async (p: Promise<unknown>) => {
     try {
@@ -135,44 +173,85 @@ export function ItemsEditor({
 
   return (
     <div className="space-y-4">
-      {sections.length === 0 && (
-        <EmptyState icon={Layers} title="Adicione a primeira etapa da proposta." />
-      )}
-      {sections.map((s, idx) => (
-        <SectionCard
-          key={s.id}
-          idx={idx + 1}
-          section={s}
-          items={items.filter((i) => i.section_id === s.id)}
-          result={result}
-          params={params}
-          locked={locked}
-          catalog={catalog}
-          run={run}
-          onAdd={() => setPicker(s)}
-        />
-      ))}
-      {!locked && (
-        <div className="flex flex-wrap gap-2">
-          <select
-            className={`${selectClass} min-w-0 flex-1 sm:max-w-xs`}
-            value={stageId}
-            onChange={(e) => setStageId(e.target.value)}
-          >
-            <option value="">Etapa personalizada</option>
-            {stages
-              .filter((s) => s.active)
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-          </select>
-          <Button variant="outline" onClick={addSection}>
-            <Plus className="h-4 w-4" /> Adicionar etapa
-          </Button>
+      <div className="rounded-2xl border border-border/70 bg-card shadow-card">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border/60 px-4 py-3">
+          <h2 className="font-semibold">Etapas e serviços</h2>
+          <span className="text-xs text-muted-foreground">
+            {sections.length} etapas · {items.length} serviços · {materialsCount} materiais
+          </span>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <label className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                aria-label="Buscar serviço"
+                placeholder="Buscar serviço..."
+                className="h-8 w-48 pl-8 text-sm"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </label>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setOpen(new Set(sections.map((s) => s.id)))}
+            >
+              Expandir todas
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setOpen(new Set())}>
+              Recolher todas
+            </Button>
+          </div>
         </div>
-      )}
+        {sections.length === 0 && (
+          <EmptyState icon={Layers} title="Adicione a primeira etapa da proposta." />
+        )}
+        {q && !shown.length && (
+          <p className="px-4 py-6 text-sm text-muted-foreground">Nenhum serviço encontrado.</p>
+        )}
+        <div className="divide-y divide-border/60">
+          {shown.map((s) => (
+            <SectionCard
+              key={s.id}
+              idx={sections.indexOf(s) + 1}
+              section={s}
+              items={items.filter(
+                (i) =>
+                  i.section_id === s.id && (!q || matches(i) || s.title.toLowerCase().includes(q)),
+              )}
+              result={result}
+              params={params}
+              locked={locked}
+              catalog={catalog}
+              run={run}
+              open={!!q || open.has(s.id)}
+              onToggle={() => toggle(s.id)}
+              onAdd={() => setPicker(s)}
+            />
+          ))}
+        </div>
+        {!locked && (
+          <div className="flex flex-wrap gap-2 border-t border-border/60 p-4">
+            <select
+              className={`${selectClass} min-w-0 flex-1 sm:max-w-xs`}
+              value={stageId}
+              onChange={(e) => setStageId(e.target.value)}
+            >
+              <option value="">Etapa personalizada</option>
+              {stages
+                .filter((s) => s.active)
+                .map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+            </select>
+            <Button variant="outline" onClick={addSection}>
+              <Plus className="h-4 w-4" /> Adicionar etapa
+            </Button>
+          </div>
+        )}
+      </div>
 
       <Dialog open={!!picker} onOpenChange={(o) => !o && setPicker(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
@@ -221,6 +300,8 @@ function SectionCard({
   locked,
   catalog,
   run,
+  open,
+  onToggle,
   onAdd,
 }: {
   idx: number;
@@ -231,12 +312,15 @@ function SectionCard({
   locked: boolean;
   catalog: CatalogMaterial[];
   run: (p: Promise<unknown>) => Promise<void>;
+  open: boolean;
+  onToggle: () => void;
   onAdd: () => void;
 }) {
-  const total = items.reduce(
-    (s, i) => s + (result.items.find((r) => r.id === i.id)?.total ?? 0),
-    0,
-  );
+  const rows = items.map((i) => result.items.find((r) => r.id === i.id));
+  const total = rows.reduce((s, r) => s + (r?.total ?? 0), 0);
+  const cost = rows.reduce((s, r) => s + (r?.laborCost ?? 0) + (r?.materialsCost ?? 0), 0);
+  const materials = new Set(items.flatMap((i) => i.materials.map((m) => m.material_id ?? m.name)))
+    .size;
   function autoMaterials() {
     const names = Array.from(
       new Set(
@@ -252,9 +336,14 @@ function SectionCard({
     run(budgetApi.updateSection(section.id, { materials_text: names.join(", ") + "." }));
   }
   return (
-    <Card className="shadow-card">
-      <CardHeader className="flex-row flex-wrap items-center gap-2 space-y-0 p-4 pb-2 sm:p-6 sm:pb-2">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-soft font-display text-sm font-bold text-primary">
+    <section className={cn("border-l-4", open ? "border-l-primary" : "border-l-transparent")}>
+      <div className="flex flex-wrap items-center gap-2 px-3 py-3 sm:px-4">
+        <span
+          className={cn(
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-display text-sm font-bold",
+            open ? "bg-primary text-primary-foreground" : "bg-primary-soft text-primary",
+          )}
+        >
           {idx}
         </span>
         <Input
@@ -267,8 +356,35 @@ function SectionCard({
             run(budgetApi.updateSection(section.id, { title: e.target.value }))
           }
         />
-        <Money value={total} className="ml-auto text-base font-semibold" />
-        {!locked && (
+        <span className="flex items-center gap-1.5 text-xs">
+          <span className="rounded-full bg-primary-soft px-2 py-0.5 font-medium text-primary">
+            {items.length} {items.length === 1 ? "serviço" : "serviços"}
+          </span>
+          {materials > 0 && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+              {materials} {materials === 1 ? "material" : "materiais"}
+            </span>
+          )}
+        </span>
+        <span className="w-28 text-right text-xs text-muted-foreground">
+          <span className="block tabular-nums">{fmtBRL(cost)}</span>
+          custo direto
+        </span>
+        <span className="w-32 text-right text-xs text-muted-foreground">
+          <Money value={total} className="block text-base font-semibold text-foreground" />
+          preço de venda
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-expanded={open}
+          aria-label={open ? "Recolher etapa" : "Expandir etapa"}
+          onClick={onToggle}
+        >
+          {open ? <ChevronUp className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        </Button>
+        {!locked && open && (
           <Button
             type="button"
             variant="danger"
@@ -282,55 +398,62 @@ function SectionCard({
             <Trash2 className="h-4 w-4" />
           </Button>
         )}
-      </CardHeader>
-      <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
-        <div className="divide-y divide-border/60">
-          {items.map((it) => (
-            <ItemRow
-              key={it.id}
-              item={it}
-              r={result.items.find((x) => x.id === it.id)}
-              params={params}
-              locked={locked}
-              catalog={catalog}
-              run={run}
-            />
-          ))}
-        </div>
-        {!locked && (
-          <Button type="button" size="sm" variant="soft" className="mt-2" onClick={onAdd}>
-            <Plus className="h-4 w-4" /> Serviço
-          </Button>
-        )}
-        <div className="mt-4 space-y-1.5 rounded-xl bg-muted/40 p-3">
-          <div className="flex items-center justify-between gap-2">
-            <Label className="text-xs text-muted-foreground">
-              Materiais inclusos (texto do PDF)
-            </Label>
-            {!locked && (
-              <button
-                type="button"
-                className="text-xs font-medium text-primary hover:underline"
-                onClick={autoMaterials}
-              >
-                Gerar a partir dos itens
-              </button>
-            )}
+      </div>
+      {open && (
+        <div className="px-4 pb-4 sm:px-6">
+          <div className="divide-y divide-border/60">
+            {items.map((it) => (
+              <ItemRow
+                key={it.id}
+                item={it}
+                r={result.items.find((x) => x.id === it.id)}
+                params={params}
+                locked={locked}
+                catalog={catalog}
+                run={run}
+              />
+            ))}
           </div>
-          <Textarea
-            key={section.materials_text ?? ""}
-            defaultValue={section.materials_text ?? ""}
-            disabled={locked}
-            rows={2}
-            className="bg-card"
-            onBlur={(e) =>
-              e.target.value !== (section.materials_text ?? "") &&
-              run(budgetApi.updateSection(section.id, { materials_text: e.target.value }))
-            }
-          />
+          {!locked && (
+            <Button type="button" size="sm" variant="soft" className="mt-2" onClick={onAdd}>
+              <Plus className="h-4 w-4" /> Serviço
+            </Button>
+          )}
+          <div className="mt-4 space-y-1.5 rounded-xl bg-muted/40 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <Label className="text-xs text-muted-foreground">
+                Materiais inclusos (texto do PDF)
+              </Label>
+              {!locked && (
+                <button
+                  type="button"
+                  className="text-xs font-medium text-primary hover:underline"
+                  onClick={autoMaterials}
+                >
+                  Gerar a partir dos itens
+                </button>
+              )}
+            </div>
+            <Textarea
+              key={section.materials_text ?? ""}
+              defaultValue={section.materials_text ?? ""}
+              disabled={locked}
+              rows={2}
+              className="bg-card"
+              onBlur={(e) =>
+                e.target.value !== (section.materials_text ?? "") &&
+                run(budgetApi.updateSection(section.id, { materials_text: e.target.value }))
+              }
+            />
+          </div>
+          <div className="mt-3 flex justify-end">
+            <Button type="button" size="sm" variant="outline" onClick={onToggle}>
+              Recolher etapa <ChevronUp className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </section>
   );
 }
 

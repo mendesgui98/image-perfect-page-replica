@@ -104,7 +104,7 @@ function LegacyPricingPanel({
   }
 
   return (
-    <div className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+    <div className="space-y-4 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:self-start xl:overflow-y-auto xl:overscroll-contain xl:pr-1 xl:[scrollbar-width:thin]">
       <Card className="shadow-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Resultado interno</CardTitle>
@@ -366,7 +366,7 @@ function DirectCostPanel({
   }
 
   return (
-    <div className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+    <div className="space-y-4 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:self-start xl:overflow-y-auto xl:overscroll-contain xl:pr-1 xl:[scrollbar-width:thin]">
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Custo direto</CardTitle>
@@ -375,16 +375,24 @@ function DirectCostPanel({
           </p>
         </CardHeader>
         <CardContent className="space-y-1.5 text-sm">
-          {byStage.map((x) => (
-            <Row key={x.id} l={x.name} v={x.cost} muted />
-          ))}
-          <div
-            className={cn("space-y-1.5", byStage.length > 0 && "border-t border-border/60 pt-2")}
-          >
-            <Row l="Mão de obra" v={sim.laborCost} />
-            <Row l="Materiais" v={sim.materialsCost} />
+          <Row l="Mão de obra" v={sim.laborCost} />
+          <Row l="Materiais" v={sim.materialsCost} />
+          <div className="border-t border-border/60 pt-2">
             <Row l="Custo direto total" v={sim.totalCost} strong />
           </div>
+          {byStage.length > 0 && (
+            <details className="group rounded-lg bg-muted/50 px-3 py-2">
+              <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-medium text-primary [&::-webkit-details-marker]:hidden">
+                Ver custo por etapa ({byStage.length})
+                <span className="transition-transform group-open:rotate-180">▾</span>
+              </summary>
+              <div className="mt-2 space-y-1.5">
+                {byStage.map((x) => (
+                  <Row key={x.id} l={x.name} v={x.cost} muted />
+                ))}
+              </div>
+            </details>
+          )}
         </CardContent>
       </Card>
 
