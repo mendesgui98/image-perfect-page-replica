@@ -100,10 +100,18 @@ function ScheduleDetail() {
           <>
             <RecordDeleteButton entity="schedules" id={id} name={h.name} />
             <Button variant="outline" asChild>
-              <Link to="/cronogramas/$id/pdf" params={{ id }}>
-                <FileDown className="h-4 w-4" />
-                Gerar PDF
-              </Link>
+              {/* Vinculado: o PDF da obra traz também pagamentos e materiais do cliente. */}
+              {h.work_id ? (
+                <Link to="/obras/$id/cronograma/pdf" params={{ id: h.work_id }}>
+                  <FileDown className="h-4 w-4" />
+                  Gerar PDF
+                </Link>
+              ) : (
+                <Link to="/cronogramas/$id/pdf" params={{ id }}>
+                  <FileDown className="h-4 w-4" />
+                  Gerar PDF
+                </Link>
+              )}
             </Button>
             {me?.canSeeCosts && <NewSchedule copyId={id} />}
           </>
