@@ -382,7 +382,7 @@ function Editor() {
       )}
 
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
-        <Tabs defaultValue="itens">
+        <Tabs defaultValue="itens" className="min-w-0">
           <TabsList>
             <TabsTrigger value="itens">Serviços</TabsTrigger>
             <TabsTrigger value="dados">Dados e condições</TabsTrigger>

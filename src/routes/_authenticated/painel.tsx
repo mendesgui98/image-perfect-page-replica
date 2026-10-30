@@ -87,7 +87,8 @@ function Painel() {
               {longDate(businessDate())} · visão geral da JMG Reformas
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Celular: olho + entrada + saída numa linha e "Novo orçamento" na largura toda. */}
+          <div className="grid w-full grid-cols-[auto_1fr_1fr] gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
             <HideValuesToggle />
             <Button variant="outline" asChild>
               <Link to="/financeiro" search={{ view: "lancamentos", novo: "entrada" }}>
@@ -99,7 +100,7 @@ function Painel() {
                 <Plus className="h-4 w-4 text-negative" /> Lançar saída
               </Link>
             </Button>
-            <Button className="bg-gold text-hero-end hover:bg-gold/90" asChild>
+            <Button className="col-span-3 bg-gold text-hero-end hover:bg-gold/90" asChild>
               <Link to="/orcamentos">
                 <Plus className="h-4 w-4" /> Novo orçamento
               </Link>
@@ -116,9 +117,9 @@ function Painel() {
               key={a}
               className="flex flex-wrap items-center gap-3 rounded-xl border border-warning bg-warning/15 px-4 py-2.5 text-sm text-warning-foreground"
             >
-              <AlertTriangle className="h-4 w-4 shrink-0" />
-              <span className="min-w-0 flex-1">{a}</span>
-              <Link to="/configuracoes" className="font-semibold underline">
+              <AlertTriangle className="h-4 w-4 shrink-0 self-start sm:self-center" />
+              <span className="min-w-0 flex-1 basis-[calc(100%-2rem)] sm:basis-auto">{a}</span>
+              <Link to="/configuracoes" className="ml-7 font-semibold underline sm:ml-0">
                 Abrir configurações
               </Link>
             </div>
