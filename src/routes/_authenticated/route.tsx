@@ -8,6 +8,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { isDeadSessionError } from "@/integrations/supabase/session-recovery";
 import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { OfflineStatus } from "@/components/pwa/offline-status";
@@ -20,7 +21,10 @@ import { CommandPalette } from "@/components/layout/command-palette";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
+    // supabase-js keeps a rejected session while its access token has not expired,
+    // which leaves the app retrying a dead refresh token; drop it and sign in again.
+    if (isDeadSessionError(error)) await supabase.auth.signOut({ scope: "local" });
     if (!data.user) throw redirect({ to: "/auth" });
   },
   component: Shell,
