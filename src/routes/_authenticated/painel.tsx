@@ -1,7 +1,7 @@
 import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Plus } from "lucide-react";
+import { AlertTriangle, Minus, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useMfa } from "@/hooks/use-mfa";
@@ -76,40 +76,7 @@ function Painel() {
 
   return (
     <div>
-      {me?.canSeeCosts ? (
-        <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-              {greeting(new Date().getHours())}
-              {me.name ? `, ${me.name.split(/[\s@]/)[0]}` : ""}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {longDate(businessDate())} · visão geral da JMG Reformas
-            </p>
-          </div>
-          {/* Celular: olho + entrada + saída numa linha e "Novo orçamento" na largura toda. */}
-          <div className="grid w-full grid-cols-[auto_1fr_1fr] gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
-            <HideValuesToggle />
-            <Button variant="outline" asChild>
-              <Link to="/financeiro" search={{ view: "lancamentos", novo: "entrada" }}>
-                <Plus className="h-4 w-4 text-positive" /> Lançar entrada
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/financeiro" search={{ view: "lancamentos", novo: "saida" }}>
-                <Plus className="h-4 w-4 text-negative" /> Lançar saída
-              </Link>
-            </Button>
-            <Button className="col-span-3 bg-gold text-hero-end hover:bg-gold/90" asChild>
-              <Link to="/orcamentos">
-                <Plus className="h-4 w-4" /> Novo orçamento
-              </Link>
-            </Button>
-          </div>
-        </header>
-      ) : (
-        <PageHeader title="JMG Reformas" subtitle="Equipe de campo" />
-      )}
+      {!me?.canSeeCosts && <PageHeader title="JMG Reformas" subtitle="Equipe de campo" />}
       {alerts.length > 0 && (
         <div className="mb-5 space-y-2">
           {alerts.map((a) => (
@@ -128,7 +95,44 @@ function Painel() {
       )}
       {me?.canSeeCosts ? (
         <HideValuesScope>
-          <ExecutivePanel />
+          <ExecutivePanel
+            hero={{
+              title: `${greeting(new Date().getHours())}${me.name ? `, ${me.name.split(/[\s@]/)[0]}` : ""}`,
+              subtitle: longDate(businessDate()),
+              actions: (
+                // Celular: olho + entrada + saída numa linha e "Novo orçamento" na largura toda.
+                <div className="grid w-full grid-cols-[auto_1fr_1fr] gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+                  <HideValuesToggle className="border-white/20 bg-white/10 text-hero-foreground hover:bg-white/20" />
+                  <Button
+                    variant="outline"
+                    className="border-white/20 bg-white/10 text-hero-foreground hover:bg-white/20 hover:text-hero-foreground"
+                    asChild
+                  >
+                    <Link to="/financeiro" search={{ view: "lancamentos", novo: "entrada" }}>
+                      <Plus className="h-4 w-4" /> Entrada
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-white/20 bg-white/10 text-hero-foreground hover:bg-white/20 hover:text-hero-foreground"
+                    asChild
+                  >
+                    <Link to="/financeiro" search={{ view: "lancamentos", novo: "saida" }}>
+                      <Minus className="h-4 w-4" /> Saída
+                    </Link>
+                  </Button>
+                  <Button
+                    className="col-span-3 bg-gold font-bold text-hero-end hover:bg-gold/90"
+                    asChild
+                  >
+                    <Link to="/orcamentos">
+                      <Plus className="h-4 w-4" /> Novo orçamento
+                    </Link>
+                  </Button>
+                </div>
+              ),
+            }}
+          />
         </HideValuesScope>
       ) : (
         <>
