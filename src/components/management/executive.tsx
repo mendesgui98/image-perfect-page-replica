@@ -1,5 +1,5 @@
 import { ReceiptButton } from "@/components/works/finance";
-import { HomeDashboard } from "@/components/management/home-panel";
+import { HomeDashboard, type PanelHeroProps } from "@/components/management/home-panel";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch, useLocation } from "@tanstack/react-router";
@@ -326,7 +326,7 @@ export function CompositionTable({
     </div>
   );
 }
-export function ExecutivePanel() {
+export function ExecutivePanel({ hero }: { hero: PanelHeroProps }) {
   const brl = useBRL();
   const { data, error } = useQuery(dashboardOptions);
   const search = useSearch({ strict: false }) as ExecutiveFilter & { detail?: Indicator };
@@ -357,6 +357,7 @@ export function ExecutivePanel() {
         compositions={compositions}
         allTime={executiveComposition(data, { ...search, period: "todos" })}
         data={data}
+        hero={hero}
         onDetail={(id) =>
           navigate({
             to: target,

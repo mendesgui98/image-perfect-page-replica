@@ -2,10 +2,19 @@ import { Link } from "@tanstack/react-router";
 import { CalendarDays, ChevronRight, MapPin, User, Wallet } from "lucide-react";
 import type { WorkSummary } from "@/lib/dashboard-data";
 import { progressAttention } from "@/lib/work-progress";
+import { businessDate } from "@/lib/dashboard-math";
+import {
+  STAGE_STATE_LABEL,
+  nextStage,
+  receiptPace,
+  stageTimeline,
+  type StageState,
+} from "@/lib/panel-insights";
 import { fmtNum } from "@/lib/format";
 import { useBRL } from "@/lib/hidden-values";
 import { Button } from "@/components/ui/button";
-import { Meter, Money } from "@/components/kpi";
+import { Money } from "@/components/kpi";
+import { cn } from "@/lib/utils";
 
 const STATUS_LABEL: Record<string, string> = {
   execucao: "Em execução",
@@ -14,10 +23,18 @@ const STATUS_LABEL: Record<string, string> = {
   concluida: "Finalizada",
 };
 
+const STAGE_TONE: Record<StageState, string> = {
+  concluida: "bg-primary",
+  andamento: "bg-gold",
+  atrasada: "bg-negative",
+  afazer: "bg-muted-foreground/25",
+};
+
 /**
- * Card de uma obra no Painel: valor, recebido e custo realizado já calculados em
- * dashboard-data; os percentuais vêm de balance.financialProgress e progressAttention. Faixa azul
- * com a situação e o anel de avanço físico; atalhos para cronograma, financeiro e a obra.
+ * Card de uma obra no Painel: valor, recebido, resultado e custo realizado já calculados em
+ * dashboard-data; os percentuais vêm de balance.financialProgress e progressAttention, a linha do
+ * tempo das etapas de stageTimeline. Faixa azul com a situação e o anel de avanço físico; atalhos
+ * para cronograma, financeiro e a obra.
  */
 export function WorkCard({ s }: { s: WorkSummary }) {
   const brl = useBRL();
@@ -30,6 +47,9 @@ export function WorkCard({ s }: { s: WorkSummary }) {
   );
   const progress = Math.min(100, Math.max(0, s.progress));
   const minMargin = Number(s.budget.params?.min_margin) || 0;
+  const timeline = stageTimeline(s.stages, businessDate());
+  const next = nextStage(timeline);
+  const pace = receiptPace(s.progress, s.balance.financialProgress);
   const lowMargin =
     !unconfirmed && s.result.sale > 0 && minMargin > 0 && s.result.margin * 100 < minMargin;
   return (
@@ -97,45 +117,84 @@ export function WorkCard({ s }: { s: WorkSummary }) {
             <span className="truncate">{s.work.address || "Local não informado"}</span>
           </p>
         </div>
-        <div className="space-y-2.5">
-          <div className="flex items-end justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Valor da obra
-              </p>
-              <p className="text-base font-bold sm:text-lg">
-                <Money value={s.result.sale} />
-              </p>
+        {timeline.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Etapas
+            </p>
+            <div className="flex gap-0.5" role="list" aria-label="Etapas da obra">
+              {timeline.map((st) => (
+                <span
+                  key={st.id}
+                  role="listitem"
+                  title={`${st.name} · ${STAGE_STATE_LABEL[st.state]}`}
+                  aria-label={`${st.name}: ${STAGE_STATE_LABEL[st.state]}`}
+                  className={cn("h-2.5 min-w-1.5 rounded-sm", STAGE_TONE[st.state])}
+                  style={{ flex: `${st.size} 1 0` }}
+                />
+              ))}
             </div>
-            <div className="min-w-0 text-right">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Recebido
-              </p>
-              <p className="text-base font-bold sm:text-lg">
-                <Money value={s.totals.received} tone="positive" />
-              </p>
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+              {(Object.keys(STAGE_TONE) as StageState[]).map((k) => (
+                <span key={k} className="flex items-center gap-1">
+                  <i className={cn("h-2 w-2 rounded-sm", STAGE_TONE[k])} />
+                  {STAGE_STATE_LABEL[k]}
+                </span>
+              ))}
             </div>
           </div>
-          <Meter size="sm" showValue={false} value={s.balance.financialProgress} tone="positive" />
-          <div className="flex justify-between gap-3 text-xs text-muted-foreground">
-            <span className="num">{fmtNum(s.balance.financialProgress)}% recebido</span>
-            <span className="num">{brl(s.balance.receivable)} a receber</span>
+        )}
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="min-w-0 rounded-xl bg-primary-soft p-3">
+            <p className="text-[11px] font-semibold text-primary">Recebido do contrato</p>
+            <p className="text-lg font-bold text-primary num">
+              {fmtNum(Math.round(s.balance.financialProgress))}%
+            </p>
+            <p className="truncate text-[11px] text-muted-foreground">
+              {brl(s.totals.received)} de {brl(s.result.sale)}
+            </p>
+          </div>
+          <div className="min-w-0 rounded-xl bg-gold-soft p-3">
+            <p className="text-[11px] font-semibold text-alert">Resultado previsto</p>
+            <p className="text-lg font-bold">
+              {unconfirmed ? (
+                <span className="text-sm text-muted-foreground">Não conferido</span>
+              ) : (
+                <Money value={s.result.result} tone="auto" />
+              )}
+            </p>
+            <p className="truncate text-[11px] text-muted-foreground">
+              {unconfirmed || s.result.sale <= 0
+                ? "custo previsto pendente"
+                : `margem ${fmtNum(Math.round(s.result.margin * 1000) / 10)}%`}
+            </p>
           </div>
         </div>
 
-        <div className="space-y-2.5 rounded-xl bg-muted/50 p-3">
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="text-xs font-medium text-muted-foreground">Custo realizado</span>
-            <span className="text-sm font-bold">
-              <Money value={s.incurred} tone="negative" />
-            </span>
-          </div>
-          <Meter size="sm" showValue={false} value={consumed} tone="alert" />
-          <p className="text-xs text-muted-foreground">
+        <div className="space-y-1 text-xs">
+          {s.result.sale > 0 && (
+            <p className={cn("font-semibold", pace.behind ? "text-alert" : "text-positive")}>
+              {pace.behind
+                ? `Recebido ${fmtNum(pace.gap)} pontos atrás do avanço`
+                : "Recebimento em dia com o avanço"}
+            </p>
+          )}
+          <p className="text-muted-foreground">
+            Custo realizado <b className="text-foreground">{brl(s.incurred)}</b>
             {consumed === null
-              ? "Custo previsto não conferido"
-              : `${fmtNum(consumed)}% do custo previsto`}
+              ? " · previsto não conferido"
+              : ` · ${fmtNum(consumed)}% do previsto`}
           </p>
+          {next && (
+            <p className="flex flex-wrap gap-x-1.5 border-t border-border/60 pt-2 text-sm">
+              <span className="text-muted-foreground">Próxima etapa</span>
+              <b className={cn(next.state === "atrasada" && "text-negative")}>
+                {next.name}
+                {next.state === "atrasada" ? " · atrasada" : ""}
+              </b>
+            </p>
+          )}
         </div>
 
         <div className="mt-auto grid grid-cols-3 gap-2 border-t border-border/60 pt-3">

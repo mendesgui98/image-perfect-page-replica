@@ -10,13 +10,14 @@ export function HideValuesScope({ children }: { children: ReactNode }) {
 }
 
 /** Olhinho: aberto mostra os valores, fechado oculta. */
-export function HideValuesToggle() {
+export function HideValuesToggle({ className }: { className?: string } = {}) {
   const hidden = useStoredValuesHidden();
   return (
     <Button
       type="button"
       variant="outline"
       size="icon"
+      className={className}
       aria-pressed={hidden}
       aria-label={hidden ? "Mostrar valores" : "Ocultar valores"}
       title={hidden ? "Mostrar valores" : "Ocultar valores"}
